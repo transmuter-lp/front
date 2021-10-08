@@ -78,11 +78,12 @@ class EOI(Terminal):
     def __len__(self) -> int:
         return 0
 
-def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], tuple[str, Callable[[str, str, int, int, int, int], Terminal]]]], id_chars: Optional[list[str]] = ["_"]) -> Optional[list[Terminal]]:
+def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], tuple[str, Callable[[str, str, int, int, int, int], Terminal]]]], id_chars: list[str] = ["_"]) -> Optional[list[Terminal]]:
     input = input.replace("\r\n", "\n")
     input = input.replace("\n\r", "\n")
     input = input.replace("\r", "\n")
     terminals = sorted(terminals, key = lambda terminal: (str(terminal) if isinstance(terminal, _TerminalMeta) else terminal[0]) + "\177")
+    non_printables: set[str] = {terminal[0][0] for terminal in terminals if not isinstance(terminal, _TerminalMeta) and (not terminal[0][0].isprintable() or terminal[0][0] == " ")}
     tokens: list[Terminal] = []
     page: int = 1
     line: int = 1
@@ -90,7 +91,7 @@ def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], t
     position: int = 0
 
     while position < len(input):
-        if input[position].isprintable() and input[position] != " ":
+        if input[position].isprintable() and input[position] != " " or input[position] in non_printables:
             try:
                 for terminal in terminals:
                     if isinstance(terminal, _TerminalMeta):
