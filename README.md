@@ -1,4 +1,2 @@
-# Alchemist.py
-The Cesium to C transpiler written in Python.
-
-The C dialect used is GCC's.
+# Alchemist Front-end
+Front-end libraries and utilities for the Alchemist compiler infrastructure.
