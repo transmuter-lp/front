@@ -78,7 +78,29 @@ class EOI(Terminal):
     def __len__(self) -> int:
         return 0
 
-def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], tuple[str, Callable[[str, str, int, int, int, int], Terminal]]]], id_chars: list[str] = ["_"]) -> Optional[list[Terminal]]:
+def process_non_printable(input, position, page, line, col):
+    token = IgnoreToken(page, line, col, input[position])
+
+    if input[position] == "\t":
+        token.end_col = col + 8 - (col + 7) % 8
+    elif input[position] == "\n":
+        token.end_line = line + 1
+        token.end_col = 1
+    elif input[position] == "\v":
+        token.end_line = line + 1
+        token.end_col = col
+    elif input[position] == "\f":
+        token.end_page = page + 1
+        token.end_line = 1
+        token.end_col = 1
+    elif input[position] == " ":
+        pass
+    else:
+        return None
+
+    return token
+
+def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], tuple[str, Callable[[str, str, int, int, int, int], Terminal]]]], id_chars: str = "_") -> Optional[list[Terminal]]:
     input = input.replace("\r\n", "\n")
     input = input.replace("\n\r", "\n")
     input = input.replace("\r", "\n")
@@ -93,21 +115,19 @@ def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], t
     while position < len(input):
         if input[position].isprintable() and input[position] != " " or input[position] in non_printables:
             try:
+                token_added: bool = False
+
                 for terminal in terminals:
                     if isinstance(terminal, _TerminalMeta):
                         if input[position:position + len(terminal)] == str(terminal):
-                            if (str(terminal)[-1].isalnum() or str(terminal)[-1] in id_chars) and position + len(terminal) < len(input) and (input[position + len(terminal)].isalnum() or input[position + len(terminal)] in id_chars):
-                                end: int = position + len(terminal) + 1
-
-                                while end < len(input) and (input[end].isalnum() or input[end] in id_chars):
-                                    end += 1
-
-                                tokens.append(Identifier(page, line, col, input[position:end]))
-                            else:
+                            if (not str(terminal)[-1].isalnum() and str(terminal)[-1] not in id_chars) or position + len(terminal) >= len(input) or (not input[position + len(terminal)].isalnum() and input[position + len(terminal)] not in id_chars):
                                 tokens.append(terminal(page, line, col))
+                                position += len(tokens[-1])
+                                col += len(tokens[-1])
+                                token_added = True
 
-                            position += len(tokens[-1])
-                            col += len(tokens[-1])
+                            break
+                        elif input[position:position + len(terminal)] + "\177" < str(terminal) + "\177":
                             break
                     elif input[position:position + len(terminal[0])] == terminal[0]:
                         token: Terminal = terminal[1](filepath, input, position, page, line, col)
@@ -119,8 +139,12 @@ def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], t
                         page = token.end_page
                         line = token.end_line
                         col = token.end_col
+                        token_added = True
                         break
-                else:
+                    elif input[position:position + len(terminal[0])] + "\177" < terminal[0] + "\177":
+                        break
+
+                if not token_added:
                     if input[position].isalpha() or input[position] in id_chars:
                         end: int = position + 1
 
@@ -136,19 +160,12 @@ def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], t
                 print(e)
                 return None
         else:
-            if input[position] == "\t":
-                col += 8 - (col + 7) % 8
-            elif input[position] == "\n":
-                line += 1
-                col = 1
-            elif input[position] == "\v":
-                line += 1
-            elif input[position] == "\f":
-                page += 1
-                line = 1
-                col = 1
-            elif input[position] == " ":
-                col += 1
+            token = process_non_printable(input, position, page, line, col)
+
+            if token != None:
+                page = token.end_page
+                line = token.end_line
+                col = token.end_col
 
             position += 1
 
