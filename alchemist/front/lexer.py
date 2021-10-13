@@ -78,8 +78,8 @@ class EOI(Terminal):
     def __len__(self) -> int:
         return 0
 
-def process_non_printable(input, position, page, line, col):
-    token = IgnoreToken(page, line, col, input[position])
+def process_non_printable(input: str, position: int, page: int, line: int, col: int) -> Optional[IgnoreToken]:
+    token: IgnoreToken = IgnoreToken(page, line, col, input[position])
 
     if input[position] == "\t":
         token.end_col = col + 8 - (col + 7) % 8
@@ -104,8 +104,7 @@ def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], t
     input = input.replace("\r\n", "\n")
     input = input.replace("\n\r", "\n")
     input = input.replace("\r", "\n")
-    terminals = sorted(terminals, key = lambda terminal: (str(terminal) if isinstance(terminal, _TerminalMeta) else terminal[0]) + "\177")
-    non_printables: set[str] = {terminal[0][0] for terminal in terminals if not isinstance(terminal, _TerminalMeta) and (not terminal[0][0].isprintable() or terminal[0][0] == " ")}
+    terminals = sorted(terminals, key = lambda terminal: (str(terminal) if isinstance(terminal, _TerminalMeta) else terminal[0]) + "\U0010FFFF")
     tokens: list[Terminal] = []
     page: int = 1
     line: int = 1
@@ -113,60 +112,59 @@ def lexer_run(filepath: str, input: str, terminals: list[Union[type[Terminal], t
     position: int = 0
 
     while position < len(input):
-        if input[position].isprintable() and input[position] != " " or input[position] in non_printables:
-            try:
-                token_added: bool = False
+        try:
+            token_added: bool = False
 
-                for terminal in terminals:
-                    if isinstance(terminal, _TerminalMeta):
-                        if input[position:position + len(terminal)] == str(terminal):
-                            if (not str(terminal)[-1].isalnum() and str(terminal)[-1] not in id_chars) or position + len(terminal) >= len(input) or (not input[position + len(terminal)].isalnum() and input[position + len(terminal)] not in id_chars):
-                                tokens.append(terminal(page, line, col))
-                                position += len(tokens[-1])
-                                col += len(tokens[-1])
-                                token_added = True
+            for terminal in terminals:
+                if isinstance(terminal, _TerminalMeta):
+                    if input[position:position + len(terminal)] == str(terminal):
+                        if (not str(terminal)[-1].isalnum() and str(terminal)[-1] not in id_chars) or position + len(terminal) >= len(input) or (not input[position + len(terminal)].isalnum() and input[position + len(terminal)] not in id_chars):
+                            tokens.append(terminal(page, line, col))
+                            position += len(tokens[-1])
+                            col += len(tokens[-1])
+                            token_added = True
 
-                            break
-                        elif input[position:position + len(terminal)] + "\177" < str(terminal) + "\177":
-                            break
-                    elif input[position:position + len(terminal[0])] == terminal[0]:
-                        token: Terminal = terminal[1](filepath, input, position, page, line, col)
+                        break
+                    elif input[position:position + len(terminal)] + "\U0010FFFF" < str(terminal) + "\U0010FFFF":
+                        break
+                elif input[position:position + len(terminal[0])] == terminal[0]:
+                    token: Terminal = terminal[1](filepath, input, position, page, line, col)
 
-                        if not isinstance(token, IgnoreToken):
-                            tokens.append(token)
+                    if not isinstance(token, IgnoreToken):
+                        tokens.append(token)
 
-                        position += len(token)
+                    position += len(token)
+                    page = token.end_page
+                    line = token.end_line
+                    col = token.end_col
+                    token_added = True
+                    break
+                elif input[position:position + len(terminal[0])] + "\U0010FFFF" < terminal[0] + "\U0010FFFF":
+                    break
+
+            if not token_added:
+                if input[position].isalpha() or input[position] in id_chars:
+                    end: int = position + 1
+
+                    while end < len(input) and (input[end].isalnum() or input[end] in id_chars):
+                        end += 1
+
+                    tokens.append(Identifier(page, line, col, input[position:end]))
+                    position += len(tokens[-1])
+                    col += len(tokens[-1])
+                elif not input[position].isprintable() or input[position] == " ":
+                    token: Optional[IgnoreToken] = process_non_printable(input, position, page, line, col)
+
+                    if token != None:
                         page = token.end_page
                         line = token.end_line
                         col = token.end_col
-                        token_added = True
-                        break
-                    elif input[position:position + len(terminal[0])] + "\177" < terminal[0] + "\177":
-                        break
 
-                if not token_added:
-                    if input[position].isalpha() or input[position] in id_chars:
-                        end: int = position + 1
-
-                        while end < len(input) and (input[end].isalnum() or input[end] in id_chars):
-                            end += 1
-
-                        tokens.append(Identifier(page, line, col, input[position:end]))
-                        position += len(tokens[-1])
-                        col += len(tokens[-1])
-                    else:
-                        raise InvalidStringLexerException(filepath, page, line, col, input[position:])
-            except InvalidStringLexerException as e:
-                print(e)
-                return None
-        else:
-            token = process_non_printable(input, position, page, line, col)
-
-            if token != None:
-                page = token.end_page
-                line = token.end_line
-                col = token.end_col
-
-            position += 1
+                    position += 1
+                else:
+                    raise InvalidStringLexerException(filepath, page, line, col, input[position:])
+        except InvalidStringLexerException as e:
+            print(e)
+            return None
 
     return tokens
