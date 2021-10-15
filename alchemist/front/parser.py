@@ -19,16 +19,16 @@ from functools import wraps
 from collections.abc import Callable
 from typing import Union, Optional
 
-class UnexpectedFirstTokenParserException(Exception):
+class UnexpectedFirstTokenParserError(Exception):
     def __init__(self, filepath: str, symbol: Callable, token: Terminal, symbols: list[type[Terminal]]):
-        super().__init__("{}:{}:{}:{}: {}: '{}' starting {}. Allowed options are: {}.".format(filepath, token.page, token.line, token.col, self.__class__.__name__, token, symbol.__name__, symbols))
+        super().__init__("{}:{}:{}: {}: '{}' starting {}. Allowed options are: {}.".format(filepath, token.line, token.col, self.__class__.__name__, token, symbol.__name__, symbols))
 
-class UnexpectedTokenParserException(Exception):
+class UnexpectedTokenParserError(Exception):
     def __init__(self, filepath: str, token: Terminal, symbol: Optional[type[Terminal]] = None):
         if symbol != None:
-            super().__init__("{}:{}:{}:{}: {}: '{}'. Expected '{}'.".format(filepath, token.page, token.line, token.col, self.__class__.__name__, token, symbol))
+            super().__init__("{}:{}:{}: {}: '{}'. Expected '{}'.".format(filepath, token.line, token.col, self.__class__.__name__, token, symbol))
         else:
-            super().__init__("{}:{}:{}:{}: {}: '{}'.".format(filepath, token.page, token.line, token.col, self.__class__.__name__, token))
+            super().__init__("{}:{}:{}: {}: '{}'.".format(filepath, token.line, token.col, self.__class__.__name__, token))
 
 def self(fn: Callable) -> Callable:
     @wraps(fn)
@@ -83,27 +83,22 @@ def parser_run(filepath: str, tokens: list[Terminal], start: Callable[[str, list
     stack: list[Union[type[Terminal], Callable[[str, list[Terminal], int], list[Union[type[Terminal], Callable]]]]] = [EOI, start]
     position: int = 0
 
-    try:
-        while len(stack) > 0 and position < len(tokens):
-            symbol: Union[type[Terminal], Callable[[str, list[Terminal], int], list[Union[type[Terminal], Callable]]]] = stack.pop()
+    while len(stack) > 0 and position < len(tokens):
+        symbol: Union[type[Terminal], Callable[[str, list[Terminal], int], list[Union[type[Terminal], Callable]]]] = stack.pop()
 
-            if isinstance(symbol, _TerminalMeta):
-                token: Terminal = tokens[position]
+        if isinstance(symbol, _TerminalMeta):
+            token: Terminal = tokens[position]
 
-                if token == symbol:
-                    position += 1
-                else:
-                    raise UnexpectedTokenParserException(filepath, token, symbol)
+            if token == symbol:
+                position += 1
             else:
-                symbols: list[Union[type[Terminal], Callable]] = symbol(filepath, tokens, position)
-                symbols.reverse()
-                stack += symbols
+                raise UnexpectedTokenParserError(filepath, token, symbol)
+        else:
+            symbols: list[Union[type[Terminal], Callable]] = symbol(filepath, tokens, position)
+            symbols.reverse()
+            stack += symbols
 
-        if len(stack) > 0 and stack[-1] != EOI:
-            raise UnexpectedTokenParserException(filepath, EOI(tokens[position - 1].end_page, tokens[position - 1].end_line, tokens[position - 1].end_col), stack[-1] if isinstance(stack[-1], _TerminalMeta) else None)
-        elif position < len(tokens) and tokens[position] != EOI:
-            raise UnexpectedTokenParserException(filepath, tokens[position], EOI)
-    except UnexpectedFirstTokenParserException as e:
-        print(e)
-    except UnexpectedTokenParserException as e:
-        print(e)
+    if len(stack) > 0 and stack[-1] != EOI:
+        raise UnexpectedTokenParserError(filepath, EOI(tokens[position - 1].end_line, tokens[position - 1].end_col), stack[-1] if isinstance(stack[-1], _TerminalMeta) else None)
+    elif position < len(tokens) and tokens[position] != EOI:
+        raise UnexpectedTokenParserError(filepath, tokens[position], EOI)
