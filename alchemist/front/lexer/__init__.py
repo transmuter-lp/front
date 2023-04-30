@@ -2,35 +2,20 @@
 # Copyright (C) 2023  Natan Junges <natanajunges@gmail.com>
 #
 # Alchemist is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
+# it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # any later version.
 #
 # Alchemist is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
+# GNU Lesser General Public License for more details.
 #
-# You should have received a copy of the GNU General Public License
+# You should have received a copy of the GNU Lesser General Public License
 # along with Alchemist.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional, Union
 import re
-
-from .. import CompilerError
-
-class CompilerLexicalError(CompilerError): pass
-
-class CompilerEOIError(CompilerLexicalError):
-    def __init__(self, input: "InputHandler"):
-        super().__init__(input, "Unexpected end of input.")
-
-class CompilerNoTerminalError(CompilerLexicalError):
-    def __init__(self, input: "InputHandler"):
-        super().__init__(input, "Could not match any expected terminal.")
-
-class CompilerTerminalError(CompilerLexicalError):
-    def __init__(self): pass
 
 class InputHandler:
     def __init__(self, input: str, filename: str = "<stdin>", startpos: int = 0, endpos: Optional[int] = None, newline: str = "\n"):
@@ -179,3 +164,18 @@ class Lexer:
                 self.token = self.token.next
 
         return self.token
+
+from .. import CompilerError
+
+class CompilerLexicalError(CompilerError): pass
+
+class CompilerEOIError(CompilerLexicalError):
+    def __init__(self, input: InputHandler):
+        super().__init__(input, "Unexpected end of input.")
+
+class CompilerNoTerminalError(CompilerLexicalError):
+    def __init__(self, input: InputHandler):
+        super().__init__(input, "Could not match any expected terminal.")
+
+class CompilerTerminalError(CompilerLexicalError):
+    def __init__(self): pass
