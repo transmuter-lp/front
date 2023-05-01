@@ -1,18 +1,18 @@
 # This file is part of the Alchemist front-end libraries
 # Copyright (C) 2023  Natan Junges <natanajunges@gmail.com>
 #
-# Alchemist is free software: you can redistribute it and/or modify
+# This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # any later version.
 #
-# Alchemist is distributed in the hope that it will be useful,
+# This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU Lesser General Public License for more details.
 #
 # You should have received a copy of the GNU Lesser General Public License
-# along with Alchemist.  If not, see <https://www.gnu.org/licenses/>.
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Optional, Union
 import re
@@ -84,6 +84,12 @@ class Terminal(ASTNode):
     def str(self) -> str:
         return self.pattern if type(self.pattern) is str else self._str
 
+class Start(Terminal):
+    def __init__(self, input: InputHandler):
+        ASTNode.__init__(self, None)
+        self.next: Optional[Terminal] = None
+        self.state: tuple[int, int, int] = input.get_state()
+
 TerminalList = list[Union[type[Terminal], tuple[type[Terminal], "TerminalList"]]]
 
 class Lexer:
@@ -97,14 +103,14 @@ class Lexer:
 
     def __init__(self, input: InputHandler):
         self.input: InputHandler = input
-        self.token: Optional[Terminal] = None
+        self.token: Terminal = Start(input)
 
-    def get_state(self) -> tuple[tuple[int, int, int], Terminal]:
-        return (self.input.get_state(), self.token)
+    def get_state(self) -> Terminal:
+        return self.token
 
-    def set_state(self, state: tuple[tuple[int, int, int], Terminal]):
-        input, self.token = state
-        self.input.set_state(input)
+    def set_state(self, state: Terminal):
+        self.token = state
+        self.input.set_state(state.state)
 
     def ignore(self):
         while True:
@@ -118,8 +124,8 @@ class Lexer:
                 break
 
     def next_token(self, parent: Optional["Production"]) -> Terminal:
-        if self.token is not None and self.token.next is not None:
-            self.token = self.token.next
+        if self.token.next is not None:
+            self.set_state(self.token.next)
         else:
             self.ignore()
 
@@ -137,14 +143,18 @@ class Lexer:
                                 try:
                                     if type(c) is tuple:
                                         te, ch = c
-                                        token = te(parent, self.input)
+                                        to = te(parent, self.input)
+                                        assert len(to.str) == len(token.str)
+                                        token = to
                                         children = ch
                                     else:
-                                        token = c(parent, self.input)
+                                        to = c(parent, self.input)
+                                        assert len(to.str) == len(token.str)
+                                        token = to
                                         children = []
 
                                     break
-                                except CompilerTerminalError: pass
+                                except (CompilerTerminalError, AssertionError): pass
                             else:
                                 break
                     else:
@@ -156,12 +166,9 @@ class Lexer:
                 raise CompilerNoTerminalError(self.input)
 
             self.input.advance(len(token.str))
-
-            if self.token is None:
-                self.token = token
-            else:
-                self.token.next = token
-                self.token = self.token.next
+            token.state: tuple[int, int, int] = self.input.get_state()
+            self.token.next = token
+            self.token = self.token.next
 
         return self.token
 
