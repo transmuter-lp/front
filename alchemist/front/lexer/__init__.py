@@ -17,6 +17,8 @@
 from typing import Optional, Union
 import re
 
+from .. import ASTNode, CompilerError
+
 class InputHandler:
     def __init__(self, input: str, filename: str = "<stdin>", startpos: int = 0, endpos: Optional[int] = None, newline: str = "\n"):
         self.input: str = input
@@ -49,8 +51,6 @@ class InputHandler:
                 self.column += length
 
             self.position += length
-
-from .. import ASTNode
 
 class Terminal(ASTNode):
     pattern: Union[str, re.Pattern] = ""
@@ -172,8 +172,6 @@ class Lexer:
             self.token = self.token.next
 
         return self.token
-
-from .. import CompilerError
 
 class CompilerLexicalError(CompilerError): pass
 
