@@ -25,26 +25,26 @@ RuleTemplate = Union[Sequence["RuleTemplate"], "Rule", str]
 
 class Rule:
     @staticmethod
-    def get(arg: RuleTemplate) -> "Rule":
-        if isinstance(arg, tuple):
-            return Group(arg)
+    def get(template: RuleTemplate) -> "Rule":
+        if isinstance(template, tuple):
+            return Group(template)
 
-        if isinstance(arg, list):
-            return Optional(arg)
+        if isinstance(template, list):
+            return Optional(template)
 
-        if not isinstance(arg, Rule):
-            return Term(arg)
+        if isinstance(template, str):
+            return Term(template)
 
-        return arg
+        return template
 
     @staticmethod
-    def filter(args: Sequence[RuleTemplate]) -> list["Rule"]:
-        ret = [Rule.get(arg) for arg in args if not isinstance(arg, Switch) or
-               arg.enabled]
-        ret = [arg for arg in ret if isinstance(arg, Term) or
-               len(arg.args.args if isinstance(arg.args, Group) else arg.args)
-               > 0]
-        return ret
+    def filter(templates: Sequence[RuleTemplate]) -> list["Rule"]:
+        rules = [Rule.get(template) for template in templates if not
+                 isinstance(template, Switch) or template.enabled]
+        rules = [rule for rule in rules if isinstance(rule, Term) or
+                 len(rule.rules.rules if isinstance(rule.rules, Group) else
+                     rule.rules) > 0]
+        return rules
 
     @staticmethod
     def indent(level: int) -> str:
@@ -54,157 +54,158 @@ class Rule:
     def paths(level: int) -> str:
         return f"paths{str(level)}"
 
-    def __init__(self, args: Union[list["Rule"], "Group"]):
-        self.args: Union[list[Rule], Group] = args
+    def __init__(self, rules: Union[list["Rule"], "Group"]):
+        self.rules: Union[list[Rule], Group] = rules
 
-    def __call__(self, indent_level: int, paths_level: int) -> str:
+    def __call__(self, indent: int, level: int) -> str:
         raise NotImplementedError()
 
 
 class Group(Rule):
-    def __init__(self, args: Sequence[RuleTemplate]):
-        super().__init__(Rule.filter(args))
+    def __init__(self, templates: Sequence[RuleTemplate]):
+        super().__init__(Rule.filter(templates))
         i = 0
 
-        while i < len(self.args):
-            if isinstance(self.args[i], Group):
-                group = self.args[i].args
-                self.args = self.args[:i] + group + self.args[i + 1:]
-                i += len(group)
+        while i < len(self.rules):
+            if isinstance(self.rules[i], Group):
+                rules = self.rules[i].rules
+                self.rules = self.rules[:i] + rules + self.rules[i + 1:]
+                i += len(rules)
             else:
                 i += 1
 
-    def __call__(self, indent_level: int, paths_level: int) -> str:
-        ret = ""
+    def __call__(self, indent: int, level: int) -> str:
+        code = ""
 
-        for arg in self.args:
-            ret += arg(indent_level, paths_level)
+        for rule in self.rules:
+            code += rule(indent, level)
 
-        return ret
+        return code
 
 
 class Optional(Rule):
-    def __init__(self, args: list[RuleTemplate]):
-        super().__init__(Group(args))
+    def __init__(self, templates: list[RuleTemplate]):
+        super().__init__(Group(templates))
 
-        if (len(self.args.args) == 1 and
-                isinstance(self.args.args[0], Optional)):
-            self.args = self.args.args[0].args
+        if (len(self.rules.rules) == 1 and
+                isinstance(self.rules.rules[0], Optional)):
+            self.rules = self.rules.rules[0].rules
 
-    def __call__(self, indent_level: int, paths_level: int) -> str:
-        ret = "\n"
-        ret += f"{Rule.indent(indent_level)}try:  # optional"
-        ret += f"{Rule.indent(indent_level + 1)}{Rule.paths(paths_level + 1)} = {Rule.paths(paths_level)}"
-        ret += self.args(indent_level + 1, paths_level + 1)
-        ret += f"{Rule.indent(indent_level + 1)}{Rule.paths(paths_level)} |= {Rule.paths(paths_level + 1)}"
-        ret += f"{Rule.indent(indent_level)}except (CompilerSyntaxError, CompilerEOIError):"
-        ret += f"{Rule.indent(indent_level + 1)}pass"
-        ret += "\n"
-        return ret
+    def __call__(self, indent: int, level: int) -> str:
+        code = "\n"
+        code += f"{Rule.indent(indent)}try:  # optional"
+        code += f"{Rule.indent(indent + 1)}{Rule.paths(level + 1)} = {Rule.paths(level)}"
+        code += self.rules(indent + 1, level + 1)
+        code += f"{Rule.indent(indent + 1)}{Rule.paths(level)} |= {Rule.paths(level + 1)}"
+        code += f"{Rule.indent(indent)}except (CompilerSyntaxError, CompilerEOIError):"
+        code += f"{Rule.indent(indent + 1)}pass"
+        code += "\n"
+        return code
 
 
 class Switch(Rule):
     enabled: bool = False
 
-    def __init__(self, *args: RuleTemplate):
+    def __init__(self, *templates: RuleTemplate):
         if self.enabled:
-            super().__init__(Group(args))
+            super().__init__(Group(templates))
 
-    def __call__(self, indent_level: int, paths_level: int) -> str:
-        return self.args(indent_level, paths_level)
+    def __call__(self, indent: int, level: int) -> str:
+        return self.rules(indent, level)
 
 
 class repeat(Rule):
-    def __init__(self, *args: RuleTemplate):
-        super().__init__(Group(args))
+    def __init__(self, *templates: RuleTemplate):
+        super().__init__(Group(templates))
 
-        if len(self.args.args) == 1 and isinstance(self.args.args[0], repeat):
-            self.args = self.args.args[0].args
+        if (len(self.rules.rules) == 1 and
+                isinstance(self.rules.rules[0], repeat)):
+            self.rules = self.rules.rules[0].rules
 
-    def __call__(self, indent_level: int, paths_level: int) -> str:
-        ret = "\n"
-        ret += f"{Rule.indent(indent_level)}# begin repeat"
-        ret += f"{Rule.indent(indent_level)}{Rule.paths(paths_level + 1)} = {Rule.paths(paths_level)}"
-        ret += "\n"
-        ret += f"{Rule.indent(indent_level)}while True:"
-        ret += f"{Rule.indent(indent_level + 1)}try:"
-        ret += self.args(indent_level + 2, paths_level + 1)
-        ret += f"{Rule.indent(indent_level + 2)}{Rule.paths(paths_level)} |= {Rule.paths(paths_level + 1)}"
-        ret += f"{Rule.indent(indent_level + 1)}except (CompilerSyntaxError, CompilerEOIError):"
-        ret += f"{Rule.indent(indent_level + 2)}break"
-        ret += "\n"
-        ret += f"{Rule.indent(indent_level)}# end repeat"
-        ret += "\n"
-        return ret
+    def __call__(self, indent: int, level: int) -> str:
+        code = "\n"
+        code += f"{Rule.indent(indent)}# begin repeat"
+        code += f"{Rule.indent(indent)}{Rule.paths(level + 1)} = {Rule.paths(level)}"
+        code += "\n"
+        code += f"{Rule.indent(indent)}while True:"
+        code += f"{Rule.indent(indent + 1)}try:"
+        code += self.rules(indent + 2, level + 1)
+        code += f"{Rule.indent(indent + 2)}{Rule.paths(level)} |= {Rule.paths(level + 1)}"
+        code += f"{Rule.indent(indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"
+        code += f"{Rule.indent(indent + 2)}break"
+        code += "\n"
+        code += f"{Rule.indent(indent)}# end repeat"
+        code += "\n"
+        return code
 
 
 class oneof(Rule):
-    def __init__(self, *args: RuleTemplate):
-        super().__init__(Rule.filter(args))
+    def __init__(self, *templates: RuleTemplate):
+        super().__init__(Rule.filter(templates))
         i = 0
 
-        while i < len(self.args):
-            if isinstance(self.args[i], oneof):
-                options = self.args[i].args
-                self.args = self.args[:i] + options + self.args[i + 1:]
-                i += len(options)
+        while i < len(self.rules):
+            if isinstance(self.rules[i], oneof):
+                rules = self.rules[i].rules
+                self.rules = self.rules[:i] + rules + self.rules[i + 1:]
+                i += len(rules)
             else:
                 i += 1
 
-    def __call__(self, indent_level: int, paths_level: int) -> str:
-        if len(self.args) == 1:
-            return self.args[0](indent_level, paths_level)
+    def __call__(self, indent: int, level: int) -> str:
+        if len(self.rules) == 1:
+            return self.rules[0](indent, level)
 
-        ret = "\n"
-        ret += f"{Rule.indent(indent_level)}# begin oneof"
-        ret += f"{Rule.indent(indent_level)}{Rule.paths(paths_level + 1)} = set()"
+        code = "\n"
+        code += f"{Rule.indent(indent)}# begin oneof"
+        code += f"{Rule.indent(indent)}{Rule.paths(level + 1)} = set()"
 
-        for i, arg in enumerate(self.args):
-            ret += "\n"
-            ret += f"{Rule.indent(indent_level)}try:  # option {i + 1}"
-            ret += f"{Rule.indent(indent_level + 1)}{Rule.paths(paths_level + 2)} = {Rule.paths(paths_level)}"
-            ret += arg(indent_level + 1, paths_level + 2)
-            ret += f"{Rule.indent(indent_level + 1)}{Rule.paths(paths_level + 1)} |= {Rule.paths(paths_level + 2)}"
-            ret += f"{Rule.indent(indent_level)}except CompilerSyntaxError:"
-            ret += f"{Rule.indent(indent_level + 1)}pass"
+        for i, rule in enumerate(self.rules):
+            code += "\n"
+            code += f"{Rule.indent(indent)}try:  # option {i + 1}"
+            code += f"{Rule.indent(indent + 1)}{Rule.paths(level + 2)} = {Rule.paths(level)}"
+            code += rule(indent + 1, level + 2)
+            code += f"{Rule.indent(indent + 1)}{Rule.paths(level + 1)} |= {Rule.paths(level + 2)}"
+            code += f"{Rule.indent(indent)}except CompilerSyntaxError:"
+            code += f"{Rule.indent(indent + 1)}pass"
 
-        ret += "\n"
-        ret += f"{Rule.indent(indent_level)}if len({Rule.paths(paths_level + 1)}) == 0:"
-        ret += f"{Rule.indent(indent_level + 1)}raise CompilerSyntaxError(self)"
-        ret += "\n"
-        ret += f"{Rule.indent(indent_level)}{Rule.paths(paths_level)} = {Rule.paths(paths_level + 1)}"
-        ret += f"{Rule.indent(indent_level)}# end oneof"
-        ret += "\n"
-        return ret
+        code += "\n"
+        code += f"{Rule.indent(indent)}if len({Rule.paths(level + 1)}) == 0:"
+        code += f"{Rule.indent(indent + 1)}raise CompilerSyntaxError(self)"
+        code += "\n"
+        code += f"{Rule.indent(indent)}{Rule.paths(level)} = {Rule.paths(level + 1)}"
+        code += f"{Rule.indent(indent)}# end oneof"
+        code += "\n"
+        return code
 
 
 class Term(Rule):
-    def __init__(self, arg: str):
-        self.arg: str = arg
+    def __init__(self, node: str):
+        self.node: str = node
 
-    def __call__(self, indent_level: int, paths_level: int) -> str:
-        return f"{Rule.indent(indent_level)}{Rule.paths(paths_level)} = self.process_paths({Rule.paths(paths_level)}, {self.arg})"
+    def __call__(self, indent: int, level: int) -> str:
+        return f"{Rule.indent(indent)}{Rule.paths(level)} = self.process_paths({Rule.paths(level)}, {self.node})"
 
 
 class ProductionTemplate:
-    rule: RuleTemplate = ()
+    template: RuleTemplate = ()
 
     @classmethod
     def generate(cls) -> str:
-        if isinstance(cls.rule, Switch) and not cls.rule.enabled:
+        if isinstance(cls.template, Switch) and not cls.template.enabled:
             return ""
 
-        rule = Rule.get(cls.rule)
+        rule = Rule.get(cls.template)
 
-        if not isinstance(rule, Term) and len(rule.args.args if
-                                              isinstance(rule.args, Group) else
-                                              rule.args) == 0:
+        if (not isinstance(rule, Term) and
+                len(rule.rules.rules if isinstance(rule.rules, Group) else
+                    rule.rules) == 0):
             return ""
 
-        ret = f"class {cls.__name__}(Production):"
-        ret += f"{Rule.indent(1)}def __init__(self, parent: Optional[Production], lexer: \"Lexer\"):"
-        ret += f"{Rule.indent(2)}super().__init__(parent, lexer)"
-        ret += f"{Rule.indent(2)}{Rule.paths(0)} = {{lexer.get_state()}}"
-        ret += rule(2, 0).replace("\n\n\n", "\n\n")
-        ret += f"{Rule.indent(2)}self.paths: set[\"Terminal\"] = {Rule.paths(0)}"
-        return ret
+        code = f"class {cls.__name__}(Production):"
+        code += f"{Rule.indent(1)}def __init__(self, parent: Optional[Production], lexer: \"Lexer\"):"
+        code += f"{Rule.indent(2)}super().__init__(parent, lexer)"
+        code += f"{Rule.indent(2)}{Rule.paths(0)} = {{lexer.get_state()}}"
+        code += rule(2, 0).replace("\n\n\n", "\n\n")
+        code += f"{Rule.indent(2)}self.paths: set[\"Terminal\"] = {Rule.paths(0)}"
+        return code
