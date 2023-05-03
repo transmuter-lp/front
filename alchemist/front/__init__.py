@@ -29,5 +29,5 @@ class ASTNode:
 
 class CompilerError(Exception):
     def __init__(self, _input: "InputHandler", msg: str):
-        super().__init__(f"{_input.filename}:{_input.lc[0]}:{_input.lc[1]}: "
-                         f"{self.__class__.__name__}: {msg}")
+        super().__init__(f"{_input.filename}:{_input.poslc[0]}:"
+                         f"{_input.poslc[1]}:{self.__class__.__name__}: {msg}")
