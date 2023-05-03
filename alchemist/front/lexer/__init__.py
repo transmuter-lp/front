@@ -101,8 +101,8 @@ class Terminal(ASTNode):
 class Start(Terminal):
     def __init__(self, _input: InputHandler):
         ASTNode.__init__(self, None)
-        self.state: tuple[int, int, int] = _input.get_state()
-        self.next: Optional[Terminal] = None
+        self.state = _input.get_state()
+        self.next = None
 
 
 TerminalList = list[Union[
@@ -157,10 +157,9 @@ class Lexer:
             try:
                 ctoken = terminal(parent, self.input)
                 assert token is None or len(ctoken.str) == len(token.str)
+                return ctoken, children
             except (CompilerTerminalError, AssertionError):
-                continue
-
-            return ctoken, children
+                pass
 
         return None
 
