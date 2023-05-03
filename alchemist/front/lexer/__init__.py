@@ -33,15 +33,15 @@ class InputHandler:
         self.endpos: int = endpos if endpos is not None else len(_input)
         self.newline: str = newline
         self.position: int = 0
-        self.lc: tuple[int, int] = (1, 1)
+        self.poslc: tuple[int, int] = (1, 1)
         self.advance(startpos)
 
     def get_state(self) -> tuple[int, int, int]:
-        return (self.position, self.lc[0], self.lc[1])
+        return (self.position, self.poslc[0], self.poslc[1])
 
     def set_state(self, state: tuple[int, int, int]):
         self.position = state[0]
-        self.lc = (state[1], state[2])
+        self.poslc = (state[1], state[2])
 
     def __getitem__(self, key: slice) -> str:
         return self.input[max(self.startpos, key.start):
@@ -53,11 +53,11 @@ class InputHandler:
                                      self.position + length)
 
             if lines > 0:
-                self.lc = (self.lc[0] + lines, (self.position + length -
-                           self.input.rfind(self.newline, self.position,
-                                            self.position + length)))
+                self.poslc = (self.poslc[0] + lines, (self.position + length -
+                              self.input.rfind(self.newline, self.position,
+                                               self.position + length)))
             else:
-                self.lc = (self.lc[0], self.lc[1] + length)
+                self.poslc = (self.poslc[0], self.poslc[1] + length)
 
             self.position += length
 
@@ -134,9 +134,9 @@ class Lexer:
 
     def ignore(self):
         while True:
-            for p in self.ignored:
-                match = p.match(self.input.input, self.input.position,
-                                self.input.endpos)
+            for pattern in self.ignored:
+                match = pattern.match(self.input.input, self.input.position,
+                                      self.input.endpos)
 
                 if match:
                     self.input.advance(len(match[0]))
@@ -144,55 +144,55 @@ class Lexer:
             else:
                 break
 
+    def match_terminal(self, parent: Optional["Production"],
+                       terminals: TerminalList,
+                       token: Optional[Terminal] = None):
+        for term in terminals:
+            if isinstance(term, tuple):
+                terminal, children = term
+            else:
+                terminal = term
+                children = []
+
+            try:
+                ctoken = terminal(parent, self.input)
+                assert token is None or len(ctoken.str) == len(token.str)
+            except (CompilerTerminalError, AssertionError):
+                continue
+
+            return ctoken, children
+
+        return None
+
     def next_token(self, parent: Optional["Production"]) -> Terminal:
         if self.token.next is not None:
             self.set_state(self.token.next)
-        else:
-            self.ignore()
+            return self.token
 
-            if self.input.position == self.input.endpos:
-                raise CompilerEOIError(self.input)
+        self.ignore()
 
-            for t in self.terminals:
-                try:
-                    if isinstance(t, tuple):
-                        terminal, children = t
-                        token = terminal(parent, self.input)
+        if self.input.position == self.input.endpos:
+            raise CompilerEOIError(self.input)
 
-                        while True:
-                            for c in children:
-                                try:
-                                    if isinstance(c, tuple):
-                                        te, ch = c
-                                        to = te(parent, self.input)
-                                        assert len(to.str) == len(token.str)
-                                        token = to
-                                        children = ch
-                                    else:
-                                        to = c(parent, self.input)
-                                        assert len(to.str) == len(token.str)
-                                        token = to
-                                        children = []
+        match = self.match_terminal(parent, self.terminals)
 
-                                    break
-                                except (CompilerTerminalError, AssertionError):
-                                    pass
-                            else:
-                                break
-                    else:
-                        token = t(parent, self.input)
+        if match is None:
+            raise CompilerNoTerminalError(self.input)
 
-                    break
-                except CompilerTerminalError:
-                    pass
-            else:
-                raise CompilerNoTerminalError(self.input)
+        token, children = match
 
-            self.input.advance(len(token.str))
-            token.state = self.input.get_state()
-            self.token.next = token
-            self.token = self.token.next
+        while True:
+            match = self.match_terminal(parent, children, token)
 
+            if match is None:
+                break
+
+            token, children = match
+
+        self.input.advance(len(token.str))
+        token.state = self.input.get_state()
+        self.token.next = token
+        self.token = self.token.next
         return self.token
 
 
