@@ -46,14 +46,6 @@ class Rule:
                      rule.rules) > 0]
         return rules
 
-    @staticmethod
-    def indent(level: int) -> str:
-        return f"\n{'    ' * level}"
-
-    @staticmethod
-    def paths(level: int) -> str:
-        return f"paths{str(level)}"
-
     def __init__(self, rules: Union[list["Rule"], "Group"]):
         self.rules: Union[list[Rule], Group] = rules
 
@@ -93,12 +85,12 @@ class Optional(Rule):
 
     def __call__(self, indent: int, level: int) -> str:
         code = "\n"
-        code += f"{Rule.indent(indent)}try:  # optional"
-        code += f"{Rule.indent(indent + 1)}{Rule.paths(level + 1)} = {Rule.paths(level)}"
+        code += f"\n{'    ' * indent}try:  # optional"
+        code += f"\n{'    ' * (indent + 1)}paths{level + 1} = paths{level}"
         code += self.rules(indent + 1, level + 1)
-        code += f"{Rule.indent(indent + 1)}{Rule.paths(level)} |= {Rule.paths(level + 1)}"
-        code += f"{Rule.indent(indent)}except (CompilerSyntaxError, CompilerEOIError):"
-        code += f"{Rule.indent(indent + 1)}pass"
+        code += f"\n{'    ' * (indent + 1)}paths{level} |= paths{level + 1}"
+        code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"
+        code += f"\n{'    ' * (indent + 1)}pass"
         code += "\n"
         return code
 
@@ -124,17 +116,17 @@ class repeat(Rule):
 
     def __call__(self, indent: int, level: int) -> str:
         code = "\n"
-        code += f"{Rule.indent(indent)}# begin repeat"
-        code += f"{Rule.indent(indent)}{Rule.paths(level + 1)} = {Rule.paths(level)}"
+        code += f"\n{'    ' * indent}# begin repeat"
+        code += f"\n{'    ' * indent}paths{level + 1} = paths{level}"
         code += "\n"
-        code += f"{Rule.indent(indent)}while True:"
-        code += f"{Rule.indent(indent + 1)}try:"
+        code += f"\n{'    ' * indent}while True:"
+        code += f"\n{'    ' * (indent + 1)}try:"
         code += self.rules(indent + 2, level + 1)
-        code += f"{Rule.indent(indent + 2)}{Rule.paths(level)} |= {Rule.paths(level + 1)}"
-        code += f"{Rule.indent(indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"
-        code += f"{Rule.indent(indent + 2)}break"
+        code += f"\n{'    ' * (indent + 2)}paths{level} |= paths{level + 1}"
+        code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"
+        code += f"\n{'    ' * (indent + 2)}break"
         code += "\n"
-        code += f"{Rule.indent(indent)}# end repeat"
+        code += f"\n{'    ' * indent}# end repeat"
         code += "\n"
         return code
 
@@ -157,24 +149,24 @@ class oneof(Rule):
             return self.rules[0](indent, level)
 
         code = "\n"
-        code += f"{Rule.indent(indent)}# begin oneof"
-        code += f"{Rule.indent(indent)}{Rule.paths(level + 1)} = set()"
+        code += f"\n{'    ' * indent}# begin oneof"
+        code += f"\n{'    ' * indent}paths{level + 1} = set()"
 
         for i, rule in enumerate(self.rules):
             code += "\n"
-            code += f"{Rule.indent(indent)}try:  # option {i + 1}"
-            code += f"{Rule.indent(indent + 1)}{Rule.paths(level + 2)} = {Rule.paths(level)}"
+            code += f"\n{'    ' * indent}try:  # option {i + 1}"
+            code += f"\n{'    ' * (indent + 1)}paths{level + 2} = paths{level}"
             code += rule(indent + 1, level + 2)
-            code += f"{Rule.indent(indent + 1)}{Rule.paths(level + 1)} |= {Rule.paths(level + 2)}"
-            code += f"{Rule.indent(indent)}except CompilerSyntaxError:"
-            code += f"{Rule.indent(indent + 1)}pass"
+            code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"
+            code += f"\n{'    ' * indent}except CompilerSyntaxError:"
+            code += f"\n{'    ' * (indent + 1)}pass"
 
         code += "\n"
-        code += f"{Rule.indent(indent)}if len({Rule.paths(level + 1)}) == 0:"
-        code += f"{Rule.indent(indent + 1)}raise CompilerSyntaxError(self)"
+        code += f"\n{'    ' * indent}if len(paths{level + 1}) == 0:"
+        code += f"\n{'    ' * (indent + 1)}raise CompilerSyntaxError(self)"
         code += "\n"
-        code += f"{Rule.indent(indent)}{Rule.paths(level)} = {Rule.paths(level + 1)}"
-        code += f"{Rule.indent(indent)}# end oneof"
+        code += f"\n{'    ' * indent}paths{level} = paths{level + 1}"
+        code += f"\n{'    ' * indent}# end oneof"
         code += "\n"
         return code
 
@@ -184,7 +176,7 @@ class Term(Rule):
         self.node: str = node
 
     def __call__(self, indent: int, level: int) -> str:
-        return f"{Rule.indent(indent)}{Rule.paths(level)} = self.process_paths({Rule.paths(level)}, {self.node})"
+        return f"\n{'    ' * indent}paths{level} = self.process_paths(paths{level}, {self.node})"
 
 
 class ProductionTemplate:
@@ -203,9 +195,9 @@ class ProductionTemplate:
             return ""
 
         code = f"class {cls.__name__}(Production):"
-        code += f"{Rule.indent(1)}def __init__(self, parent: Optional[Production], lexer: \"Lexer\"):"
-        code += f"{Rule.indent(2)}super().__init__(parent, lexer)"
-        code += f"{Rule.indent(2)}{Rule.paths(0)} = {{lexer.get_state()}}"
+        code += "\n    def __init__(self, parent: Optional[Production], lexer: \"Lexer\"):"
+        code += "\n        super().__init__(parent, lexer)"
+        code += "\n        paths0 = {lexer.get_state()}"
         code += rule(2, 0).replace("\n\n\n", "\n\n")
-        code += f"{Rule.indent(2)}self.paths: set[\"Terminal\"] = {Rule.paths(0)}"
+        code += "\n        self.paths: set[\"Terminal\"] = paths0"
         return code
