@@ -33,15 +33,18 @@ class Production(ASTNode):
         nextpaths = set()
         state = self.lexer.get_state()
 
-        for p in paths:
-            self.lexer.set_state(p)
+        if issubclass(node, Production):
+            for path in paths:
+                self.lexer.set_state(path)
 
-            if issubclass(node, Production):
                 try:
                     nextpaths |= node(self, self.lexer).paths
                 except CompilerSyntaxError:
                     pass
-            else:  # Terminal
+        else:  # Terminal
+            for path in paths:
+                self.lexer.set_state(path)
+
                 try:
                     assert isinstance(self.lexer.next_token(self), node)
                     nextpaths.add(self.lexer.get_state())
