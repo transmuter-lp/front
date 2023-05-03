@@ -93,11 +93,12 @@ class optional(rule):
 
     def __call__(self, indent_level: int, paths_level: int) -> str:
         ret = "\n"
-        ret += f"{rule.indent(indent_level)}try: # optional"
+        ret += f"{rule.indent(indent_level)}try:  # optional"
         ret += f"{rule.indent(indent_level + 1)}{rule.paths(paths_level + 1)} = {rule.paths(paths_level)}"
         ret += self.args(indent_level + 1, paths_level + 1)
         ret += f"{rule.indent(indent_level + 1)}{rule.paths(paths_level)} |= {rule.paths(paths_level + 1)}"
-        ret += f"{rule.indent(indent_level)}except (CompilerSyntaxError, CompilerEOIError): pass"
+        ret += f"{rule.indent(indent_level)}except (CompilerSyntaxError, CompilerEOIError):"
+        ret += f"{rule.indent(indent_level + 1)}pass"
         ret += "\n"
         return ret
 
@@ -129,7 +130,8 @@ class repeat(rule):
         ret += f"{rule.indent(indent_level + 1)}try:"
         ret += self.args(indent_level + 2, paths_level + 1)
         ret += f"{rule.indent(indent_level + 2)}{rule.paths(paths_level)} |= {rule.paths(paths_level + 1)}"
-        ret += f"{rule.indent(indent_level + 1)}except (CompilerSyntaxError, CompilerEOIError): break"
+        ret += f"{rule.indent(indent_level + 1)}except (CompilerSyntaxError, CompilerEOIError):"
+        ret += f"{rule.indent(indent_level + 2)}break"
         ret += "\n"
         ret += f"{rule.indent(indent_level)}# end repeat"
         ret += "\n"
@@ -159,11 +161,12 @@ class oneof(rule):
 
         for i, arg in enumerate(self.args):
             ret += "\n"
-            ret += f"{rule.indent(indent_level)}try: # option {i + 1}"
+            ret += f"{rule.indent(indent_level)}try:  # option {i + 1}"
             ret += f"{rule.indent(indent_level + 1)}{rule.paths(paths_level + 2)} = {rule.paths(paths_level)}"
             ret += arg(indent_level + 1, paths_level + 2)
             ret += f"{rule.indent(indent_level + 1)}{rule.paths(paths_level + 1)} |= {rule.paths(paths_level + 2)}"
-            ret += f"{rule.indent(indent_level)}except CompilerSyntaxError: pass"
+            ret += f"{rule.indent(indent_level)}except CompilerSyntaxError:"
+            ret += f"{rule.indent(indent_level + 1)}pass"
 
         ret += "\n"
         ret += f"{rule.indent(indent_level)}if len({rule.paths(paths_level + 1)}) == 0:"
