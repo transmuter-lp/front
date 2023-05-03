@@ -14,7 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .lexer import InputHandler
+
 
 class ASTNode:
     keep: bool = True
@@ -22,6 +26,8 @@ class ASTNode:
     def __init__(self, parent: Optional["ASTNode"]):
         self.parent: Optional[ASTNode] = parent
 
+
 class CompilerError(Exception):
-    def __init__(self, input: "InputHandler", msg: str):
-        super().__init__(f"{input.filename}:{input.line}:{input.column}: {self.__class__.__name__}: {msg}")
+    def __init__(self, _input: "InputHandler", msg: str):
+        super().__init__(f"{_input.filename}:{_input.lc[0]}:{_input.lc[1]}: "
+                         f"{self.__class__.__name__}: {msg}")

@@ -14,16 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 from .. import ASTNode, CompilerError
+
+if TYPE_CHECKING:
+    from ..lexer import Lexer, Terminal
+
 
 class Production(ASTNode):
     def __init__(self, parent: Optional["Production"], lexer: "Lexer"):
         super().__init__(parent)
         self.lexer: "Lexer" = lexer
+        self.paths: set["Terminal"] = set()
 
-    def process_paths(self, paths: set["Terminal"], node: type[ASTNode]) -> set["Terminal"]:
+    def process_paths(self, paths: set["Terminal"],
+                      node: type[ASTNode]) -> set["Terminal"]:
         nextpaths = set()
         state = self.lexer.get_state()
 
@@ -33,19 +39,25 @@ class Production(ASTNode):
             if issubclass(node, Production):
                 try:
                     nextpaths |= node(self, self.lexer).paths
-                except CompilerSyntaxError: pass
-            else: # Terminal
+                except CompilerSyntaxError:
+                    pass
+            else:  # Terminal
                 try:
                     assert isinstance(self.lexer.next_token(self), node)
                     nextpaths.add(self.lexer.get_state())
-                except AssertionError: pass
+                except AssertionError:
+                    pass
 
         self.lexer.set_state(state)
 
         if len(nextpaths) == 0:
-            raise CompilerSyntaxError()
+            raise CompilerSyntaxError(self)
 
         return nextpaths
 
+
 class CompilerSyntaxError(CompilerError):
-    def __init__(self): pass
+    def __init__(self, production: Production):
+        super().__init__(production.lexer.input,
+                         f"In {production.__class__.__name__}: "
+                         "Could not find a parsing path.")
