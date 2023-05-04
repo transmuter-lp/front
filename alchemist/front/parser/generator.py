@@ -35,7 +35,7 @@ class Rule:
         if isinstance(template, str):
             return Term(template)
 
-        return template
+        return template  # type: ignore[return-value]
 
     @staticmethod
     def filter(templates: Sequence[RuleTemplate]) -> list["Rule"]:
@@ -43,7 +43,7 @@ class Rule:
                  isinstance(template, Switch) or template.enabled]
         rules = [rule for rule in rules if isinstance(rule, Term) or
                  len(rule.rules.rules if isinstance(rule.rules, Group) else
-                     rule.rules) > 0]
+                     rule.rules) > 0]  # type: ignore[arg-type]
         return rules
 
     def __init__(self, rules: Union[list["Rule"], "Group"]):
@@ -58,18 +58,19 @@ class Group(Rule):
         super().__init__(Rule.filter(templates))
         i = 0
 
-        while i < len(self.rules):
-            if isinstance(self.rules[i], Group):
-                rules = self.rules[i].rules
-                self.rules = self.rules[:i] + rules + self.rules[i + 1:]
-                i += len(rules)
+        while i < len(self.rules):  # type: ignore[arg-type]
+            if isinstance(self.rules[i], Group):  # type: ignore[index]
+                rules = self.rules[i].rules  # type: ignore[index]
+                # pylint: disable-next=C0301
+                self.rules = self.rules[:i] + rules + self.rules[i + 1:]  # type: ignore[index, operator]# noqa: E501
+                i += len(rules)  # type: ignore[arg-type]
             else:
                 i += 1
 
     def __call__(self, indent: int, level: int) -> str:
         code = ""
 
-        for rule in self.rules:
+        for rule in self.rules:  # type: ignore[union-attr]
             code += rule(indent, level)
 
         return code
@@ -79,17 +80,18 @@ class Optional(Rule):
     def __init__(self, templates: list[RuleTemplate]):
         super().__init__(Group(templates))
 
-        if (len(self.rules.rules) == 1 and
-                isinstance(self.rules.rules[0], Optional)):
-            self.rules = self.rules.rules[0].rules
+        if (len(self.rules.rules) == 1 and  # type: ignore[union-attr, arg-type]# noqa: E501
+                # pylint: disable-next=C0301
+                isinstance(self.rules.rules[0], Optional)):  # type: ignore[union-attr, index]# noqa: E501
+            self.rules = self.rules.rules[0].rules  # type: ignore[union-attr, index]# noqa: E501
 
     def __call__(self, indent: int, level: int) -> str:
         code = "\n"
         code += f"\n{'    ' * indent}try:  # optional"
         code += f"\n{'    ' * (indent + 1)}paths{level + 1} = paths{level}"
-        code += self.rules(indent + 1, level + 1)
+        code += self.rules(indent + 1, level + 1)  # type: ignore[operator]
         code += f"\n{'    ' * (indent + 1)}paths{level} |= paths{level + 1}"
-        code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"
+        code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
         code += f"\n{'    ' * (indent + 1)}pass"
         code += "\n"
         return code
@@ -103,16 +105,17 @@ class Switch(Rule):
             super().__init__(Group(templates))
 
     def __call__(self, indent: int, level: int) -> str:
-        return self.rules(indent, level)
+        return self.rules(indent, level)  # type: ignore[operator]
 
 
-class repeat(Rule):
+class repeat(Rule):  # pylint: disable=C0103
     def __init__(self, *templates: RuleTemplate):
         super().__init__(Group(templates))
 
-        if (len(self.rules.rules) == 1 and
-                isinstance(self.rules.rules[0], repeat)):
-            self.rules = self.rules.rules[0].rules
+        if (len(self.rules.rules) == 1 and  # type: ignore[union-attr, arg-type]# noqa: E501
+                # pylint: disable-next=C0301
+                isinstance(self.rules.rules[0], repeat)):  # type: ignore[union-attr, index]# noqa: E501
+            self.rules = self.rules.rules[0].rules  # type: ignore[union-attr, index]# noqa: E501
 
     def __call__(self, indent: int, level: int) -> str:
         code = "\n"
@@ -121,9 +124,10 @@ class repeat(Rule):
         code += "\n"
         code += f"\n{'    ' * indent}while True:"
         code += f"\n{'    ' * (indent + 1)}try:"
-        code += self.rules(indent + 2, level + 1)
+        code += self.rules(indent + 2, level + 1)  # type: ignore[operator]
         code += f"\n{'    ' * (indent + 2)}paths{level} |= paths{level + 1}"
-        code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"
+        # pylint: disable-next=C0301
+        code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
         code += f"\n{'    ' * (indent + 2)}break"
         code += "\n"
         code += f"\n{'    ' * indent}# end repeat"
@@ -131,33 +135,34 @@ class repeat(Rule):
         return code
 
 
-class oneof(Rule):
+class oneof(Rule):  # pylint: disable=C0103
     def __init__(self, *templates: RuleTemplate):
         super().__init__(Rule.filter(templates))
         i = 0
 
-        while i < len(self.rules):
-            if isinstance(self.rules[i], oneof):
-                rules = self.rules[i].rules
-                self.rules = self.rules[:i] + rules + self.rules[i + 1:]
-                i += len(rules)
+        while i < len(self.rules):  # type: ignore[arg-type]
+            if isinstance(self.rules[i], oneof):  # type: ignore[index]
+                rules = self.rules[i].rules  # type: ignore[index]
+                # pylint: disable-next=C0301
+                self.rules = self.rules[:i] + rules + self.rules[i + 1:]  # type: ignore[index, operator]# noqa: E501
+                i += len(rules)  # type: ignore[arg-type]
             else:
                 i += 1
 
     def __call__(self, indent: int, level: int) -> str:
-        if len(self.rules) == 1:
-            return self.rules[0](indent, level)
+        if len(self.rules) == 1:  # type: ignore[arg-type]
+            return self.rules[0](indent, level)  # type: ignore[index]
 
         code = "\n"
         code += f"\n{'    ' * indent}# begin oneof"
         code += f"\n{'    ' * indent}paths{level + 1} = set()"
 
-        for i, rule in enumerate(self.rules):
+        for i, rule in enumerate(self.rules):  # type: ignore[arg-type]
             code += "\n"
             code += f"\n{'    ' * indent}try:  # option {i + 1}"
             code += f"\n{'    ' * (indent + 1)}paths{level + 2} = paths{level}"
             code += rule(indent + 1, level + 2)
-            code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"
+            code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"  # noqa: E501
             code += f"\n{'    ' * indent}except CompilerSyntaxError:"
             code += f"\n{'    ' * (indent + 1)}pass"
 
@@ -172,18 +177,20 @@ class oneof(Rule):
 
 
 class Term(Rule):
-    def __init__(self, node: str):
+    def __init__(self, node: str):  # pylint: disable=W0231
         self.node: str = node
 
     def __call__(self, indent: int, level: int) -> str:
-        return f"\n{'    ' * indent}paths{level} = self.process_paths(paths{level}, {self.node})"
+        # pylint: disable-next=C0301
+        return f"\n{'    ' * indent}paths{level} = self.process_paths(paths{level}, {self.node})"  # noqa: E501
 
 
-class ProductionTemplate:
+class ProductionTemplate:  # pylint: disable=R0903
     template: RuleTemplate = ()
 
     @classmethod
     def generate(cls) -> str:
+        # pylint: disable-next=E1101
         if isinstance(cls.template, Switch) and not cls.template.enabled:
             return ""
 
@@ -191,11 +198,12 @@ class ProductionTemplate:
 
         if (not isinstance(rule, Term) and
                 len(rule.rules.rules if isinstance(rule.rules, Group) else
-                    rule.rules) == 0):
+                    rule.rules) == 0):  # type: ignore[arg-type]
             return ""
 
         code = f"class {cls.__name__}(Production):"
-        code += "\n    def __init__(self, parent: Optional[Production], lexer: \"Lexer\"):"
+        # pylint: disable-next=C0301
+        code += "\n    def __init__(self, parent: Optional[Production], lexer: \"Lexer\"):"  # noqa: E501
         code += "\n        super().__init__(parent, lexer)"
         code += "\n        paths0 = {lexer.get_state()}"
         code += rule(2, 0).replace("\n\n\n", "\n\n")

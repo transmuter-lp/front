@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from ..lexer import Lexer, Terminal
 
 
-class Production(ASTNode):
+class Production(ASTNode):  # pylint: disable=R0903
     def __init__(self, parent: Optional["Production"], lexer: "Lexer"):
         super().__init__(parent)
         self.lexer: "Lexer" = lexer

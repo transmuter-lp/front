@@ -99,8 +99,8 @@ class Terminal(ASTNode):
 
 
 class Start(Terminal):
-    def __init__(self, _input: InputHandler):
-        ASTNode.__init__(self, None)
+    def __init__(self, _input: InputHandler):  # pylint: disable=W0231
+        ASTNode.__init__(self, None)  # pylint: disable=W0233
         self.state = _input.get_state()
         self.next = None
 

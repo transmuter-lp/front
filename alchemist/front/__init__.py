@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .lexer import InputHandler
 
 
-class ASTNode:
+class ASTNode:  # pylint: disable=R0903
     keep: bool = True
 
     def __init__(self, parent: Optional["ASTNode"]):
