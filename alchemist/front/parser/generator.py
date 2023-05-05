@@ -54,7 +54,7 @@ class Rule(Generic[T]):
         raise NotImplementedError()
 
 
-class Group(Rule):
+class Group(Rule[list[Rule]]):
     def __init__(self, templates: RuleTemplates):
         super().__init__(Rule.filter(templates))
         i = 0
@@ -76,7 +76,7 @@ class Group(Rule):
         return code
 
 
-class Optional(Rule):
+class Optional(Rule[Group]):
     def __init__(self, templates: list[RuleTemplate]):
         super().__init__(Group(templates))
 
@@ -96,7 +96,7 @@ class Optional(Rule):
         return code
 
 
-class Switch(Rule):
+class Switch(Rule[Group]):
     enabled: bool = False
 
     def __init__(self, *templates: RuleTemplate):
@@ -107,12 +107,11 @@ class Switch(Rule):
         return self.rules(indent, level)
 
 
-class repeat(Rule):  # pylint: disable=C0103
+class repeat(Rule[Group]):  # pylint: disable=C0103
     def __init__(self, *templates: RuleTemplate):
         super().__init__(Group(templates))
 
         if (len(self.rules.rules) == 1 and
-                # pylint: disable-next=C0301
                 isinstance(self.rules.rules[0], repeat)):
             self.rules = self.rules.rules[0].rules
 
@@ -134,7 +133,7 @@ class repeat(Rule):  # pylint: disable=C0103
         return code
 
 
-class oneof(Rule):  # pylint: disable=C0103
+class oneof(Rule[list[Rule]]):  # pylint: disable=C0103
     def __init__(self, *templates: RuleTemplate):
         super().__init__(Rule.filter(templates))
         i = 0
@@ -142,7 +141,6 @@ class oneof(Rule):  # pylint: disable=C0103
         while i < len(self.rules):
             if isinstance(self.rules[i], oneof):
                 rules = self.rules[i].rules
-                # pylint: disable-next=C0301
                 self.rules = self.rules[:i] + rules + self.rules[i + 1:]
                 i += len(rules)
             else:
