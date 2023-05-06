@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 class Production(ASTNode):  # pylint: disable=R0903
-    def __init__(self, parent: Optional["Production"], lexer: "Lexer"):
+    def __init__(self, parent: Optional["Production"], lexer: "Lexer") -> None:
         super().__init__(parent)
         self.lexer: "Lexer" = lexer
         self.paths: set["Terminal"] = set()
@@ -31,8 +31,8 @@ class Production(ASTNode):  # pylint: disable=R0903
     def _process_paths(
         self, paths: set["Terminal"], node: type[ASTNode]
     ) -> set["Terminal"]:
-        nextpaths = set()
-        state = self.lexer.get_state()
+        nextpaths: set["Terminal"] = set()
+        state: "Terminal" = self.lexer.get_state()
 
         if issubclass(node, Production):
             for path in paths:
@@ -61,7 +61,7 @@ class Production(ASTNode):  # pylint: disable=R0903
 
 
 class CompilerSyntaxError(CompilerError):
-    def __init__(self, production: Production):
+    def __init__(self, production: Production) -> None:
         super().__init__(
             production.lexer.input,
             f"In {production.__class__.__name__}: "

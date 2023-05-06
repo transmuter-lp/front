@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, Union, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING
 import re
 
 from .. import ASTNode, CompilerError
@@ -31,7 +31,7 @@ class InputHandler:
         startpos: int = 0,
         endpos: Optional[int] = None,
         newline: str = "\n"
-    ):
+    ) -> None:
         self.input: str = _input
         self.filename: str = filename
         self.__startpos: int = startpos
@@ -44,7 +44,7 @@ class InputHandler:
     def get_state(self) -> tuple[int, int, int]:
         return self.position, self.poslc[0], self.poslc[1]
 
-    def set_state(self, state: tuple[int, int, int]):
+    def set_state(self, state: tuple[int, int, int]) -> None:
         self.position = state[0]
         self.poslc = state[1], state[2]
 
@@ -53,9 +53,9 @@ class InputHandler:
             max(self.__startpos, key.start):min(key.stop, self.endpos)
         ]
 
-    def advance(self, length: int):
+    def advance(self, length: int) -> None:
         if self.position + length <= self.endpos:
-            lines = self.input.count(
+            lines: int = self.input.count(
                 self.__newline, self.position, self.position + length
             )
 
@@ -74,7 +74,7 @@ class InputHandler:
 
 
 class Terminal(ASTNode):
-    _pattern: Union[str, re.Pattern] = ""
+    _pattern: str | re.Pattern = ""
     _index: int = 0
     _weight: float = 0.0
 
@@ -86,7 +86,9 @@ class Terminal(ASTNode):
         # re.Pattern
         return False, cls._index, -cls._weight
 
-    def __init__(self, parent: Optional["Production"], _input: InputHandler):
+    def __init__(
+        self, parent: Optional["Production"], _input: InputHandler
+    ) -> None:
         if isinstance(self._pattern, str):
             if (
                 _input[_input.position:_input.position + len(self._pattern)]
@@ -94,7 +96,8 @@ class Terminal(ASTNode):
             ):
                 raise _CompilerTerminalError(_input, self)
         else:  # re.Pattern
-            match = self._pattern.match(  # pylint: disable=E1101
+            # pylint: disable-next=E1101
+            match: Optional[re.Match[str]] = self._pattern.match(
                 _input.input, _input.position, _input.endpos
             )
 
@@ -113,15 +116,13 @@ class Terminal(ASTNode):
 
 
 class _Start(Terminal):
-    def __init__(self, _input: InputHandler):  # pylint: disable=W0231
+    def __init__(self, _input: InputHandler) -> None:  # pylint: disable=W0231
         ASTNode.__init__(self, None)  # pylint: disable=W0233
         self.state = _input.get_state()
         self.next = None
 
 
-_TerminalList = list[
-    Union[type[Terminal], tuple[type[Terminal], "_TerminalList"]]
-]
+_TerminalList = list[type[Terminal] | tuple[type[Terminal], "_TerminalList"]]
 
 
 class Lexer:
@@ -135,21 +136,21 @@ class Lexer:
         )
         return terminals
 
-    def __init__(self, _input: InputHandler):
+    def __init__(self, _input: InputHandler) -> None:
         self.input: InputHandler = _input
         self.__token: Terminal = _Start(_input)
 
     def get_state(self) -> Terminal:
         return self.__token
 
-    def set_state(self, state: Terminal):
+    def set_state(self, state: Terminal) -> None:
         self.__token = state
         self.input.set_state(state.state)
 
-    def __ignore(self):
+    def __ignore(self) -> None:
         while True:
             for pattern in self._ignored:
-                match = pattern.match(
+                match: Optional[re.Match[str]] = pattern.match(
                     self.input.input, self.input.position, self.input.endpos
                 )
 
@@ -166,6 +167,9 @@ class Lexer:
         token: Optional[Terminal] = None
     ) -> Optional[tuple[Terminal, _TerminalList]]:
         for term in terminals:
+            terminal: type[Terminal]
+            children: _TerminalList
+
             if isinstance(term, tuple):
                 terminal, children = term
             else:  # type[Terminal]
@@ -173,7 +177,7 @@ class Lexer:
                 children = []
 
             try:
-                ctoken = terminal(parent, self.input)
+                ctoken: Terminal = terminal(parent, self.input)
                 assert token is None or len(ctoken.str) == len(token.str)
                 return ctoken, children
             except (_CompilerTerminalError, AssertionError):
@@ -191,11 +195,15 @@ class Lexer:
         if self.input.position == self.input.endpos:
             raise CompilerEOIError(self.input)
 
-        match = self.__match_terminal(parent, self._terminals)
+        match: Optional[
+            tuple[Terminal, _TerminalList]
+        ] = self.__match_terminal(parent, self._terminals)
 
         if match is None:
             raise CompilerNoTerminalError(self.input)
 
+        token: Terminal
+        children: _TerminalList
         token, children = match
 
         while True:
@@ -218,17 +226,17 @@ class _CompilerLexicalError(CompilerError):
 
 
 class CompilerEOIError(_CompilerLexicalError):
-    def __init__(self, _input: InputHandler):
+    def __init__(self, _input: InputHandler) -> None:
         super().__init__(_input, "Unexpected end of input.")
 
 
 class CompilerNoTerminalError(_CompilerLexicalError):
-    def __init__(self, _input: InputHandler):
+    def __init__(self, _input: InputHandler) -> None:
         super().__init__(_input, "Could not match any expected terminal.")
 
 
 class _CompilerTerminalError(_CompilerLexicalError):
-    def __init__(self, _input: InputHandler, terminal: Terminal):
+    def __init__(self, _input: InputHandler, terminal: Terminal) -> None:
         super().__init__(
             _input,
             f"Could not match the expected {terminal.__class__.__name__}."

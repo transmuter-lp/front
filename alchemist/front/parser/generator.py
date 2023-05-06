@@ -40,7 +40,7 @@ class _Rule(Generic[_T]):
 
     @staticmethod
     def _filter(templates: _RuleTemplates) -> list["_Rule"]:
-        rules = [
+        rules: list[_Rule] = [
             _Rule.get(template) for template in templates
             if not isinstance(template, Switch) or template.enabled
         ]
@@ -54,7 +54,7 @@ class _Rule(Generic[_T]):
         ]
         return rules
 
-    def __init__(self, rules: _T):
+    def __init__(self, rules: _T) -> None:
         self.rules: _T = rules
 
     def __call__(self, indent: int, level: int) -> str:
@@ -62,20 +62,20 @@ class _Rule(Generic[_T]):
 
 
 class _Group(_Rule[list[_Rule]]):
-    def __init__(self, templates: _RuleTemplates):
+    def __init__(self, templates: _RuleTemplates) -> None:
         super().__init__(self._filter(templates))
-        i = 0
+        i: int = 0
 
         while i < len(self.rules):
             if isinstance(self.rules[i], _Group):
-                rules = self.rules[i].rules
+                rules: list[_Rule] = self.rules[i].rules
                 self.rules = self.rules[:i] + rules + self.rules[i + 1:]
                 i += len(rules)
             else:
                 i += 1
 
     def __call__(self, indent: int, level: int) -> str:
-        code = ""
+        code: str = ""
 
         for rule in self.rules:
             code += rule(indent, level)
@@ -84,7 +84,7 @@ class _Group(_Rule[list[_Rule]]):
 
 
 class _Optional(_Rule[_Group]):
-    def __init__(self, templates: list[_RuleTemplate]):
+    def __init__(self, templates: list[_RuleTemplate]) -> None:
         super().__init__(_Group(templates))
 
         if len(self.rules.rules) == 1 and isinstance(
@@ -93,7 +93,7 @@ class _Optional(_Rule[_Group]):
             self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int) -> str:
-        code = "\n"
+        code: str = "\n"
         code += f"\n{'    ' * indent}try:  # optional"
         code += f"\n{'    ' * (indent + 1)}paths{level + 1} = paths{level}"
         code += self.rules(indent + 1, level + 1)
@@ -107,7 +107,7 @@ class _Optional(_Rule[_Group]):
 class Switch(_Rule[_Group]):
     enabled: bool = False
 
-    def __init__(self, *templates: _RuleTemplate):
+    def __init__(self, *templates: _RuleTemplate) -> None:
         if self.enabled:
             super().__init__(_Group(templates))
 
@@ -116,7 +116,7 @@ class Switch(_Rule[_Group]):
 
 
 class repeat(_Rule[_Group]):  # pylint: disable=C0103
-    def __init__(self, *templates: _RuleTemplate):
+    def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(_Group(templates))
 
         if len(self.rules.rules) == 1 and isinstance(
@@ -125,7 +125,7 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
             self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int) -> str:
-        code = "\n"
+        code: str = "\n"
         code += f"\n{'    ' * indent}# begin repeat"
         code += f"\n{'    ' * indent}paths{level + 1} = paths{level}"
         code += "\n"
@@ -143,13 +143,13 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
 
 
 class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
-    def __init__(self, *templates: _RuleTemplate):
+    def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(self._filter(templates))
-        i = 0
+        i: int = 0
 
         while i < len(self.rules):
             if isinstance(self.rules[i], oneof):
-                rules = self.rules[i].rules
+                rules: list[_Rule] = self.rules[i].rules
                 self.rules = self.rules[:i] + rules + self.rules[i + 1:]
                 i += len(rules)
             else:
@@ -159,7 +159,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
         if len(self.rules) == 1:
             return self.rules[0](indent, level)
 
-        code = "\n"
+        code: str = "\n"
         code += f"\n{'    ' * indent}# begin oneof"
         code += f"\n{'    ' * indent}paths{level + 1} = set()"
 
@@ -183,7 +183,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
 
 
 class _Term(_Rule[str]):
-    def __init__(self, node: str):
+    def __init__(self, node: str) -> None:
         super().__init__(node)
 
     def __call__(self, indent: int, level: int) -> str:
@@ -200,7 +200,7 @@ class ProductionTemplate:  # pylint: disable=R0903
         if isinstance(cls._template, Switch) and not cls._template.enabled:
             return ""
 
-        rule = _Rule.get(cls._template)
+        rule: _Rule = _Rule.get(cls._template)
 
         if (
             not isinstance(rule, _Term)
@@ -212,7 +212,7 @@ class ProductionTemplate:  # pylint: disable=R0903
         ):
             return ""
 
-        code = f"class {cls.__name__}(Production):"
+        code: str = f"class {cls.__name__}(Production):"
         # pylint: disable-next=C0301
         code += '\n    def __init__(self, parent: Optional[Production], lexer: "Lexer"):'  # noqa: E501
         code += "\n        super().__init__(parent, lexer)"

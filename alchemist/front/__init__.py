@@ -23,12 +23,12 @@ if TYPE_CHECKING:
 class ASTNode:  # pylint: disable=R0903
     keep: bool = True
 
-    def __init__(self, parent: Optional["ASTNode"]):
+    def __init__(self, parent: Optional["ASTNode"]) -> None:
         self.parent: Optional[ASTNode] = parent
 
 
 class CompilerError(Exception):
-    def __init__(self, _input: "InputHandler", msg: str):
+    def __init__(self, _input: "InputHandler", msg: str) -> None:
         super().__init__(
             f"{_input.filename}:{_input.poslc[0]}:{_input.poslc[1]}:"
             f"{self.__class__.__name__}: {msg}"
