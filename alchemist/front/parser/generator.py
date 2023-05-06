@@ -95,7 +95,8 @@ class _Optional(_Rule[_Group]):
     def __call__(self, indent: int, level: int) -> str:
         code: str = "\n"
         code += f"\n{'    ' * indent}try:  # optional"
-        code += f"\n{'    ' * (indent + 1)}paths{level + 1} = paths{level}"
+        # pylint: disable-next=C0301
+        code += f"\n{'    ' * (indent + 1)}paths{level + 1}: set[\"Terminal\"] = paths{level}"  # noqa: E501
         code += self.rules(indent + 1, level + 1)
         code += f"\n{'    ' * (indent + 1)}paths{level} |= paths{level + 1}"
         code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
@@ -127,7 +128,8 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
     def __call__(self, indent: int, level: int) -> str:
         code: str = "\n"
         code += f"\n{'    ' * indent}# begin repeat"
-        code += f"\n{'    ' * indent}paths{level + 1} = paths{level}"
+        # pylint: disable-next=C0301
+        code += f"\n{'    ' * indent}paths{level + 1}: set[\"Terminal\"] = paths{level}"  # noqa: E501
         code += "\n"
         code += f"\n{'    ' * indent}while True:"
         code += f"\n{'    ' * (indent + 1)}try:"
@@ -161,12 +163,13 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
 
         code: str = "\n"
         code += f"\n{'    ' * indent}# begin oneof"
-        code += f"\n{'    ' * indent}paths{level + 1} = set()"
+        code += f"\n{'    ' * indent}paths{level + 1}: set[\"Terminal\"] = set()"  # noqa: E501
 
         for i, rule in enumerate(self.rules):
             code += "\n"
             code += f"\n{'    ' * indent}try:  # option {i + 1}"
-            code += f"\n{'    ' * (indent + 1)}paths{level + 2} = paths{level}"
+            # pylint: disable-next=C0301
+            code += f"\n{'    ' * (indent + 1)}paths{level + 2}: set[\"Terminal\"] = paths{level}"  # noqa: E501
             code += rule(indent + 1, level + 2)
             code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"  # noqa: E501
             code += f"\n{'    ' * indent}except CompilerSyntaxError:"
@@ -214,9 +217,9 @@ class ProductionTemplate:  # pylint: disable=R0903
 
         code: str = f"class {cls.__name__}(Production):"
         # pylint: disable-next=C0301
-        code += '\n    def __init__(self, parent: Optional[Production], lexer: "Lexer"):'  # noqa: E501
+        code += '\n    def __init__(self, parent: Optional[Production], lexer: "Lexer") -> None:'  # noqa: E501
         code += "\n        super().__init__(parent, lexer)"
-        code += "\n        paths0 = {lexer.get_state()}"
+        code += '\n        paths0: set["Terminal"] = {lexer.get_state()}'
         code += rule(2, 0).replace("\n\n\n", "\n\n")
         code += '\n        self.paths: set["Terminal"] = paths0'
         return code
