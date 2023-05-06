@@ -29,7 +29,7 @@ class InputHandler:
         _input: str,
         filename: str = "<stdin>",
         startpos: int = 0,
-        endpos: Optional[int] = None,
+        endpos: int | None = None,
         newline: str = "\n"
     ) -> None:
         self.input: str = _input
@@ -97,7 +97,7 @@ class Terminal(ASTNode):
                 raise _CompilerTerminalError(_input, self)
         else:  # re.Pattern
             # pylint: disable-next=E1101
-            match: Optional[re.Match[str]] = self._pattern.match(
+            match: re.Match[str] | None = self._pattern.match(
                 _input.input, _input.position, _input.endpos
             )
 
@@ -108,7 +108,7 @@ class Terminal(ASTNode):
 
         super().__init__(parent)
         self.state: tuple[int, int, int] = _input.get_state()
-        self.next: Optional[Terminal] = None
+        self.next: Terminal | None = None
 
     @property
     def str(self) -> str:
@@ -150,7 +150,7 @@ class Lexer:
     def __ignore(self) -> None:
         while True:
             for pattern in self._ignored:
-                match: Optional[re.Match[str]] = pattern.match(
+                match: re.Match[str] | None = pattern.match(
                     self.input.input, self.input.position, self.input.endpos
                 )
 
@@ -164,8 +164,8 @@ class Lexer:
         self,
         parent: Optional["Production"],
         terminals: _TerminalList,
-        token: Optional[Terminal] = None
-    ) -> Optional[tuple[Terminal, _TerminalList]]:
+        token: Terminal | None = None
+    ) -> tuple[Terminal, _TerminalList] | None:
         for term in terminals:
             terminal: type[Terminal]
             children: _TerminalList
@@ -195,9 +195,9 @@ class Lexer:
         if self.input.position == self.input.endpos:
             raise CompilerEOIError(self.input)
 
-        match: Optional[
-            tuple[Terminal, _TerminalList]
-        ] = self.__match_terminal(parent, self._terminals)
+        match: tuple[Terminal, _TerminalList] | None = self.__match_terminal(
+            parent, self._terminals
+        )
 
         if match is None:
             raise CompilerNoTerminalError(self.input)
@@ -228,6 +228,11 @@ class _CompilerLexicalError(CompilerError):
 class CompilerEOIError(_CompilerLexicalError):
     def __init__(self, _input: InputHandler) -> None:
         super().__init__(_input, "Unexpected end of input.")
+
+
+class CompilerNEOIError(_CompilerLexicalError):
+    def __init__(self, _input: InputHandler) -> None:
+        super().__init__(_input, "Expected end of input.")
 
 
 class CompilerNoTerminalError(_CompilerLexicalError):

@@ -24,7 +24,7 @@ class ASTNode:  # pylint: disable=R0903
     keep: bool = True
 
     def __init__(self, parent: Optional["ASTNode"]) -> None:
-        self.parent: Optional[ASTNode] = parent
+        self.parent: ASTNode | None = parent
 
 
 class CompilerError(Exception):

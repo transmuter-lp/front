@@ -217,9 +217,9 @@ class ProductionTemplate:  # pylint: disable=R0903
 
         code: str = f"class {cls.__name__}(Production):"
         # pylint: disable-next=C0301
-        code += '\n    def __init__(self, parent: Optional[Production], lexer: "Lexer") -> None:'  # noqa: E501
-        code += "\n        super().__init__(parent, lexer)"
-        code += '\n        paths0: set["Terminal"] = {lexer.get_state()}'
+        code += '\n    def __init__(self, parent: Production | None, parser: Parser) -> None:'  # noqa: E501
+        code += "\n        super().__init__(parent, parser)"
+        code += '\n        paths0: set["Terminal"] = {parser.lexer.get_state()}'  # noqa: E501
         code += rule(2, 0).replace("\n\n\n", "\n\n")
         code += '\n        self.paths: set["Terminal"] = paths0'
         return code
