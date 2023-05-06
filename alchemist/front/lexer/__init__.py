@@ -24,70 +24,84 @@ if TYPE_CHECKING:
 
 
 class InputHandler:
-    def __init__(self, _input: str, filename: str = "<stdin>",
-                 startpos: int = 0, endpos: Optional[int] = None,
-                 newline: str = "\n"):
+    def __init__(
+        self,
+        _input: str,
+        filename: str = "<stdin>",
+        startpos: int = 0,
+        endpos: Optional[int] = None,
+        newline: str = "\n"
+    ):
         self.input: str = _input
         self.filename: str = filename
-        self.startpos: int = startpos
+        self.__startpos: int = startpos
         self.endpos: int = endpos if endpos is not None else len(_input)
-        self.newline: str = newline
+        self.__newline: str = newline
         self.position: int = 0
-        self.poslc: tuple[int, int] = (1, 1)
+        self.poslc: tuple[int, int] = 1, 1
         self.advance(startpos)
 
     def get_state(self) -> tuple[int, int, int]:
-        return (self.position, self.poslc[0], self.poslc[1])
+        return self.position, self.poslc[0], self.poslc[1]
 
     def set_state(self, state: tuple[int, int, int]):
         self.position = state[0]
-        self.poslc = (state[1], state[2])
+        self.poslc = state[1], state[2]
 
     def __getitem__(self, key: slice) -> str:
-        return self.input[max(self.startpos, key.start):
-                          min(key.stop, self.endpos)]
+        return self.input[
+            max(self.__startpos, key.start):min(key.stop, self.endpos)
+        ]
 
     def advance(self, length: int):
         if self.position + length <= self.endpos:
-            lines = self.input.count(self.newline, self.position,
-                                     self.position + length)
+            lines = self.input.count(
+                self.__newline, self.position, self.position + length
+            )
 
             if lines > 0:
-                self.poslc = (self.poslc[0] + lines, (self.position + length -
-                              self.input.rfind(self.newline, self.position,
-                                               self.position + length)))
+                self.poslc = (
+                    self.poslc[0] + lines,
+                    self.position + length
+                    - self.input.rfind(
+                        self.__newline, self.position, self.position + length
+                    )
+                )
             else:
-                self.poslc = (self.poslc[0], self.poslc[1] + length)
+                self.poslc = self.poslc[0], self.poslc[1] + length
 
             self.position += length
 
 
 class Terminal(ASTNode):
-    pattern: Union[str, re.Pattern] = ""
-    index: int = 0
-    weight: float = .0
+    _pattern: Union[str, re.Pattern] = ""
+    _index: int = 0
+    _weight: float = 0.0
 
     @classmethod
     def key(cls) -> tuple[bool, int, float]:
-        if isinstance(cls.pattern, str):
-            return (True, -len(cls.pattern), -cls.weight)
+        if isinstance(cls._pattern, str):
+            return True, -len(cls._pattern), -cls._weight
 
         # re.Pattern
-        return (False, cls.index, -cls.weight)
+        return False, cls._index, -cls._weight
 
     def __init__(self, parent: Optional["Production"], _input: InputHandler):
-        if isinstance(self.pattern, str):
-            if (_input[_input.position: _input.position + len(self.pattern)] !=
-                    self.pattern):
-                raise CompilerTerminalError(_input, self)
-        elif isinstance(self.pattern, re.Pattern):
-            match = self.pattern.match(_input.input, _input.position,
-                                       _input.endpos)
+        if isinstance(self._pattern, str):
+            if (
+                _input[_input.position:_input.position + len(self._pattern)]
+                != self._pattern
+            ):
+                raise _CompilerTerminalError(_input, self)
+        else:  # re.Pattern
+            match = self._pattern.match(  # pylint: disable=E1101
+                _input.input, _input.position, _input.endpos
+            )
 
             if not match:
-                raise CompilerTerminalError(_input, self)
+                raise _CompilerTerminalError(_input, self)
 
-            self._str: str = match[0]
+            self.__str: str = match[0]
 
         super().__init__(parent)
         self.state: tuple[int, int, int] = _input.get_state()
@@ -95,48 +109,49 @@ class Terminal(ASTNode):
 
     @property
     def str(self) -> str:
-        return self.pattern if isinstance(self.pattern, str) else self._str
+        return self._pattern if isinstance(self._pattern, str) else self.__str
 
 
-class Start(Terminal):
+class _Start(Terminal):
     def __init__(self, _input: InputHandler):  # pylint: disable=W0231
         ASTNode.__init__(self, None)  # pylint: disable=W0233
         self.state = _input.get_state()
         self.next = None
 
 
-TerminalList = list[Union[
-    type[Terminal],
-    tuple[type[Terminal], "TerminalList"]
-]]
+_TerminalList = list[
+    Union[type[Terminal], tuple[type[Terminal], "_TerminalList"]]
+]
 
 
 class Lexer:
-    terminals: TerminalList = []
-    ignored: list[re.Pattern] = []
+    _terminals: _TerminalList = []
+    _ignored: list[re.Pattern] = []
 
     @staticmethod
-    def sort(terminals: TerminalList) -> TerminalList:
-        terminals.sort(key=lambda t: t[0].key() if isinstance(t, tuple) else
-                       t.key())
+    def sort(terminals: _TerminalList) -> _TerminalList:
+        terminals.sort(
+            key=lambda t: t[0].key() if isinstance(t, tuple) else t.key()
+        )
         return terminals
 
     def __init__(self, _input: InputHandler):
         self.input: InputHandler = _input
-        self.token: Terminal = Start(_input)
+        self.__token: Terminal = _Start(_input)
 
     def get_state(self) -> Terminal:
-        return self.token
+        return self.__token
 
     def set_state(self, state: Terminal):
-        self.token = state
+        self.__token = state
         self.input.set_state(state.state)
 
-    def ignore(self):
+    def __ignore(self):
         while True:
-            for pattern in self.ignored:
-                match = pattern.match(self.input.input, self.input.position,
-                                      self.input.endpos)
+            for pattern in self._ignored:
+                match = pattern.match(
+                    self.input.input, self.input.position, self.input.endpos
+                )
 
                 if match:
                     self.input.advance(len(match[0]))
@@ -144,13 +159,16 @@ class Lexer:
             else:
                 break
 
-    def match_terminal(self, parent: Optional["Production"],
-                       terminals: TerminalList,
-                       token: Optional[Terminal] = None):
+    def __match_terminal(
+        self,
+        parent: Optional["Production"],
+        terminals: _TerminalList,
+        token: Optional[Terminal] = None
+    ) -> Optional[tuple[Terminal, _TerminalList]]:
         for term in terminals:
             if isinstance(term, tuple):
                 terminal, children = term
-            else:
+            else:  # type[Terminal]
                 terminal = term
                 children = []
 
@@ -158,22 +176,22 @@ class Lexer:
                 ctoken = terminal(parent, self.input)
                 assert token is None or len(ctoken.str) == len(token.str)
                 return ctoken, children
-            except (CompilerTerminalError, AssertionError):
+            except (_CompilerTerminalError, AssertionError):
                 pass
 
         return None
 
     def next_token(self, parent: Optional["Production"]) -> Terminal:
-        if self.token.next is not None:
-            self.set_state(self.token.next)
-            return self.token
+        if self.__token.next is not None:
+            self.set_state(self.__token.next)
+            return self.__token
 
-        self.ignore()
+        self.__ignore()
 
         if self.input.position == self.input.endpos:
             raise CompilerEOIError(self.input)
 
-        match = self.match_terminal(parent, self.terminals)
+        match = self.__match_terminal(parent, self._terminals)
 
         if match is None:
             raise CompilerNoTerminalError(self.input)
@@ -181,7 +199,7 @@ class Lexer:
         token, children = match
 
         while True:
-            match = self.match_terminal(parent, children, token)
+            match = self.__match_terminal(parent, children, token)
 
             if match is None:
                 break
@@ -190,26 +208,28 @@ class Lexer:
 
         self.input.advance(len(token.str))
         token.state = self.input.get_state()
-        self.token.next = token
-        self.token = self.token.next
-        return self.token
+        self.__token.next = token
+        self.__token = self.__token.next
+        return self.__token
 
 
-class CompilerLexicalError(CompilerError):
+class _CompilerLexicalError(CompilerError):
     pass
 
 
-class CompilerEOIError(CompilerLexicalError):
+class CompilerEOIError(_CompilerLexicalError):
     def __init__(self, _input: InputHandler):
         super().__init__(_input, "Unexpected end of input.")
 
 
-class CompilerNoTerminalError(CompilerLexicalError):
+class CompilerNoTerminalError(_CompilerLexicalError):
     def __init__(self, _input: InputHandler):
         super().__init__(_input, "Could not match any expected terminal.")
 
 
-class CompilerTerminalError(CompilerLexicalError):
+class _CompilerTerminalError(_CompilerLexicalError):
     def __init__(self, _input: InputHandler, terminal: Terminal):
-        super().__init__(_input, "Could not match the expected "
-                         f"{terminal.__class__.__name__}.")
+        super().__init__(
+            _input,
+            f"Could not match the expected {terminal.__class__.__name__}."
+        )

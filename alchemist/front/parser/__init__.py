@@ -28,8 +28,9 @@ class Production(ASTNode):  # pylint: disable=R0903
         self.lexer: "Lexer" = lexer
         self.paths: set["Terminal"] = set()
 
-    def process_paths(self, paths: set["Terminal"],
-                      node: type[ASTNode]) -> set["Terminal"]:
+    def _process_paths(
+        self, paths: set["Terminal"], node: type[ASTNode]
+    ) -> set["Terminal"]:
         nextpaths = set()
         state = self.lexer.get_state()
 
@@ -61,6 +62,8 @@ class Production(ASTNode):  # pylint: disable=R0903
 
 class CompilerSyntaxError(CompilerError):
     def __init__(self, production: Production):
-        super().__init__(production.lexer.input,
-                         f"In {production.__class__.__name__}: "
-                         "Could not find a parsing path.")
+        super().__init__(
+            production.lexer.input,
+            f"In {production.__class__.__name__}: "
+            "Could not find a parsing path."
+        )

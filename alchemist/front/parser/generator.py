@@ -19,48 +19,55 @@
 
 from typing import Union, TypeVar, Generic
 
-RuleTemplate = Union["RuleTemplates", "Rule", str]
-RuleTemplates = tuple[RuleTemplate, ...] | list[RuleTemplate]
-T = TypeVar("T", list["Rule"], "Group")
+_RuleTemplate = Union["_RuleTemplates", "_Rule", str]
+_RuleTemplates = tuple[_RuleTemplate, ...] | list[_RuleTemplate]
+_T = TypeVar("_T", list["_Rule"], "_Group", str)
 
 
-class Rule(Generic[T]):
+class _Rule(Generic[_T]):
     @staticmethod
-    def get(template: RuleTemplate) -> "Rule":
+    def get(template: _RuleTemplate) -> "_Rule":
         if isinstance(template, tuple):
-            return Group(template)
+            return _Group(template)
 
         if isinstance(template, list):
-            return Optional(template)
+            return _Optional(template)
 
         if isinstance(template, str):
-            return Term(template)
+            return _Term(template)
 
         return template
 
     @staticmethod
-    def filter(templates: RuleTemplates) -> list["Rule"]:
-        rules = [Rule.get(template) for template in templates if not
-                 isinstance(template, Switch) or template.enabled]
-        rules = [rule for rule in rules if isinstance(rule, Term) or
-                 len(rule.rules.rules if isinstance(rule.rules, Group) else
-                     rule.rules) > 0]
+    def _filter(templates: _RuleTemplates) -> list["_Rule"]:
+        rules = [
+            _Rule.get(template) for template in templates
+            if not isinstance(template, Switch) or template.enabled
+        ]
+        rules = [
+            rule for rule in rules
+            if isinstance(rule, _Term) or len(
+                rule.rules.rules
+                if isinstance(rule.rules, _Group)
+                else rule.rules
+            ) > 0
+        ]
         return rules
 
-    def __init__(self, rules: T):
-        self.rules: T = rules
+    def __init__(self, rules: _T):
+        self.rules: _T = rules
 
     def __call__(self, indent: int, level: int) -> str:
         raise NotImplementedError()
 
 
-class Group(Rule[list[Rule]]):
-    def __init__(self, templates: RuleTemplates):
-        super().__init__(Rule.filter(templates))
+class _Group(_Rule[list[_Rule]]):
+    def __init__(self, templates: _RuleTemplates):
+        super().__init__(self._filter(templates))
         i = 0
 
         while i < len(self.rules):
-            if isinstance(self.rules[i], Group):
+            if isinstance(self.rules[i], _Group):
                 rules = self.rules[i].rules
                 self.rules = self.rules[:i] + rules + self.rules[i + 1:]
                 i += len(rules)
@@ -76,12 +83,13 @@ class Group(Rule[list[Rule]]):
         return code
 
 
-class Optional(Rule[Group]):
-    def __init__(self, templates: list[RuleTemplate]):
-        super().__init__(Group(templates))
+class _Optional(_Rule[_Group]):
+    def __init__(self, templates: list[_RuleTemplate]):
+        super().__init__(_Group(templates))
 
-        if (len(self.rules.rules) == 1 and
-                isinstance(self.rules.rules[0], Optional)):
+        if len(self.rules.rules) == 1 and isinstance(
+            self.rules.rules[0], _Optional
+        ):
             self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int) -> str:
@@ -96,23 +104,24 @@ class Optional(Rule[Group]):
         return code
 
 
-class Switch(Rule[Group]):
+class Switch(_Rule[_Group]):
     enabled: bool = False
 
-    def __init__(self, *templates: RuleTemplate):
+    def __init__(self, *templates: _RuleTemplate):
         if self.enabled:
-            super().__init__(Group(templates))
+            super().__init__(_Group(templates))
 
     def __call__(self, indent: int, level: int) -> str:
         return self.rules(indent, level)
 
 
-class repeat(Rule[Group]):  # pylint: disable=C0103
-    def __init__(self, *templates: RuleTemplate):
-        super().__init__(Group(templates))
+class repeat(_Rule[_Group]):  # pylint: disable=C0103
+    def __init__(self, *templates: _RuleTemplate):
+        super().__init__(_Group(templates))
 
-        if (len(self.rules.rules) == 1 and
-                isinstance(self.rules.rules[0], repeat)):
+        if len(self.rules.rules) == 1 and isinstance(
+            self.rules.rules[0], repeat
+        ):
             self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int) -> str:
@@ -133,9 +142,9 @@ class repeat(Rule[Group]):  # pylint: disable=C0103
         return code
 
 
-class oneof(Rule[list[Rule]]):  # pylint: disable=C0103
-    def __init__(self, *templates: RuleTemplate):
-        super().__init__(Rule.filter(templates))
+class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
+    def __init__(self, *templates: _RuleTemplate):
+        super().__init__(self._filter(templates))
         i = 0
 
         while i < len(self.rules):
@@ -173,36 +182,41 @@ class oneof(Rule[list[Rule]]):  # pylint: disable=C0103
         return code
 
 
-class Term(Rule):
-    def __init__(self, node: str):  # pylint: disable=W0231
-        self.node: str = node
+class _Term(_Rule[str]):
+    def __init__(self, node: str):
+        super().__init__(node)
 
     def __call__(self, indent: int, level: int) -> str:
         # pylint: disable-next=C0301
-        return f"\n{'    ' * indent}paths{level} = self.process_paths(paths{level}, {self.node})"  # noqa: E501
+        return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"  # noqa: E501
 
 
 class ProductionTemplate:  # pylint: disable=R0903
-    template: RuleTemplate = ()
+    _template: _RuleTemplate = ()
 
     @classmethod
     def generate(cls) -> str:
         # pylint: disable-next=E1101
-        if isinstance(cls.template, Switch) and not cls.template.enabled:
+        if isinstance(cls._template, Switch) and not cls._template.enabled:
             return ""
 
-        rule = Rule.get(cls.template)
+        rule = _Rule.get(cls._template)
 
-        if (not isinstance(rule, Term) and
-                len(rule.rules.rules if isinstance(rule.rules, Group) else
-                    rule.rules) == 0):
+        if (
+            not isinstance(rule, _Term)
+            and len(
+                rule.rules.rules
+                if isinstance(rule.rules, _Group)
+                else rule.rules
+            ) == 0
+        ):
             return ""
 
         code = f"class {cls.__name__}(Production):"
         # pylint: disable-next=C0301
-        code += "\n    def __init__(self, parent: Optional[Production], lexer: \"Lexer\"):"  # noqa: E501
+        code += '\n    def __init__(self, parent: Optional[Production], lexer: "Lexer"):'  # noqa: E501
         code += "\n        super().__init__(parent, lexer)"
         code += "\n        paths0 = {lexer.get_state()}"
         code += rule(2, 0).replace("\n\n\n", "\n\n")
-        code += "\n        self.paths: set[\"Terminal\"] = paths0"
+        code += '\n        self.paths: set["Terminal"] = paths0'
         return code
