@@ -109,6 +109,7 @@ class CompilerSyntaxError(CompilerError):
     def __init__(self, production: Production, msg: str) -> None:
         super().__init__(
             production.parser.lexer.input,
+            "Syntax Error",
             f"In {production.__class__.__name__}: {msg}"
         )
 

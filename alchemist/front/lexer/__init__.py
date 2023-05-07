@@ -222,7 +222,8 @@ class Lexer:
 
 
 class _CompilerLexicalError(CompilerError):
-    pass
+    def __init__(self, _input: InputHandler, msg: str) -> None:
+        super().__init__(_input, "Lexical Error", msg)
 
 
 class CompilerEOIError(_CompilerLexicalError):
@@ -238,6 +239,5 @@ class CompilerNoTerminalError(_CompilerLexicalError):
 class _CompilerTerminalError(_CompilerLexicalError):
     def __init__(self, _input: InputHandler, terminal: Terminal) -> None:
         super().__init__(
-            _input,
-            f"Could not match the expected {terminal.__class__.__name__}."
+            _input, f"Could not match expected {terminal.__class__.__name__}."
         )
