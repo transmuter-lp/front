@@ -178,7 +178,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
 
         code += "\n"
         code += f"\n{'    ' * indent}if len(paths{level + 1}) == 0:"
-        code += f"\n{'    ' * (indent + 1)}raise CompilerSyntaxError(self)"
+        code += f"\n{'    ' * (indent + 1)}raise CompilerNoPathError(self)"
         code += "\n"
         code += f"\n{'    ' * indent}paths{level} = paths{level + 1}"
         code += f"\n{'    ' * indent}# end oneof"

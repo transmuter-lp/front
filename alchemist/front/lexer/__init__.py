@@ -230,11 +230,6 @@ class CompilerEOIError(_CompilerLexicalError):
         super().__init__(_input, "Unexpected end of input.")
 
 
-class CompilerNEOIError(_CompilerLexicalError):
-    def __init__(self, _input: InputHandler) -> None:
-        super().__init__(_input, "Expected end of input.")
-
-
 class CompilerNoTerminalError(_CompilerLexicalError):
     def __init__(self, _input: InputHandler) -> None:
         super().__init__(_input, "Could not match any expected terminal.")

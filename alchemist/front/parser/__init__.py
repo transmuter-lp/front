@@ -17,7 +17,7 @@
 from typing import Optional, cast, TYPE_CHECKING
 
 from .. import ASTNode, CompilerError
-from ..lexer import CompilerEOIError, CompilerNEOIError
+from ..lexer import CompilerEOIError
 
 if TYPE_CHECKING:
     from ..lexer import Lexer, Terminal
@@ -65,7 +65,7 @@ class Production(ASTNode):  # pylint: disable=R0903
         self.parser.lexer.set_state(state)
 
         if len(nextpaths) == 0:
-            raise CompilerSyntaxError(self)
+            raise CompilerNoPathError(self)
 
         return nextpaths
 
@@ -82,6 +82,10 @@ class Parser:  # pylint: disable=R0903
     def parse(self) -> Production | None:
         try:
             ast: Production = self._start(None, self)
+
+            if len(ast.paths) == 0:
+                raise CompilerNoPathError(ast)
+
             paths: list[Terminal] = list(ast.paths)
             i: int = 0
 
@@ -92,7 +96,7 @@ class Parser:  # pylint: disable=R0903
                     i += 1
 
             if len(paths) == 0:
-                raise CompilerNEOIError(self.lexer.input)
+                raise CompilerNEOIError(ast)
 
             ast.paths = set(paths)
             return ast
@@ -102,9 +106,18 @@ class Parser:  # pylint: disable=R0903
 
 
 class CompilerSyntaxError(CompilerError):
-    def __init__(self, production: Production) -> None:
+    def __init__(self, production: Production, msg: str) -> None:
         super().__init__(
             production.parser.lexer.input,
-            f"In {production.__class__.__name__}: "
-            "Could not find a parsing path."
+            f"In {production.__class__.__name__}: {msg}"
         )
+
+
+class CompilerNoPathError(CompilerSyntaxError):
+    def __init__(self, production: Production) -> None:
+        super().__init__(production, "Could not find a parsing path.")
+
+
+class CompilerNEOIError(CompilerSyntaxError):
+    def __init__(self, production: Production) -> None:
+        super().__init__(production, "Expected end of input.")
