@@ -17,7 +17,7 @@
 from typing import Optional, cast, TYPE_CHECKING
 
 from .. import ASTNode, CompilerError
-from ..lexer import CompilerNEOIError
+from ..lexer import CompilerEOIError, CompilerNEOIError
 
 if TYPE_CHECKING:
     from ..lexer import Lexer, Terminal
@@ -59,7 +59,7 @@ class Production(ASTNode):  # pylint: disable=R0903
                 try:
                     assert isinstance(self.parser.lexer.next_token(self), node)
                     nextpaths.add(self.parser.lexer.get_state())
-                except AssertionError:
+                except (CompilerEOIError, AssertionError):
                     pass
 
         self.parser.lexer.set_state(state)
@@ -81,13 +81,20 @@ class Parser:  # pylint: disable=R0903
 
     def parse(self) -> Production | None:
         try:
-            ast = self._start(None, self)
+            ast: Production = self._start(None, self)
+            paths: list[Terminal] = list(ast.paths)
+            i: int = 0
 
-            for path in ast.paths:
-                if path.state[0] != self.lexer.input.endpos:
-                    self.lexer.set_state(path)
-                    raise CompilerNEOIError(self.lexer.input)
+            while i < len(paths):
+                if paths[i].state[0] != self.lexer.input.endpos:
+                    paths = paths[:i] + paths[i + 1:]
+                else:
+                    i += 1
 
+            if len(paths) == 0:
+                raise CompilerNEOIError(self.lexer.input)
+
+            ast.paths = set(paths)
             return ast
         except CompilerError as error:
             print(error)

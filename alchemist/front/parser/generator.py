@@ -172,7 +172,8 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
             code += f"\n{'    ' * (indent + 1)}paths{level + 2}: set[\"Terminal\"] = paths{level}"  # noqa: E501
             code += rule(indent + 1, level + 2)
             code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"  # noqa: E501
-            code += f"\n{'    ' * indent}except CompilerSyntaxError:"
+            # pylint: disable-next=C0301
+            code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
             code += f"\n{'    ' * (indent + 1)}pass"
 
         code += "\n"
