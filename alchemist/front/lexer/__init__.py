@@ -109,6 +109,7 @@ class Terminal(ASTNode):
         super().__init__(parent)
         self.state: tuple[int, int, int] = _input.get_state()
         self.next: Terminal | None = None
+        self.productions: dict[type["Production"], "Production" | None] = {}
 
     @property
     def str(self) -> str:
@@ -120,6 +121,7 @@ class _Start(Terminal):
         ASTNode.__init__(self, None)  # pylint: disable=W0233
         self.state = _input.get_state()
         self.next = None
+        self.productions = {}
 
 
 _TerminalList = list[type[Terminal] | tuple[type[Terminal], "_TerminalList"]]

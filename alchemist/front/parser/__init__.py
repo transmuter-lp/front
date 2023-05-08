@@ -41,16 +41,16 @@ class Production(ASTNode):  # pylint: disable=R0903
             for path in paths:
                 self.parser.lexer.set_state(path)
 
-                if (path, node) not in self.parser.productions:
+                if node not in path.productions:
                     try:
                         production: Production = node(self, self.parser)
                         nextpaths |= production.paths
-                        self.parser.productions[path, node] = production
+                        path.productions[node] = production
                     except CompilerSyntaxError:
-                        self.parser.productions[path, node] = None
-                elif self.parser.productions[path, node] is not None:
+                        path.productions[node] = None
+                elif path.productions[node] is not None:
                     nextpaths |= cast(
-                        Production, self.parser.productions[path, node]
+                        Production, path.productions[node]
                     ).paths
         else:  # Terminal
             for path in paths:
@@ -75,17 +75,10 @@ class Parser:  # pylint: disable=R0903
 
     def __init__(self, lexer: "Lexer") -> None:
         self.lexer: "Lexer" = lexer
-        self.productions: dict[
-            tuple[Terminal, type[Production]], Production | None
-        ] = {}
 
     def parse(self) -> Production | None:
         try:
             ast: Production = self._start(None, self)
-
-            if len(ast.paths) == 0:
-                raise CompilerNoPathError(ast)
-
             paths: list[Terminal] = list(ast.paths)
             i: int = 0
 
