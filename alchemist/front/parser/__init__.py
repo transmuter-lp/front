@@ -87,7 +87,7 @@ class Parser:  # pylint: disable=R0903
             i: int = 0
 
             while i < len(paths):
-                if paths[i].state[0] != self.lexer.input.endpos:
+                if paths[i].end[0] != self.lexer.input.endpos:
                     paths = paths[:i] + paths[i + 1:]
                 else:
                     i += 1
