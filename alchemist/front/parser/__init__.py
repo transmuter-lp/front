@@ -29,7 +29,8 @@ class Production(ASTNode):  # pylint: disable=R0903
     ) -> None:
         super().__init__(parent)
         self.parser: Parser = parser
-        self.paths: set["Terminal"] = set()
+        self.output_paths: set["Terminal"] = set()
+        self.input_path: "Terminal" = parser.lexer.get_state()
 
     def _process_paths(
         self, paths: set["Terminal"], node: type[ASTNode]
@@ -44,14 +45,14 @@ class Production(ASTNode):  # pylint: disable=R0903
                 if (path, node) not in self.parser.productions:
                     try:
                         production: Production = node(self, self.parser)
-                        nextpaths |= production.paths
+                        nextpaths |= production.output_paths
                         self.parser.productions[path, node] = production
                     except CompilerSyntaxError:
                         self.parser.productions[path, node] = None
                 elif self.parser.productions[path, node] is not None:
                     nextpaths |= cast(
                         Production, self.parser.productions[path, node]
-                    ).paths
+                    ).output_paths
         else:  # Terminal
             for path in paths:
                 self.parser.lexer.set_state(path)
@@ -82,7 +83,7 @@ class Parser:  # pylint: disable=R0903
     def parse(self) -> Production | None:
         try:
             ast: Production = self._start(None, self)
-            paths: list[Terminal] = list(ast.paths)
+            paths: list[Terminal] = list(ast.output_paths)
             i: int = 0
 
             while i < len(paths):
@@ -94,7 +95,7 @@ class Parser:  # pylint: disable=R0903
             if len(paths) == 0:
                 raise CompilerNEOIError(ast)
 
-            ast.paths = set(paths)
+            ast.output_paths = set(paths)
             return ast
         except CompilerError as error:
             print(error)
