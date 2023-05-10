@@ -107,7 +107,8 @@ class Terminal(ASTNode):
             self.__str: str = match[0]
 
         super().__init__(parent)
-        self.state: tuple[int, int, int] = _input.get_state()
+        self.start: tuple[int, int, int] = _input.get_state()
+        self.end: tuple[int, int, int] = self.start
         self.next: Terminal | None = None
 
     @property
@@ -118,7 +119,8 @@ class Terminal(ASTNode):
 class _Start(Terminal):
     def __init__(self, _input: InputHandler) -> None:  # pylint: disable=W0231
         ASTNode.__init__(self, None)  # pylint: disable=W0233
-        self.state = _input.get_state()
+        self.start = _input.get_state()
+        self.end = self.start
         self.next = None
 
 
@@ -145,7 +147,7 @@ class Lexer:
 
     def set_state(self, state: Terminal) -> None:
         self.__token = state
-        self.input.set_state(state.state)
+        self.input.set_state(state.end)
 
     def __ignore(self) -> None:
         while True:
@@ -215,7 +217,7 @@ class Lexer:
             token, children = match
 
         self.input.advance(len(token.str))
-        token.state = self.input.get_state()
+        token.end = self.input.get_state()
         self.__token.next = token
         self.__token = self.__token.next
         return self.__token
