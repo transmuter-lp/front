@@ -220,7 +220,7 @@ class ProductionTemplate:  # pylint: disable=R0903
         # pylint: disable-next=C0301
         code += '\n    def __init__(self, parent: Production | None, parser: Parser) -> None:'  # noqa: E501
         code += "\n        super().__init__(parent, parser)"
-        code += '\n        paths0: set["Terminal"] = {parser.lexer.get_state()}'  # noqa: E501
+        code += '\n        paths0: set["Terminal"] = {self.input_path}'
         code += rule(2, 0).replace("\n\n\n", "\n\n")
-        code += '\n        self.paths: set["Terminal"] = paths0'
+        code += '\n        self.output_paths = paths0'
         return code
