@@ -83,19 +83,17 @@ class Parser:  # pylint: disable=R0903
     def parse(self) -> Production | None:
         try:
             ast: Production = self._start(None, self)
-            paths: list[Terminal] = list(ast.output_paths)
-            i: int = 0
+            output_path: Terminal | None = None
 
-            while i < len(paths):
-                if paths[i].end[0] != self.lexer.input.endpos:
-                    paths = paths[:i] + paths[i + 1:]
-                else:
-                    i += 1
+            for path in ast.output_paths:
+                if path.end[0] == self.lexer.input.endpos:
+                    output_path = path
+                    break
 
-            if len(paths) == 0:
+            if output_path is None:
                 raise CompilerNEOIError(ast)
 
-            ast.output_paths = set(paths)
+            ast.output_paths = {output_path}
             return ast
         except CompilerError as error:
             print(error)
