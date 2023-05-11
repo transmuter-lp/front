@@ -40,9 +40,9 @@ class Production(ASTNode):  # pylint: disable=R0903
 
         if issubclass(node, Production):
             for path in paths:
-                self.parser.lexer.set_state(path)
-
                 if (path, node) not in self.parser.productions:
+                    self.parser.lexer.set_state(path)
+
                     try:
                         production: Production = node(self, self.parser)
                         nextpaths |= production.output_paths
@@ -77,13 +77,13 @@ class Parser:  # pylint: disable=R0903
     def __init__(self, lexer: "Lexer") -> None:
         self.lexer: "Lexer" = lexer
         self.productions: dict[
-            tuple[Terminal, type[Production]], Production | None
+            tuple["Terminal", type[Production]], Production | None
         ] = {}
 
     def parse(self) -> Production | None:
         try:
             ast: Production = self._start(None, self)
-            output_path: Terminal | None = None
+            output_path: "Terminal" | None = None
 
             for path in ast.output_paths:
                 if path.end[0] == self.lexer.input.endpos:

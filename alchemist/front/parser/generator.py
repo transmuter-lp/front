@@ -127,19 +127,16 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
 
     def __call__(self, indent: int, level: int) -> str:
         code: str = "\n"
-        code += f"\n{'    ' * indent}# begin repeat"
         # pylint: disable-next=C0301
         code += f"\n{'    ' * indent}paths{level + 1}: set[\"Terminal\"] = paths{level}"  # noqa: E501
         code += "\n"
-        code += f"\n{'    ' * indent}while True:"
+        code += f"\n{'    ' * indent}while True:  # repeat"
         code += f"\n{'    ' * (indent + 1)}try:"
         code += self.rules(indent + 2, level + 1)
         code += f"\n{'    ' * (indent + 2)}paths{level} |= paths{level + 1}"
         # pylint: disable-next=C0301
         code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
         code += f"\n{'    ' * (indent + 2)}break"
-        code += "\n"
-        code += f"\n{'    ' * indent}# end repeat"
         code += "\n"
         return code
 
