@@ -24,17 +24,13 @@ if TYPE_CHECKING:
 
 
 class Production(ASTNode):  # pylint: disable=R0903
-    def __init__(
-        self, parent: Optional["Production"], parser: "Parser"
-    ) -> None:
+    def __init__(self, parent: Optional["Production"], parser: "Parser") -> None:
         super().__init__(parent)
         self.parser: Parser = parser
         self.output_paths: set["Terminal"] = set()
         self.input_path: "Terminal" = parser.lexer.get_state()
 
-    def _process_paths(
-        self, paths: set["Terminal"], node: type[ASTNode]
-    ) -> set["Terminal"]:
+    def _process_paths(self, paths: set["Terminal"], node: type[ASTNode]) -> set["Terminal"]:
         nextpaths: set["Terminal"] = set()
         state: "Terminal" = self.parser.lexer.get_state()
 
@@ -50,9 +46,7 @@ class Production(ASTNode):  # pylint: disable=R0903
                     except CompilerSyntaxError:
                         self.parser.productions[path, node] = None
                 elif self.parser.productions[path, node] is not None:
-                    nextpaths |= cast(
-                        Production, self.parser.productions[path, node]
-                    ).output_paths
+                    nextpaths |= cast(Production, self.parser.productions[path, node]).output_paths
         else:  # Terminal
             for path in paths:
                 self.parser.lexer.set_state(path)
@@ -76,9 +70,7 @@ class Parser:  # pylint: disable=R0903
 
     def __init__(self, lexer: "Lexer") -> None:
         self.lexer: "Lexer" = lexer
-        self.productions: dict[
-            tuple["Terminal", type[Production]], Production | None
-        ] = {}
+        self.productions: dict[tuple["Terminal", type[Production]], Production | None] = {}
 
     def parse(self) -> Production | None:
         try:
@@ -102,11 +94,7 @@ class Parser:  # pylint: disable=R0903
 
 class CompilerSyntaxError(CompilerError):
     def __init__(self, production: Production, msg: str) -> None:
-        super().__init__(
-            production.parser.lexer.input,
-            "Syntax Error",
-            f"In {production.__class__.__name__}: {msg}"
-        )
+        super().__init__(production.parser.lexer.input, "Syntax Error", f"In {production.__class__.__name__}: {msg}")
 
 
 class CompilerNoPathError(CompilerSyntaxError):
