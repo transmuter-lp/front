@@ -40,18 +40,8 @@ class _Rule(Generic[_T]):
 
     @staticmethod
     def _filter(templates: _RuleTemplates) -> list["_Rule"]:
-        rules: list[_Rule] = [
-            _Rule.get(template) for template in templates
-            if not isinstance(template, Switch) or template.enabled
-        ]
-        rules = [
-            rule for rule in rules
-            if isinstance(rule, _Term) or len(
-                rule.rules.rules
-                if isinstance(rule.rules, _Group)
-                else rule.rules
-            ) > 0
-        ]
+        rules: list[_Rule] = [_Rule.get(template) for template in templates if not isinstance(template, Switch) or template.enabled]
+        rules = [rule for rule in rules if isinstance(rule, _Term) or len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) > 0]
         return rules
 
     def __init__(self, rules: _T) -> None:
@@ -87,19 +77,16 @@ class _Optional(_Rule[_Group]):
     def __init__(self, templates: list[_RuleTemplate]) -> None:
         super().__init__(_Group(templates))
 
-        if len(self.rules.rules) == 1 and isinstance(
-            self.rules.rules[0], _Optional
-        ):
+        if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], _Optional):
             self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int) -> str:
         code: str = "\n"
         code += f"\n{'    ' * indent}try:  # optional"
-        # pylint: disable-next=C0301
-        code += f"\n{'    ' * (indent + 1)}paths{level + 1}: set[\"Terminal\"] = paths{level}"  # noqa: E501
+        code += f"\n{'    ' * (indent + 1)}paths{level + 1}: set[\"Terminal\"] = paths{level}"
         code += self.rules(indent + 1, level + 1)
         code += f"\n{'    ' * (indent + 1)}paths{level} |= paths{level + 1}"
-        code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
+        code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"
         code += f"\n{'    ' * (indent + 1)}pass"
         code += "\n"
         return code
@@ -120,22 +107,18 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
     def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(_Group(templates))
 
-        if len(self.rules.rules) == 1 and isinstance(
-            self.rules.rules[0], repeat
-        ):
+        if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], repeat):
             self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int) -> str:
         code: str = "\n"
-        # pylint: disable-next=C0301
-        code += f"\n{'    ' * indent}paths{level + 1}: set[\"Terminal\"] = paths{level}"  # noqa: E501
+        code += f"\n{'    ' * indent}paths{level + 1}: set[\"Terminal\"] = paths{level}"
         code += "\n"
         code += f"\n{'    ' * indent}while True:  # repeat"
         code += f"\n{'    ' * (indent + 1)}try:"
         code += self.rules(indent + 2, level + 1)
         code += f"\n{'    ' * (indent + 2)}paths{level} |= paths{level + 1}"
-        # pylint: disable-next=C0301
-        code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
+        code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"
         code += f"\n{'    ' * (indent + 2)}break"
         code += "\n"
         return code
@@ -160,17 +143,15 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
 
         code: str = "\n"
         code += f"\n{'    ' * indent}# begin oneof"
-        code += f"\n{'    ' * indent}paths{level + 1}: set[\"Terminal\"] = set()"  # noqa: E501
+        code += f"\n{'    ' * indent}paths{level + 1}: set[\"Terminal\"] = set()"
 
         for i, rule in enumerate(self.rules):
             code += "\n"
             code += f"\n{'    ' * indent}try:  # option {i + 1}"
-            # pylint: disable-next=C0301
-            code += f"\n{'    ' * (indent + 1)}paths{level + 2}: set[\"Terminal\"] = paths{level}"  # noqa: E501
+            code += f"\n{'    ' * (indent + 1)}paths{level + 2}: set[\"Terminal\"] = paths{level}"
             code += rule(indent + 1, level + 2)
-            code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"  # noqa: E501
-            # pylint: disable-next=C0301
-            code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"  # noqa: E501
+            code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"
+            code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"
             code += f"\n{'    ' * (indent + 1)}pass"
 
         code += "\n"
@@ -188,8 +169,7 @@ class _Term(_Rule[str]):
         super().__init__(node)
 
     def __call__(self, indent: int, level: int) -> str:
-        # pylint: disable-next=C0301
-        return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"  # noqa: E501
+        return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"
 
 
 class ProductionTemplate:  # pylint: disable=R0903
@@ -203,21 +183,13 @@ class ProductionTemplate:  # pylint: disable=R0903
 
         rule: _Rule = _Rule.get(cls._template)
 
-        if (
-            not isinstance(rule, _Term)
-            and len(
-                rule.rules.rules
-                if isinstance(rule.rules, _Group)
-                else rule.rules
-            ) == 0
-        ):
+        if not isinstance(rule, _Term) and len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) == 0:
             return ""
 
         code: str = f"class {cls.__name__}(Production):"
-        # pylint: disable-next=C0301
-        code += '\n    def __init__(self, parent: Production | None, parser: Parser) -> None:'  # noqa: E501
+        code += "\n    def __init__(self, parent: Production | None, parser: Parser) -> None:"
         code += "\n        super().__init__(parent, parser)"
         code += '\n        paths0: set["Terminal"] = {self.input_path}'
         code += rule(2, 0).replace("\n\n\n", "\n\n")
-        code += '\n        self.output_paths = paths0'
+        code += "\n        self.output_paths = paths0"
         return code
