@@ -24,14 +24,7 @@ if TYPE_CHECKING:
 
 
 class InputHandler:
-    def __init__(
-        self,
-        _input: str,
-        filename: str = "<stdin>",
-        startpos: int = 0,
-        endpos: int | None = None,
-        newline: str = "\n"
-    ) -> None:
+    def __init__(self, _input: str, filename: str = "<stdin>", startpos: int = 0, endpos: int | None = None, newline: str = "\n") -> None:
         self.input: str = _input
         self.filename: str = filename
         self.__startpos: int = startpos
@@ -49,24 +42,14 @@ class InputHandler:
         self.poslc = state[1], state[2]
 
     def __getitem__(self, key: slice) -> str:
-        return self.input[
-            max(self.__startpos, key.start):min(key.stop, self.endpos)
-        ]
+        return self.input[max(self.__startpos, key.start):min(key.stop, self.endpos)]
 
     def advance(self, length: int) -> None:
         if self.position + length <= self.endpos:
-            lines: int = self.input.count(
-                self.__newline, self.position, self.position + length
-            )
+            lines: int = self.input.count(self.__newline, self.position, self.position + length)
 
             if lines > 0:
-                self.poslc = (
-                    self.poslc[0] + lines,
-                    self.position + length
-                    - self.input.rfind(
-                        self.__newline, self.position, self.position + length
-                    )
-                )
+                self.poslc = self.poslc[0] + lines, self.position + length - self.input.rfind(self.__newline, self.position, self.position + length)
             else:
                 self.poslc = self.poslc[0], self.poslc[1] + length
 
@@ -86,20 +69,13 @@ class Terminal(ASTNode):
         # re.Pattern
         return False, cls._index, -cls._weight
 
-    def __init__(
-        self, parent: Optional["Production"], _input: InputHandler
-    ) -> None:
+    def __init__(self, parent: Optional["Production"], _input: InputHandler) -> None:
         if isinstance(self._pattern, str):
-            if (
-                _input[_input.position:_input.position + len(self._pattern)]
-                != self._pattern
-            ):
+            if _input[_input.position:_input.position + len(self._pattern)] != self._pattern:
                 raise _CompilerTerminalError(_input, self)
         else:  # re.Pattern
             # pylint: disable-next=E1101
-            match: re.Match[str] | None = self._pattern.match(
-                _input.input, _input.position, _input.endpos
-            )
+            match: re.Match[str] | None = self._pattern.match(_input.input, _input.position, _input.endpos)
 
             if not match:
                 raise _CompilerTerminalError(_input, self)
@@ -133,9 +109,7 @@ class Lexer:
 
     @staticmethod
     def sort(terminals: _TerminalList) -> _TerminalList:
-        terminals.sort(
-            key=lambda t: t[0].key() if isinstance(t, tuple) else t.key()
-        )
+        terminals.sort(key=lambda t: t[0].key() if isinstance(t, tuple) else t.key())
         return terminals
 
     def __init__(self, _input: InputHandler) -> None:
@@ -152,9 +126,7 @@ class Lexer:
     def __ignore(self) -> None:
         while True:
             for pattern in self._ignored:
-                match: re.Match[str] | None = pattern.match(
-                    self.input.input, self.input.position, self.input.endpos
-                )
+                match: re.Match[str] | None = pattern.match(self.input.input, self.input.position, self.input.endpos)
 
                 if match:
                     self.input.advance(len(match[0]))
@@ -163,10 +135,7 @@ class Lexer:
                 break
 
     def __match_terminal(
-        self,
-        parent: Optional["Production"],
-        terminals: _TerminalList,
-        token: Terminal | None = None
+        self, parent: Optional["Production"], terminals: _TerminalList, token: Terminal | None = None
     ) -> tuple[Terminal, _TerminalList] | None:
         for term in terminals:
             terminal: type[Terminal]
@@ -197,9 +166,7 @@ class Lexer:
         if self.input.position == self.input.endpos:
             raise CompilerEOIError(self.input)
 
-        match: tuple[Terminal, _TerminalList] | None = self.__match_terminal(
-            parent, self._terminals
-        )
+        match: tuple[Terminal, _TerminalList] | None = self.__match_terminal(parent, self._terminals)
 
         if match is None:
             raise CompilerNoTerminalError(self.input)
@@ -240,6 +207,4 @@ class CompilerNoTerminalError(_CompilerLexicalError):
 
 class _CompilerTerminalError(_CompilerLexicalError):
     def __init__(self, _input: InputHandler, terminal: Terminal) -> None:
-        super().__init__(
-            _input, f"Could not match expected {terminal.__class__.__name__}."
-        )
+        super().__init__(_input, f"Could not match expected {terminal.__class__.__name__}.")
