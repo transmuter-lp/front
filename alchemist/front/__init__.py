@@ -29,7 +29,4 @@ class ASTNode:  # pylint: disable=R0903
 
 class CompilerError(Exception):
     def __init__(self, _input: "InputHandler", error: str, msg: str) -> None:
-        super().__init__(
-            f"{_input.filename}:{_input.poslc[0]}:{_input.poslc[1]}: {error}: "
-            f"{msg}"
-        )
+        super().__init__(f"{_input.filename}:{_input.poslc[0]}:{_input.poslc[1]}: {error}: {msg}")
