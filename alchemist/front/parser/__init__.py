@@ -23,9 +23,9 @@ if TYPE_CHECKING:
     from ..lexer import Lexer, Terminal
 
 
-class Production(ASTNode):  # pylint: disable=R0903
-    def __init__(self, parent: Optional["Production"], parser: "Parser") -> None:
-        self.parent: Production | None = parent
+class NonTerminal(ASTNode):  # pylint: disable=R0903
+    def __init__(self, parent: Optional["NonTerminal"], parser: "Parser") -> None:
+        self.parent: NonTerminal | None = parent
         self.parser: Parser = parser
         self.output_paths: set["Terminal"] = set()
         self.input_path: "Terminal" = parser.lexer.get_state()
@@ -34,19 +34,19 @@ class Production(ASTNode):  # pylint: disable=R0903
         nextpaths: set["Terminal"] = set()
         state: "Terminal" = self.parser.lexer.get_state()
 
-        if issubclass(node, Production):
+        if issubclass(node, NonTerminal):
             for path in paths:
-                if (path, node) not in self.parser.productions:
+                if (path, node) not in self.parser.nonterminals:
                     self.parser.lexer.set_state(path)
 
                     try:
-                        production: Production = node(self, self.parser)
-                        nextpaths |= production.output_paths
-                        self.parser.productions[path, node] = production
+                        nonterminal: NonTerminal = node(self, self.parser)
+                        nextpaths |= nonterminal.output_paths
+                        self.parser.nonterminals[path, node] = nonterminal
                     except CompilerSyntaxError:
-                        self.parser.productions[path, node] = None
-                elif self.parser.productions[path, node] is not None:
-                    nextpaths |= cast(Production, self.parser.productions[path, node]).output_paths
+                        self.parser.nonterminals[path, node] = None
+                elif self.parser.nonterminals[path, node] is not None:
+                    nextpaths |= cast(NonTerminal, self.parser.nonterminals[path, node]).output_paths
         else:  # Terminal
             for path in paths:
                 self.parser.lexer.set_state(path)
@@ -66,15 +66,15 @@ class Production(ASTNode):  # pylint: disable=R0903
 
 
 class Parser:  # pylint: disable=R0903
-    _start: type[Production] = Production
+    _start: type[NonTerminal] = NonTerminal
 
     def __init__(self, lexer: "Lexer") -> None:
         self.lexer: "Lexer" = lexer
-        self.productions: dict[tuple["Terminal", type[Production]], Production | None] = {}
+        self.nonterminals: dict[tuple["Terminal", type[NonTerminal]], NonTerminal | None] = {}
 
-    def parse(self) -> Production | None:
+    def parse(self) -> NonTerminal | None:
         try:
-            ast: Production = self._start(None, self)
+            ast: NonTerminal = self._start(None, self)
             output_path: "Terminal" | None = None
 
             for path in ast.output_paths:
@@ -93,15 +93,15 @@ class Parser:  # pylint: disable=R0903
 
 
 class CompilerSyntaxError(CompilerError):
-    def __init__(self, production: Production, msg: str) -> None:
-        super().__init__(production.parser.lexer.input, "Syntax Error", f"In {production.__class__.__name__}: {msg}")
+    def __init__(self, nonterminal: NonTerminal, msg: str) -> None:
+        super().__init__(nonterminal.parser.lexer.input, "Syntax Error", f"In {nonterminal.__class__.__name__}: {msg}")
 
 
 class CompilerNoPathError(CompilerSyntaxError):
-    def __init__(self, production: Production) -> None:
-        super().__init__(production, "Could not find a parsing path.")
+    def __init__(self, nonterminal: NonTerminal) -> None:
+        super().__init__(nonterminal, "Could not find a parsing path.")
 
 
 class CompilerNEOIError(CompilerSyntaxError):
-    def __init__(self, production: Production) -> None:
-        super().__init__(production, "Expected end of input.")
+    def __init__(self, nonterminal: NonTerminal) -> None:
+        super().__init__(nonterminal, "Expected end of input.")

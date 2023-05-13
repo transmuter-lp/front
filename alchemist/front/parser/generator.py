@@ -185,8 +185,8 @@ class ProductionTemplate:  # pylint: disable=R0903
         if not isinstance(rule, _Term) and len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) == 0:
             return ""
 
-        code: str = f"class {cls.__name__}(Production):"
-        code += "\n    def __init__(self, parent: Production | None, parser: Parser) -> None:"
+        code: str = f"class {cls.__name__}(NonTerminal):"
+        code += "\n    def __init__(self, parent: NonTerminal | None, parser: Parser) -> None:"
         code += "\n        super().__init__(parent, parser)"
         code += '\n        paths0: set["Terminal"] = {self.input_path}'
         code += rule(2, 0).replace("\n\n\n", "\n\n")
