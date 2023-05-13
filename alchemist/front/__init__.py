@@ -14,17 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .lexer import InputHandler
 
 
 class ASTNode:  # pylint: disable=R0903
-    keep: bool = True
-
-    def __init__(self, parent: Optional["ASTNode"]) -> None:
-        self.parent: ASTNode | None = parent
+    pass
 
 
 class CompilerError(Exception):

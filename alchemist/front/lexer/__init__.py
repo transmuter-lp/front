@@ -14,13 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, TYPE_CHECKING
 import re
 
 from .. import ASTNode, CompilerError
-
-if TYPE_CHECKING:
-    from ..parser import Production
 
 
 class InputHandler:
@@ -69,20 +65,18 @@ class Terminal(ASTNode):
         # re.Pattern
         return False, cls._index, -cls._weight
 
-    def __init__(self, parent: Optional["Production"], _input: InputHandler) -> None:
+    def __init__(self, _input: InputHandler) -> None:
         if isinstance(self._pattern, str):
             if _input[_input.position:_input.position + len(self._pattern)] != self._pattern:
                 raise _CompilerTerminalError(_input, self)
         else:  # re.Pattern
-            # pylint: disable-next=E1101
-            match: re.Match[str] | None = self._pattern.match(_input.input, _input.position, _input.endpos)
+            match: re.Match[str] | None = self._pattern.match(_input.input, _input.position, _input.endpos)  # pylint: disable=E1101
 
             if not match:
                 raise _CompilerTerminalError(_input, self)
 
             self.__str: str = match[0]
 
-        super().__init__(parent)
         self.start: tuple[int, int, int] = _input.get_state()
         self.end: tuple[int, int, int] = self.start
         self.next: Terminal | None = None
@@ -91,10 +85,13 @@ class Terminal(ASTNode):
     def str(self) -> str:
         return self._pattern if isinstance(self._pattern, str) else self.__str
 
+    def accept(self, _input: InputHandler) -> None:
+        _input.advance(len(self.str))
+        self.end = _input.get_state()
+
 
 class _Start(Terminal):
     def __init__(self, _input: InputHandler) -> None:  # pylint: disable=W0231
-        ASTNode.__init__(self, None)  # pylint: disable=W0233
         self.start = _input.get_state()
         self.end = self.start
         self.next = None
@@ -134,9 +131,7 @@ class Lexer:
             else:
                 break
 
-    def __match_terminal(
-        self, parent: Optional["Production"], terminals: _TerminalList, token: Terminal | None = None
-    ) -> tuple[Terminal, _TerminalList] | None:
+    def __match_terminal(self, terminals: _TerminalList, token: Terminal | None = None) -> tuple[Terminal, _TerminalList] | None:
         for term in terminals:
             terminal: type[Terminal]
             children: _TerminalList
@@ -148,7 +143,7 @@ class Lexer:
                 children = []
 
             try:
-                ctoken: Terminal = terminal(parent, self.input)
+                ctoken: Terminal = terminal(self.input)
                 assert token is None or len(ctoken.str) == len(token.str)
                 return ctoken, children
             except (_CompilerTerminalError, AssertionError):
@@ -156,7 +151,7 @@ class Lexer:
 
         return None
 
-    def next_token(self, parent: Optional["Production"]) -> Terminal:
+    def next_token(self) -> Terminal:
         if self.__token.next is not None:
             self.set_state(self.__token.next)
             return self.__token
@@ -166,7 +161,7 @@ class Lexer:
         if self.input.position == self.input.endpos:
             raise CompilerEOIError(self.input)
 
-        match: tuple[Terminal, _TerminalList] | None = self.__match_terminal(parent, self._terminals)
+        match: tuple[Terminal, _TerminalList] | None = self.__match_terminal(self._terminals)
 
         if match is None:
             raise CompilerNoTerminalError(self.input)
@@ -176,15 +171,14 @@ class Lexer:
         token, children = match
 
         while True:
-            match = self.__match_terminal(parent, children, token)
+            match = self.__match_terminal(children, token)
 
             if match is None:
                 break
 
             token, children = match
 
-        self.input.advance(len(token.str))
-        token.end = self.input.get_state()
+        token.accept(self.input)
         self.__token.next = token
         self.__token = self.__token.next
         return self.__token

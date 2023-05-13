@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 class Production(ASTNode):  # pylint: disable=R0903
     def __init__(self, parent: Optional["Production"], parser: "Parser") -> None:
-        super().__init__(parent)
+        self.parent: Production | None = parent
         self.parser: Parser = parser
         self.output_paths: set["Terminal"] = set()
         self.input_path: "Terminal" = parser.lexer.get_state()
@@ -52,7 +52,7 @@ class Production(ASTNode):  # pylint: disable=R0903
                 self.parser.lexer.set_state(path)
 
                 try:
-                    assert isinstance(self.parser.lexer.next_token(self), node)
+                    assert isinstance(self.parser.lexer.next_token(), node)
                     nextpaths.add(self.parser.lexer.get_state())
                 except (CompilerEOIError, AssertionError):
                     pass

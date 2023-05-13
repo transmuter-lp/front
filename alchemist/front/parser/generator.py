@@ -177,8 +177,7 @@ class ProductionTemplate:  # pylint: disable=R0903
 
     @classmethod
     def generate(cls) -> str:
-        # pylint: disable-next=E1101
-        if isinstance(cls._template, Switch) and not cls._template.enabled:
+        if isinstance(cls._template, Switch) and not cls._template.enabled:  # pylint: disable=E1101
             return ""
 
         rule: _Rule = _Rule.get(cls._template)
