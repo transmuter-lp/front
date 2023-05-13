@@ -14,9 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import re
+from typing import Union, Optional, TYPE_CHECKING
 
 from .. import ASTNode, CompilerError
+
+if TYPE_CHECKING:
+    import re
 
 
 class InputHandler:
@@ -53,7 +56,7 @@ class InputHandler:
 
 
 class Terminal(ASTNode):
-    _pattern: str | re.Pattern = ""
+    _pattern: Union[str, "re.Pattern"] = ""
     _index: int = 0
     _weight: float = 0.0
 
@@ -70,7 +73,7 @@ class Terminal(ASTNode):
             if _input[_input.position:_input.position + len(self._pattern)] != self._pattern:
                 raise _CompilerTerminalError(_input, self)
         else:  # re.Pattern
-            match: re.Match[str] | None = self._pattern.match(_input.input, _input.position, _input.endpos)  # pylint: disable=E1101
+            match: Optional["re.Match[str]"] = self._pattern.match(_input.input, _input.position, _input.endpos)  # pylint: disable=E1101
 
             if not match:
                 raise _CompilerTerminalError(_input, self)
@@ -102,7 +105,7 @@ _TerminalList = list[type[Terminal] | tuple[type[Terminal], "_TerminalList"]]
 
 class Lexer:
     _terminals: _TerminalList = []
-    _ignored: list[re.Pattern] = []
+    _ignored: list["re.Pattern"] = []
 
     @staticmethod
     def sort(terminals: _TerminalList) -> _TerminalList:
@@ -123,7 +126,7 @@ class Lexer:
     def __ignore(self) -> None:
         while True:
             for pattern in self._ignored:
-                match: re.Match[str] | None = pattern.match(self.input.input, self.input.position, self.input.endpos)
+                match: Optional["re.Match[str]"] = pattern.match(self.input.input, self.input.position, self.input.endpos)
 
                 if match:
                     self.input.advance(len(match[0]))
