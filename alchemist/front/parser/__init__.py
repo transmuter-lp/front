@@ -29,20 +29,72 @@ class NonTerminal(ASTNode):  # pylint: disable=R0903
         self.parser: Parser = parser
         self.output_paths: set["Terminal"] = set()
         self.input_path: "Terminal" = parser.lexer.get_state()
+        self.recursive_path: set[type[NonTerminal]] | None = None
+
+    def __left_recursive(self, paths: set["Terminal"], node: type["NonTerminal"]) -> bool:
+        if self.input_path in paths and (self.input_path, node) not in self.parser.nonterminals:
+            parent: NonTerminal | None = self
+            recursive_path: set[type[NonTerminal]] = set()
+
+            while parent is not None and parent.input_path is self.input_path:
+                if parent.__class__ is node:
+                    if parent.recursive_path is None:
+                        parent.recursive_path = recursive_path
+                    else:
+                        parent.recursive_path |= recursive_path
+
+                    return True
+
+                recursive_path.add(parent.__class__)
+                parent = parent.parent
+
+        return False
+
+    def __process_left_recursion(self, path: "Terminal", nonterminal: "NonTerminal") -> set["Terminal"]:
+        nextpaths: set["Terminal"] = set()
+        recursive_path: set[type[NonTerminal]] = cast(set[type[NonTerminal]], nonterminal.recursive_path)
+        nonterminal.recursive_path = None
+
+        while True:
+            if nextpaths | nonterminal.output_paths == nextpaths:
+                break
+
+            for prod in recursive_path:
+                del self.parser.nonterminals[path, prod]
+
+            nextpaths |= nonterminal.output_paths
+            self.parser.nonterminals[path, nonterminal.__class__] = nonterminal
+            self.parser.lexer.set_state(path)
+
+            try:
+                nonterminal = nonterminal.__class__(self, self.parser)
+            except CompilerSyntaxError:
+                break
+
+        return nextpaths
 
     def _process_paths(self, paths: set["Terminal"], node: type[ASTNode]) -> set["Terminal"]:
         nextpaths: set["Terminal"] = set()
         state: "Terminal" = self.parser.lexer.get_state()
 
         if issubclass(node, NonTerminal):
+            left_recursive: bool = self.__left_recursive(paths, node)
+
             for path in paths:
                 if (path, node) not in self.parser.nonterminals:
+                    if left_recursive and path is self.input_path:
+                        continue
+
                     self.parser.lexer.set_state(path)
 
                     try:
                         nonterminal: NonTerminal = node(self, self.parser)
-                        nextpaths |= nonterminal.output_paths
-                        self.parser.nonterminals[path, node] = nonterminal
+
+                        if nonterminal.recursive_path is not None:
+                            nextpaths |= self.__process_left_recursion(path, nonterminal)
+                        else:
+                            nextpaths |= nonterminal.output_paths
+                            self.parser.nonterminals[path, node] = nonterminal
                     except CompilerSyntaxError:
                         self.parser.nonterminals[path, node] = None
                 elif self.parser.nonterminals[path, node] is not None:
@@ -73,23 +125,48 @@ class Parser:  # pylint: disable=R0903
         self.nonterminals: dict[tuple["Terminal", type[NonTerminal]], NonTerminal | None] = {}
 
     def parse(self) -> NonTerminal | None:
+        path: "Terminal" = self.lexer.get_state()
+
         try:
             ast: NonTerminal = self._start(None, self)
-            output_path: "Terminal" | None = None
-
-            for path in ast.output_paths:
-                if path.end[0] == self.lexer.input.endpos:
-                    output_path = path
-                    break
-
-            if output_path is None:
-                raise CompilerNEOIError(ast)
-
-            ast.output_paths = {output_path}
-            return ast
         except CompilerError as error:
             print(error)
             return None
+
+        if ast.recursive_path is not None:
+            nextpaths: set["Terminal"] = set()
+            recursive_path: set[type[NonTerminal]] = cast(set[type[NonTerminal]], ast.recursive_path)
+            ast.recursive_path = None
+
+            while True:
+                if nextpaths | ast.output_paths == nextpaths:
+                    break
+
+                for prod in recursive_path:
+                    del self.nonterminals[path, prod]
+
+                nextpaths |= ast.output_paths
+                self.nonterminals[path, self._start] = ast
+                self.lexer.set_state(path)
+
+                try:
+                    ast = self._start(None, self)
+                except CompilerError:
+                    break
+
+        output_path: "Terminal" | None = None
+
+        for path in ast.output_paths:
+            if path.end[0] == self.lexer.input.endpos:
+                output_path = path
+                break
+
+        if output_path is None:
+            print(CompilerNEOIError(ast))
+            return None
+
+        ast.output_paths = {output_path}
+        return ast
 
 
 class CompilerSyntaxError(CompilerError):
