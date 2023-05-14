@@ -123,17 +123,6 @@ class Lexer:
         self.__token = state
         self.input.set_state(state.end)
 
-    def __ignore(self) -> None:
-        while True:
-            for pattern in self._ignored:
-                match: Optional["re.Match[str]"] = pattern.match(self.input.input, self.input.position, self.input.endpos)
-
-                if match:
-                    self.input.advance(len(match[0]))
-                    break
-            else:
-                break
-
     def __match_terminal(self, terminals: _TerminalList, token: Terminal | None = None) -> tuple[Terminal, _TerminalList] | None:
         for term in terminals:
             terminal: type[Terminal]
@@ -159,7 +148,15 @@ class Lexer:
             self.set_state(self.__token.next)
             return self.__token
 
-        self.__ignore()
+        while True:
+            for pattern in self._ignored:
+                ignore: Optional["re.Match[str]"] = pattern.match(self.input.input, self.input.position, self.input.endpos)
+
+                if ignore:
+                    self.input.advance(len(ignore[0]))
+                    break
+            else:
+                break
 
         if self.input.position == self.input.endpos:
             raise CompilerEOIError(self.input)
