@@ -54,8 +54,11 @@ class NonTerminal(ASTNode):  # pylint: disable=R0903
         self.parent: NonTerminal | None = parent
         self.parser: Parser = parser
         self.output_paths: set["Terminal"] = set()
-        self.input_path: "Terminal" = parser.lexer.get_state()
+        self.input_path: Optional["Terminal"] = parser.lexer.get_state()
         self.recursive_path: set[type[NonTerminal]] | None = None
+        self._derive()
+        self.parent = None
+        self.input_path = None
 
     def __left_recursive(self, paths: set["Terminal"], node: type["NonTerminal"]) -> bool:
         if self.input_path in paths and (self.input_path, node) not in self.parser.nonterminals:
@@ -118,6 +121,9 @@ class NonTerminal(ASTNode):  # pylint: disable=R0903
             raise CompilerNoPathError(self)
 
         return nextpaths
+
+    def _derive(self) -> None:
+        raise NotImplementedError()
 
 
 class Parser:  # pylint: disable=R0903
