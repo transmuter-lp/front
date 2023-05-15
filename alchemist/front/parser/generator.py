@@ -186,8 +186,7 @@ class ProductionTemplate:  # pylint: disable=R0903
             return ""
 
         code: str = f"class {cls.__name__}(NonTerminal):"
-        code += "\n    def __init__(self, parent: NonTerminal | None, parser: Parser) -> None:"
-        code += "\n        super().__init__(parent, parser)"
+        code += "\n    def _derive(self) -> None:"
         code += '\n        paths0: set["Terminal"] = {self.input_path}'
         code += rule(2, 0).replace("\n\n\n", "\n\n")
         code += "\n        self.output_paths = paths0"
