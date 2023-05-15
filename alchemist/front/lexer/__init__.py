@@ -33,15 +33,15 @@ class InputHandler:
         self.poslc: tuple[int, int] = 1, 1
         self.advance(startpos)
 
+    def __getitem__(self, key: slice) -> str:
+        return self.input[max(self.__startpos, key.start):min(key.stop, self.endpos)]
+
     def get_state(self) -> tuple[int, int, int]:
         return self.position, self.poslc[0], self.poslc[1]
 
     def set_state(self, state: tuple[int, int, int]) -> None:
         self.position = state[0]
         self.poslc = state[1], state[2]
-
-    def __getitem__(self, key: slice) -> str:
-        return self.input[max(self.__startpos, key.start):min(key.stop, self.endpos)]
 
     def advance(self, length: int) -> None:
         if self.position + length <= self.endpos:
@@ -116,13 +116,6 @@ class Lexer:
         self.input: InputHandler = _input
         self.__token: Terminal = _Start(_input)
 
-    def get_state(self) -> Terminal:
-        return self.__token
-
-    def set_state(self, state: Terminal) -> None:
-        self.__token = state
-        self.input.set_state(state.end)
-
     def __match_terminal(self, terminals: _TerminalList, token: Terminal | None = None) -> tuple[Terminal, _TerminalList] | None:
         for term in terminals:
             terminal: type[Terminal]
@@ -142,6 +135,13 @@ class Lexer:
                 pass
 
         return None
+
+    def get_state(self) -> Terminal:
+        return self.__token
+
+    def set_state(self, state: Terminal) -> None:
+        self.__token = state
+        self.input.set_state(state.end)
 
     def next_token(self) -> Terminal:
         if self.__token.next is not None:
