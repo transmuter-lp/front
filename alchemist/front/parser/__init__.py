@@ -24,6 +24,8 @@ if TYPE_CHECKING:
 
 
 class NonTerminal(ASTNode):  # pylint: disable=R0903
+    _left_recursive: bool = True
+
     @staticmethod
     def process_left_recursion(
         parent: Optional["NonTerminal"], parser: "Parser", path: "Terminal", nonterminal: "NonTerminal"
@@ -84,7 +86,7 @@ class NonTerminal(ASTNode):  # pylint: disable=R0903
         state: "Terminal" = self.parser.lexer.get_state()
 
         if issubclass(node, NonTerminal):
-            left_recursive: bool = self.__left_recursive(paths, node)
+            left_recursive: bool = self._left_recursive and self.__left_recursive(paths, node)
 
             for path in paths:
                 if (path, node) not in self.parser.nonterminals:
@@ -173,3 +175,7 @@ class CompilerNoPathError(CompilerSyntaxError):
 class CompilerNEOIError(CompilerSyntaxError):
     def __init__(self, nonterminal: NonTerminal) -> None:
         super().__init__(nonterminal, "Expected end of input.")
+
+
+class BreakException(Exception):
+    pass

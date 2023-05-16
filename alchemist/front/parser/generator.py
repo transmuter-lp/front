@@ -47,7 +47,7 @@ class _Rule(Generic[_T]):
     def __init__(self, rules: _T) -> None:
         self.rules: _T = rules
 
-    def __call__(self, indent: int, level: int) -> str:
+    def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         raise NotImplementedError()
 
 
@@ -64,11 +64,11 @@ class _Group(_Rule[list[_Rule]]):
             else:
                 i += 1
 
-    def __call__(self, indent: int, level: int) -> str:
+    def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = ""
 
         for rule in self.rules:
-            code += rule(indent, level)
+            code += rule(indent, level, ambiguous)
 
         return code
 
@@ -80,12 +80,12 @@ class _Optional(_Rule[_Group]):
         if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], _Optional):
             self.rules = self.rules.rules[0].rules
 
-    def __call__(self, indent: int, level: int) -> str:
+    def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = "\n"
         code += f"\n{'    ' * indent}try:  # optional"
         code += f"\n{'    ' * (indent + 1)}paths{level + 1} = paths{level}"
-        code += self.rules(indent + 1, level + 1)
-        code += f"\n{'    ' * (indent + 1)}paths{level} |= paths{level + 1}"
+        code += self.rules(indent + 1, level + 1, ambiguous)
+        code += f"\n{'    ' * (indent + 1)}paths{level} {'|' if ambiguous else ''}= paths{level + 1}"
         code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"
         code += f"\n{'    ' * (indent + 1)}pass"
         code += "\n"
@@ -99,8 +99,8 @@ class Switch(_Rule[_Group]):
         if self.enabled:
             super().__init__(_Group(templates))
 
-    def __call__(self, indent: int, level: int) -> str:
-        return self.rules(indent, level)
+    def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
+        return self.rules(indent, level, ambiguous)
 
 
 class repeat(_Rule[_Group]):  # pylint: disable=C0103
@@ -110,14 +110,14 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
         if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], repeat):
             self.rules = self.rules.rules[0].rules
 
-    def __call__(self, indent: int, level: int) -> str:
+    def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = "\n"
         code += f"\n{'    ' * indent}paths{level + 1} = paths{level}"
         code += "\n"
         code += f"\n{'    ' * indent}while True:  # repeat"
         code += f"\n{'    ' * (indent + 1)}try:"
-        code += self.rules(indent + 2, level + 1)
-        code += f"\n{'    ' * (indent + 2)}paths{level} |= paths{level + 1}"
+        code += self.rules(indent + 2, level + 1, ambiguous)
+        code += f"\n{'    ' * (indent + 2)}paths{level} {'|' if ambiguous else ''}= paths{level + 1}"
         code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"
         code += f"\n{'    ' * (indent + 2)}break"
         code += "\n"
@@ -137,25 +137,39 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
             else:
                 i += 1
 
-    def __call__(self, indent: int, level: int) -> str:
+    def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         if len(self.rules) == 1:
-            return self.rules[0](indent, level)
+            return self.rules[0](indent, level, ambiguous)
 
         code: str = "\n"
         code += f"\n{'    ' * indent}# begin oneof"
         code += f"\n{'    ' * indent}paths{level + 1} = set()"
 
+        if not ambiguous:
+            code += "\n"
+            code += f"\n{'    ' * indent}with suppress(BreakException):"
+
         for i, rule in enumerate(self.rules):
             code += "\n"
-            code += f"\n{'    ' * indent}try:  # option {i + 1}"
-            code += f"\n{'    ' * (indent + 1)}paths{level + 2} = paths{level}"
-            code += rule(indent + 1, level + 2)
-            code += f"\n{'    ' * (indent + 1)}paths{level + 1} |= paths{level + 2}"
-            code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"
-            code += f"\n{'    ' * (indent + 1)}pass"
+            code += f"\n{'    ' * (indent + int(not ambiguous))}try:  # option {i + 1}"
+            code += f"\n{'    ' * (indent + 1 + int(not ambiguous))}paths{level + 2} = paths{level}"
+            code += rule(indent + 1 + int(not ambiguous), level + 2, ambiguous)
+            code += f"\n{'    ' * (indent + 1 + int(not ambiguous))}paths{level + 1} {'|' if ambiguous else ''}= paths{level + 2}"
+
+            if not ambiguous:
+                code += f"\n{'    ' * (indent + 2)}assert len(paths{level + 1}) != 0"
+                code += f"\n{'    ' * (indent + 2)}raise BreakException()"
+
+            code += (
+                f"\n{'    ' * (indent + int(not ambiguous))}except (CompilerSyntaxError, CompilerEOIError{'' if ambiguous else ', AssertionError'}):"
+            )
+            code += f"\n{'    ' * (indent + 1 + int(not ambiguous))}pass"
 
         code += "\n"
-        code += f"\n{'    ' * indent}if len(paths{level + 1}) == 0:"
+
+        if ambiguous:
+            code += f"\n{'    ' * indent}if len(paths{level + 1}) == 0:"
+
         code += f"\n{'    ' * (indent + 1)}raise CompilerNoPathError(self)"
         code += "\n"
         code += f"\n{'    ' * indent}paths{level} = paths{level + 1}"
@@ -168,12 +182,14 @@ class _Term(_Rule[str]):
     def __init__(self, node: str) -> None:
         super().__init__(node)
 
-    def __call__(self, indent: int, level: int) -> str:
+    def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"
 
 
 class ProductionTemplate:  # pylint: disable=R0903
     _template: _RuleTemplate = ()
+    _left_recursive: bool = True
+    _ambiguous: bool = True
 
     @classmethod
     def generate(cls) -> str:
@@ -186,8 +202,13 @@ class ProductionTemplate:  # pylint: disable=R0903
             return ""
 
         code: str = f"class {cls.__name__}(NonTerminal):"
+
+        if not cls._left_recursive:
+            code += "\n    _left_recursive = False"
+            code += "\n"
+
         code += "\n    def _derive(self) -> None:"
         code += '\n        paths0: set["Terminal"] = {cast("Terminal", self.input_path)}'
-        code += rule(2, 0).replace("\n\n\n", "\n\n")
+        code += rule(2, 0, cls._ambiguous).replace("\n\n\n", "\n\n")
         code += "\n        self.output_paths = paths0"
         return code
