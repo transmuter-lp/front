@@ -59,6 +59,7 @@ class Terminal(ASTNode):
     _pattern: Union[str, "re.Pattern"] = ""
     _index: int = 0
     _weight: float = 0.0
+    soft_match: bool = True
 
     @classmethod
     def key(cls) -> tuple[bool, int, float]:

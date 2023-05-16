@@ -112,7 +112,8 @@ class NonTerminal(ASTNode):  # pylint: disable=R0903
                 self.parser.lexer.set_state(path)
 
                 try:
-                    assert isinstance(self.parser.lexer.next_token(), node)
+                    token: "Terminal" = self.parser.lexer.next_token()
+                    assert isinstance(token, node) if token.soft_match else token.__class__ is node
                     nextpaths.add(self.parser.lexer.get_state())
                 except (CompilerEOIError, AssertionError):
                     pass

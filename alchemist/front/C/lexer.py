@@ -62,6 +62,7 @@ class Identifier(Terminal):
 
 class Keyword(Identifier):
     _pattern = ""
+    soft_match = False
 
 
 class Constant(Terminal):
