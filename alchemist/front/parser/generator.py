@@ -201,7 +201,7 @@ class ProductionTemplate:  # pylint: disable=R0903
         if not isinstance(rule, _Term) and len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) == 0:
             return ""
 
-        code: str = f"class {cls.__name__}(NonTerminal):"
+        code: str = f"class {cls.__name__}(Production):"
 
         if not cls._left_recursive:
             code += "\n    _left_recursive = False"
