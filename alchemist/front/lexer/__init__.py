@@ -14,9 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Union, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
-from .. import ASTNode, CompilerError
+from .. import TreeNode, CompilerError
 
 if TYPE_CHECKING:
     import re
@@ -55,8 +55,8 @@ class InputHandler:
             self.position += length
 
 
-class Terminal(ASTNode):
-    _pattern: Union[str, "re.Pattern"] = ""
+class Terminal(TreeNode):
+    _pattern: "str | re.Pattern" = ""
     _index: int = 0
     _weight: float = 0.0
     soft_match: bool = True
@@ -74,7 +74,7 @@ class Terminal(ASTNode):
             if _input[_input.position:_input.position + len(self._pattern)] != self._pattern:
                 raise _CompilerTerminalError(_input, self)
         else:  # re.Pattern
-            match: Optional["re.Match[str]"] = self._pattern.match(_input.input, _input.position, _input.endpos)  # pylint: disable=E1101
+            match: "re.Match[str] | None" = self._pattern.match(_input.input, _input.position, _input.endpos)  # pylint: disable=E1101
 
             if not match:
                 raise _CompilerTerminalError(_input, self)
@@ -151,7 +151,7 @@ class Lexer:
 
         while True:
             for pattern in self._ignored:
-                ignore: Optional["re.Match[str]"] = pattern.match(self.input.input, self.input.position, self.input.endpos)
+                ignore: "re.Match[str] | None" = pattern.match(self.input.input, self.input.position, self.input.endpos)
 
                 if ignore:
                     self.input.advance(len(ignore[0]))

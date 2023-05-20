@@ -28,7 +28,7 @@ class _Rule(Generic[_T]):
     @staticmethod
     def _filter(templates: _RuleTemplates) -> list["_Rule"]:
         rules: list[_Rule] = [_Rule.get(template) for template in templates if not isinstance(template, Switch) or template.enabled]
-        rules = [rule for rule in rules if isinstance(rule, _Term) or len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) > 0]
+        rules = [rule for rule in rules if isinstance(rule, _Symbol) or len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) > 0]
         return rules
 
     @staticmethod
@@ -40,7 +40,7 @@ class _Rule(Generic[_T]):
             return _Optional(template)
 
         if isinstance(template, str):
-            return _Term(template)
+            return _Symbol(template)
 
         return template
 
@@ -178,9 +178,9 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
         return code
 
 
-class _Term(_Rule[str]):
-    def __init__(self, node: str) -> None:
-        super().__init__(node)
+class _Symbol(_Rule[str]):
+    def __init__(self, symbol: str) -> None:
+        super().__init__(symbol)
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"
@@ -198,7 +198,7 @@ class ProductionTemplate:  # pylint: disable=R0903
 
         rule: _Rule = _Rule.get(cls._template)
 
-        if not isinstance(rule, _Term) and len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) == 0:
+        if not isinstance(rule, _Symbol) and len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) == 0:
             return ""
 
         code: str = f"class {cls.__name__}(Production):"

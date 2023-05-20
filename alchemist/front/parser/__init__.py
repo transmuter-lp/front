@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import Optional, cast, TYPE_CHECKING
+from typing import cast, TYPE_CHECKING
 
 from .. import CompilerError
 from ..lexer import CompilerEOIError
@@ -28,7 +28,7 @@ class Production:  # pylint: disable=R0903
 
     @staticmethod
     def process_left_recursion(
-        parent: Optional["Production"], parser: "Parser", path: "Terminal", production: "Production"
+        parent: "Production | None", parser: "Parser", path: "Terminal", production: "Production"
     ) -> tuple["Production", set["Terminal"]]:
         nextpaths: set["Terminal"] = set()
         recursive_path: set[type[Production]] = cast(set[type[Production]], production.recursive_path)
@@ -52,23 +52,23 @@ class Production:  # pylint: disable=R0903
 
         return production, nextpaths
 
-    def __init__(self, parent: Optional["Production"], parser: "Parser") -> None:
+    def __init__(self, parent: "Production | None", parser: "Parser") -> None:
         self.parent: Production | None = parent
         self.parser: Parser = parser
         self.output_paths: set["Terminal"] = set()
-        self.input_path: Optional["Terminal"] = parser.lexer.get_state()
+        self.input_path: "Terminal | None" = parser.lexer.get_state()
         self.recursive_path: set[type[Production]] | None = None
         self._derive()
         self.parent = None
         self.input_path = None
 
-    def __left_recursive(self, paths: set["Terminal"], node: type["Production"]) -> bool:
-        if self.input_path in paths and (self.input_path, node) not in self.parser.productions:
+    def __left_recursive(self, paths: set["Terminal"], production: type["Production"]) -> bool:
+        if self.input_path in paths and (self.input_path, production) not in self.parser.productions:
             parent: Production | None = self
             recursive_path: set[type[Production]] = set()
 
             while parent is not None and parent.input_path is self.input_path:
-                if parent.__class__ is node:
+                if parent.__class__ is production:
                     if parent.recursive_path is None:
                         parent.recursive_path = recursive_path
                     else:
@@ -81,40 +81,40 @@ class Production:  # pylint: disable=R0903
 
         return False
 
-    def _process_paths(self, paths: set["Terminal"], node: type["Terminal"] | type["Production"]) -> set["Terminal"]:
+    def _process_paths(self, paths: set["Terminal"], symbol: type["Terminal"] | type["Production"]) -> set["Terminal"]:
         nextpaths: set["Terminal"] = set()
         state: "Terminal" = self.parser.lexer.get_state()
 
-        if issubclass(node, Production):
-            left_recursive: bool = self._left_recursive and self.__left_recursive(paths, node)
+        if issubclass(symbol, Production):
+            left_recursive: bool = self._left_recursive and self.__left_recursive(paths, symbol)
 
             for path in paths:
-                if (path, node) not in self.parser.productions:
+                if (path, symbol) not in self.parser.productions:
                     if left_recursive and path is self.input_path:
                         continue
 
                     self.parser.lexer.set_state(path)
 
                     try:
-                        production: Production = node(self, self.parser)
+                        production: Production = symbol(self, self.parser)
 
                         if production.recursive_path is not None:
                             nextpaths |= self.process_left_recursion(self, self.parser, path, production)[1]
                         else:
                             nextpaths |= production.output_paths
-                            self.parser.productions[path, node] = production
+                            self.parser.productions[path, symbol] = production
                     except CompilerSyntaxError:
-                        self.parser.productions[path, node] = None
-                elif self.parser.productions[path, node] is not None:
-                    nextpaths |= cast(Production, self.parser.productions[path, node]).output_paths
+                        self.parser.productions[path, symbol] = None
+                elif self.parser.productions[path, symbol] is not None:
+                    nextpaths |= cast(Production, self.parser.productions[path, symbol]).output_paths
         else:  # Terminal
             for path in paths:
                 self.parser.lexer.set_state(path)
 
                 try:
                     token: "Terminal" = self.parser.lexer.next_token()
-                    assert isinstance(token, node) if token.soft_match else token.__class__ is node
-                    nextpaths.add(self.parser.lexer.get_state())
+                    assert isinstance(token, symbol) if token.soft_match else token.__class__ is symbol
+                    nextpaths.add(token)
                 except (CompilerEOIError, AssertionError):
                     pass
 
@@ -129,7 +129,7 @@ class Production:  # pylint: disable=R0903
         raise NotImplementedError()
 
 
-class Parser:  # pylint: disable=R0903
+class Parser:
     _start: type[Production] = Production
 
     def __init__(self, lexer: "Lexer") -> None:
@@ -140,27 +140,31 @@ class Parser:  # pylint: disable=R0903
         path: "Terminal" = self.lexer.get_state()
 
         try:
-            ast: Production = self._start(None, self)
+            forest: Production = self._start(None, self)
         except CompilerError as error:
             print(error)
             return None
 
-        if ast.recursive_path is not None:
-            ast = Production.process_left_recursion(None, self, path, ast)[0]
+        if forest.recursive_path is not None:
+            forest = Production.process_left_recursion(None, self, path, forest)[0]
 
-        output_path: "Terminal" | None = None
+        return forest
 
-        for path in ast.output_paths:
+    def prune_output_paths(self, forest: Production) -> None:
+        output_path: "Terminal | None" = None
+
+        for path in forest.output_paths:
             if path.end[0] == self.lexer.input.endpos:
                 output_path = path
                 break
 
         if output_path is None:
-            print(CompilerNEOIError(ast))
-            return None
+            print(CompilerNEOIError(forest))
+        else:
+            forest.output_paths = {output_path}
 
-        ast.output_paths = {output_path}
-        return ast
+    def clean_productions(self) -> None:
+        self.productions = {}
 
 
 class CompilerSyntaxError(CompilerError):
