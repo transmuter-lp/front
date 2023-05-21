@@ -85,7 +85,12 @@ class _Optional(_Rule[_Group]):
         code += f"\n{'    ' * indent}try:  # optional"
         code += f"\n{'    ' * (indent + 1)}paths{level + 1} = paths{level}"
         code += self.rules(indent + 1, level + 1, ambiguous)
-        code += f"\n{'    ' * (indent + 1)}paths{level} {'|' if ambiguous else ''}= paths{level + 1}"
+
+        if ambiguous:
+            code += f"\n{'    ' * (indent + 1)}GraphNode.merge_paths(paths{level}, paths{level + 1})"
+        else:
+            code += f"\n{'    ' * (indent + 1)}paths{level} = paths{level + 1}"
+
         code += f"\n{'    ' * indent}except (CompilerSyntaxError, CompilerEOIError):"
         code += f"\n{'    ' * (indent + 1)}pass"
         code += "\n"
@@ -117,7 +122,12 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
         code += f"\n{'    ' * indent}while True:  # repeat"
         code += f"\n{'    ' * (indent + 1)}try:"
         code += self.rules(indent + 2, level + 1, ambiguous)
-        code += f"\n{'    ' * (indent + 2)}paths{level} {'|' if ambiguous else ''}= paths{level + 1}"
+
+        if ambiguous:
+            code += f"\n{'    ' * (indent + 2)}GraphNode.merge_paths(paths{level}, paths{level + 1})"
+        else:
+            code += f"\n{'    ' * (indent + 2)}paths{level} = paths{level + 1}"
+
         code += f"\n{'    ' * (indent + 1)}except (CompilerSyntaxError, CompilerEOIError):"
         code += f"\n{'    ' * (indent + 2)}break"
         code += "\n"
@@ -143,7 +153,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
 
         code: str = "\n"
         code += f"\n{'    ' * indent}# begin oneof"
-        code += f"\n{'    ' * indent}paths{level + 1} = set()"
+        code += f"\n{'    ' * indent}paths{level + 1}: Paths = {{}}"
 
         if not ambiguous:
             code += "\n"
@@ -154,7 +164,11 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
             code += f"\n{'    ' * (indent + int(not ambiguous))}try:  # option {i + 1}"
             code += f"\n{'    ' * (indent + 1 + int(not ambiguous))}paths{level + 2} = paths{level}"
             code += rule(indent + 1 + int(not ambiguous), level + 2, ambiguous)
-            code += f"\n{'    ' * (indent + 1 + int(not ambiguous))}paths{level + 1} {'|' if ambiguous else ''}= paths{level + 2}"
+
+            if ambiguous:
+                code += f"\n{'    ' * (indent + 1)}GraphNode.merge_paths(paths{level + 1}, paths{level + 2})"
+            else:
+                code += f"\n{'    ' * (indent + 2)}paths{level + 1} = paths{level + 2}"
 
             if not ambiguous:
                 code += f"\n{'    ' * (indent + 2)}assert len(paths{level + 1}) != 0"
@@ -208,7 +222,8 @@ class ProductionTemplate:  # pylint: disable=R0903
             code += "\n"
 
         code += "\n    def _derive(self) -> None:"
-        code += '\n        paths0: set["Terminal"] = {cast("Terminal", self.input_path)}'
+        code += '\n        input_path = cast(GraphNode, self.input_path)'
+        code += "\n        paths0: Paths = {input_path.path: {input_path}}"
         code += rule(2, 0, cls._ambiguous).replace("\n\n\n", "\n\n")
         code += "\n        self.output_paths = paths0"
         return code

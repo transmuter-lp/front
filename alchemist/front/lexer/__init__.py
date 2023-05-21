@@ -89,7 +89,7 @@ class Terminal(TreeNode):
     def str(self) -> str:
         return self._pattern if isinstance(self._pattern, str) else self.__str
 
-    def accept(self, _input: InputHandler) -> None:
+    def advance(self, _input: InputHandler) -> None:
         _input.advance(len(self.str))
         self.end = _input.get_state()
 
@@ -179,7 +179,7 @@ class Lexer:
 
             token, children = match
 
-        token.accept(self.input)
+        token.advance(self.input)
         self.__token.next = token
         self.__token = self.__token.next
         return self.__token
