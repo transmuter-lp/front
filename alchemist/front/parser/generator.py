@@ -54,15 +54,6 @@ class _Rule(Generic[_T]):
 class _Group(_Rule[list[_Rule]]):
     def __init__(self, templates: _RuleTemplates) -> None:
         super().__init__(self._filter(templates))
-        i: int = 0
-
-        while i < len(self.rules):
-            if isinstance(self.rules[i], _Group):
-                rules: list[_Rule] = self.rules[i].rules
-                self.rules = self.rules[:i] + rules + self.rules[i + 1:]
-                i += len(rules)
-            else:
-                i += 1
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = ""
@@ -76,9 +67,6 @@ class _Group(_Rule[list[_Rule]]):
 class _Optional(_Rule[_Group]):
     def __init__(self, templates: list[_RuleTemplate]) -> None:
         super().__init__(_Group(templates))
-
-        if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], _Optional):
-            self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = "\n"
@@ -101,8 +89,7 @@ class Switch(_Rule[_Group]):
     enabled: bool = False
 
     def __init__(self, *templates: _RuleTemplate) -> None:
-        if self.enabled:
-            super().__init__(_Group(templates))
+        super().__init__(_Group(templates))
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return self.rules(indent, level, ambiguous)
@@ -111,9 +98,6 @@ class Switch(_Rule[_Group]):
 class repeat(_Rule[_Group]):  # pylint: disable=C0103
     def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(_Group(templates))
-
-        if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], repeat):
-            self.rules = self.rules.rules[0].rules
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = "\n"
@@ -137,15 +121,6 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
 class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
     def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(self._filter(templates))
-        i: int = 0
-
-        while i < len(self.rules):
-            if isinstance(self.rules[i], oneof):
-                rules: list[_Rule] = self.rules[i].rules
-                self.rules = self.rules[:i] + rules + self.rules[i + 1:]
-                i += len(rules)
-            else:
-                i += 1
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         if len(self.rules) == 1:
