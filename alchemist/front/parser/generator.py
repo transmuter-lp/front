@@ -50,6 +50,9 @@ class _Rule(Generic[_T]):
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         raise NotImplementedError()
 
+    def md(self) -> str:  # pylint: disable=C0103
+        raise NotImplementedError()
+
 
 class _Group(_Rule[list[_Rule]]):
     def __init__(self, templates: _RuleTemplates) -> None:
@@ -60,6 +63,18 @@ class _Group(_Rule[list[_Rule]]):
 
         for rule in self.rules:
             code += rule(indent, level, ambiguous)
+
+        return code
+
+    def md(self) -> str:
+        code: str = ""
+        first: bool = True
+
+        for rule in self.rules:
+            code += f'{" " if not first else ""}{rule.md()}'
+
+            if first:
+                first = False
 
         return code
 
@@ -84,6 +99,12 @@ class _Optional(_Rule[_Group]):
         code += "\n"
         return code
 
+    def md(self) -> str:
+        if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], oneof):
+            return f"_[_{self.rules.rules[0].md(False, False)}_]_"
+
+        return f"_[_{self.rules.md()}_]_"
+
 
 class Switch(_Rule[_Group]):
     enabled: bool = False
@@ -93,6 +114,9 @@ class Switch(_Rule[_Group]):
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return self.rules(indent, level, ambiguous)
+
+    def md(self) -> str:
+        return f"<code>{self.rules.md()}</code>[^{self.__class__.__name__}]"
 
 
 class repeat(_Rule[_Group]):  # pylint: disable=C0103
@@ -116,6 +140,12 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
         code += f"\n{'    ' * (indent + 2)}break"
         code += "\n"
         return code
+
+    def md(self) -> str:
+        if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], oneof):
+            return f"_{{_{self.rules.rules[0].md(False, False)}_}}_"
+
+        return f"_{{_{self.rules.md()}_}}_"
 
 
 class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
@@ -166,6 +196,29 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
         code += "\n"
         return code
 
+    def md(self, top: bool = False, paren: bool = True) -> str:
+        code: str = ""
+        first: bool = True
+        one_of: bool = top and all(isinstance(rule, _Symbol) for rule in self.rules)
+        separator: str = (" " if one_of else "  \n&emsp;&emsp;") if top else " _|_ "
+
+        if one_of:
+            code += "_(one of)_  \n&emsp;&emsp;"
+
+        if not top and paren:
+            code += "_(_"
+
+        for rule in self.rules:
+            code += f'{separator if not first else ""}{rule.md()}'
+
+            if first:
+                first = False
+
+        if not top and paren:
+            code += "_)_"
+
+        return code
+
 
 class _Symbol(_Rule[str]):
     def __init__(self, symbol: str) -> None:
@@ -174,8 +227,11 @@ class _Symbol(_Rule[str]):
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"
 
+    def md(self) -> str:
+        return f"_[{self.rules}](#{self.rules})_"
 
-class ProductionTemplate:  # pylint: disable=R0903
+
+class ProductionTemplate:
     _template: _RuleTemplate = ()
     _left_recursive: bool = True
     _ambiguous: bool = True
@@ -201,4 +257,21 @@ class ProductionTemplate:  # pylint: disable=R0903
         code += "\n        paths0: Paths = {input_path.path: {input_path}}"
         code += rule(2, 0, cls._ambiguous).replace("\n\n\n", "\n\n")
         code += "\n        self.output_paths = paths0"
+        return code
+
+    @classmethod
+    def generate_md(cls, level: int, link: str | None = None) -> str:
+        rule: _Rule = _Rule.get(cls._template)
+        code: str
+
+        if link is not None:
+            code = f'{"#" * level} [{cls.__name__}]({link}#{cls.__name__}):'
+        else:
+            code = f'{"#" * level} {cls.__name__}:'
+
+        if isinstance(rule, oneof):
+            code += f'\n&emsp;&emsp;{rule.md(True)}  '  # pylint: disable=E1121
+        else:
+            code += f'\n&emsp;&emsp;{rule.md()}  '
+
         return code
