@@ -256,9 +256,6 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=invalid-name
 
 
 class _Symbol(_Rule[str]):
-    def __init__(self, symbol: str) -> None:
-        super().__init__(symbol)
-
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"
 
