@@ -29,10 +29,14 @@ _T = TypeVar("_T", list["_Rule"], "_Group", str)
 
 class _Rule(Generic[_T]):
     @staticmethod
-    def _filter(templates: _RuleTemplates) -> list["_Rule"]:
-        rules: list[_Rule] = [_Rule.get(template) for template in templates if not isinstance(template, Switch) or template.enabled]
-        rules = [rule for rule in rules if isinstance(rule, _Symbol) or len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) > 0]
-        return rules
+    def _filter(rules: list["_Rule"]) -> list["_Rule"]:
+        filtered_rules: list[_Rule] = [rule for rule in rules if not isinstance(rule, Switch) or rule.enabled]
+        filtered_rules = [
+            rule for rule in filtered_rules
+            if isinstance(rule, _Symbol)
+            or len(rule.filtered_rules.filtered_rules if isinstance(rule.filtered_rules, _Group) else rule.filtered_rules) > 0
+        ]
+        return filtered_rules
 
     @staticmethod
     def get(template: _RuleTemplate) -> "_Rule":
@@ -49,6 +53,7 @@ class _Rule(Generic[_T]):
 
     def __init__(self, rules: _T) -> None:
         self.rules: _T = rules
+        self.filtered_rules: _T = rules
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         raise NotImplementedError()
@@ -59,12 +64,22 @@ class _Rule(Generic[_T]):
 
 class _Group(_Rule[list[_Rule]]):
     def __init__(self, templates: _RuleTemplates) -> None:
-        super().__init__(self._filter(templates))
+        super().__init__([_Rule.get(template) for template in templates])
+        self.filtered_rules = self._filter(self.rules)
+        i: int = 0
+
+        while i < len(self.filtered_rules):
+            if isinstance(self.filtered_rules[i], _Group):
+                rules: list[_Rule] = self.filtered_rules[i].filtered_rules
+                self.filtered_rules = self.filtered_rules[:i] + rules + self.filtered_rules[i + 1:]
+                i += len(rules)
+            else:
+                i += 1
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = ""
 
-        for rule in self.rules:
+        for rule in self.filtered_rules:
             code += rule(indent, level, ambiguous)
 
         return code
@@ -85,6 +100,9 @@ class _Group(_Rule[list[_Rule]]):
 class _Optional(_Rule[_Group]):
     def __init__(self, templates: list[_RuleTemplate]) -> None:
         super().__init__(_Group(templates))
+
+        if len(self.filtered_rules.filtered_rules) == 1 and isinstance(self.filtered_rules.filtered_rules[0], _Optional):
+            self.filtered_rules = self.filtered_rules.filtered_rules[0].filtered_rules
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = "\n"
@@ -126,6 +144,9 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
     def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(_Group(templates))
 
+        if len(self.filtered_rules.filtered_rules) == 1 and isinstance(self.filtered_rules.filtered_rules[0], repeat):
+            self.filtered_rules = self.filtered_rules.filtered_rules[0].filtered_rules
+
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         code: str = "\n"
         code += f"\n{'    ' * indent}paths{level + 1} = paths{level}"
@@ -153,11 +174,21 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
 
 class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
     def __init__(self, *templates: _RuleTemplate) -> None:
-        super().__init__(self._filter(templates))
+        super().__init__([_Rule.get(template) for template in templates])
+        self.filtered_rules = self._filter(self.rules)
+        i: int = 0
+
+        while i < len(self.filtered_rules):
+            if isinstance(self.filtered_rules[i], oneof):
+                rules: list[_Rule] = self.filtered_rules[i].filtered_rules
+                self.filtered_rules = self.filtered_rules[:i] + rules + self.filtered_rules[i + 1:]
+                i += len(rules)
+            else:
+                i += 1
 
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
-        if len(self.rules) == 1:
-            return self.rules[0](indent, level, ambiguous)
+        if len(self.filtered_rules) == 1:
+            return self.filtered_rules[0](indent, level, ambiguous)
 
         code: str = "\n"
         code += f"\n{'    ' * indent}# begin oneof"
@@ -167,7 +198,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
             code += "\n"
             code += f"\n{'    ' * indent}with suppress(BreakException):"
 
-        for i, rule in enumerate(self.rules):
+        for i, rule in enumerate(self.filtered_rules):
             code += "\n"
             code += f"\n{'    ' * (indent + int(not ambiguous))}try:  # option {i + 1}"
             code += f"\n{'    ' * (indent + 1 + int(not ambiguous))}paths{level + 2} = paths{level}"
@@ -246,7 +277,10 @@ class ProductionTemplate:
 
         rule: _Rule = _Rule.get(cls._template)
 
-        if not isinstance(rule, _Symbol) and len(rule.rules.rules if isinstance(rule.rules, _Group) else rule.rules) == 0:
+        if (
+            not isinstance(rule, _Symbol)
+            and len(rule.filtered_rules.filtered_rules if isinstance(rule.filtered_rules, _Group) else rule.filtered_rules) == 0
+        ):
             return ""
 
         code: str = f"class {cls.__name__}(Production):"
@@ -256,8 +290,8 @@ class ProductionTemplate:
             code += "\n"
 
         code += "\n    def _derive(self) -> None:"
-        code += '\n        input_path = cast(GraphNode, self.input_path)'
-        code += "\n        paths0: Paths = {input_path.path: {input_path}}"
+        code += "\n        input_path = cast(GraphNode, self.input_path)"
+        code += '\n        paths0: Paths = {cast("Terminal", input_path.path): {input_path}}'
         code += rule(2, 0, cls._ambiguous).replace("\n\n\n", "\n\n")
         code += "\n        self.output_paths = paths0"
         return code
@@ -272,9 +306,7 @@ class ProductionTemplate:
         else:
             code = f'{"#" * level} {cls.__name__}:'
 
-        if isinstance(rule, oneof):
-            code += f'\n&emsp;&emsp;{rule.md(True)}  '  # pylint: disable=E1121
-        else:
-            code += f'\n&emsp;&emsp;{rule.md()}  '
+        # pylint: disable-next=E1121
+        code += f'\n&emsp;&emsp;{(rule.md(True) if isinstance(rule, oneof) else rule.md()).replace("__", "").replace("_ _", " ")}  '
 
         return code
