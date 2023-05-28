@@ -91,7 +91,7 @@ class GraphNode:
             self.value.accept_reverse(visitor, self.path)
 
 
-class Visitor:  # pylint: disable=R0903
+class Visitor:
     def visit(self, node: GraphNode) -> None:
         raise NotImplementedError()
 
@@ -249,13 +249,13 @@ class Production:
             previous_children = set()
 
 
-class PruneOutputPaths(Visitor):  # pylint: disable=R0903
+class PruneOutputPaths(Visitor):
     def visit(self, node: GraphNode) -> None:
         if isinstance(node.value, Production):
             node.value.output_paths = {}
 
 
-class PruneTokens(Visitor):  # pylint: disable=R0903
+class PruneTokens(Visitor):
     def visit(self, node: GraphNode) -> None:
         if not isinstance(node.value, Production):
             node.value.next = None

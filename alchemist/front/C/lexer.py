@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-# pylint: disable=C0115
+# pylint: disable=missing-class-docstring
 
 import re
 
@@ -24,7 +24,7 @@ __all__: list[str] = []
 
 
 def _export(cls: type[Terminal]) -> type[Terminal]:
-    global __all__  # pylint: disable=W0602
+    global __all__  # pylint: disable=global-variable-not-assigned
     __all__.append(cls.__name__)
     return cls
 
@@ -33,7 +33,7 @@ keywords: list[type["Keyword"]] = []
 
 
 def _keyword(cls: type["Keyword"]) -> type["Keyword"]:
-    global keywords  # pylint: disable=W0602
+    global keywords  # pylint: disable=global-variable-not-assigned
     keywords.append(cls)
     return cls
 
@@ -42,7 +42,7 @@ punctuators: list[type["Punctuator"]] = []
 
 
 def _punctuator(cls: type["Punctuator"]) -> type["Punctuator"]:
-    global punctuators  # pylint: disable=W0602
+    global punctuators  # pylint: disable=global-variable-not-assigned
     punctuators.append(cls)
     return cls
 
@@ -80,13 +80,13 @@ class Punctuator(Terminal):
 
 @_export
 @_keyword
-class _Static_Assert(Keyword):  # pylint: disable=C0103
+class _Static_Assert(Keyword):  # pylint: disable=invalid-name
     _pattern = "_Static_assert"
 
 
 @_export
 @_keyword
-class _Thread_Local(Keyword):  # pylint: disable=C0103
+class _Thread_Local(Keyword):  # pylint: disable=invalid-name
     _pattern = "_Thread_local"
 
 

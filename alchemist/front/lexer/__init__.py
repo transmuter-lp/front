@@ -74,7 +74,7 @@ class Terminal(TreeNode):
             if _input[_input.position:_input.position + len(self._pattern)] != self._pattern:
                 raise _CompilerTerminalError(_input, self)
         else:  # re.Pattern
-            match: "re.Match[str] | None" = self._pattern.match(_input.input, _input.position, _input.endpos)  # pylint: disable=E1101
+            match: "re.Match[str] | None" = self._pattern.match(_input.input, _input.position, _input.endpos)  # pylint: disable=no-member
 
             if not match:
                 raise _CompilerTerminalError(_input, self)
@@ -95,7 +95,7 @@ class Terminal(TreeNode):
 
 
 class _Start(Terminal):
-    def __init__(self, _input: InputHandler) -> None:  # pylint: disable=W0231
+    def __init__(self, _input: InputHandler) -> None:  # pylint: disable=super-init-not-called
         self.start = _input.get_state()
         self.end = self.start
         self.next = None

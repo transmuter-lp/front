@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from .lexer import InputHandler
 
 
-class TreeNode:  # pylint: disable=R0903
+class TreeNode:  # pylint: disable=too-few-public-methods
     pass
 
 

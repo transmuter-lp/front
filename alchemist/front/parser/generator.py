@@ -25,6 +25,7 @@ from typing import Union, TypeVar, Generic
 _RuleTemplate = Union["_RuleTemplates", "_Rule", str]
 _RuleTemplates = tuple[_RuleTemplate, ...] | list[_RuleTemplate]
 _T = TypeVar("_T", list["_Rule"], "_Group", str)
+Terminals = dict[str, str | None]
 
 
 class _Rule(Generic[_T]):
@@ -58,7 +59,7 @@ class _Rule(Generic[_T]):
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         raise NotImplementedError()
 
-    def md(self) -> str:  # pylint: disable=C0103
+    def md(self, terminals: Terminals) -> str:  # pylint: disable=invalid-name
         raise NotImplementedError()
 
 
@@ -84,12 +85,12 @@ class _Group(_Rule[list[_Rule]]):
 
         return code
 
-    def md(self) -> str:
+    def md(self, terminals: Terminals) -> str:
         code: str = ""
         first: bool = True
 
         for rule in self.rules:
-            code += f'{" " if not first else ""}{rule.md()}'
+            code += f'{" " if not first else ""}{rule.md(terminals)}'
 
             if first:
                 first = False
@@ -120,11 +121,11 @@ class _Optional(_Rule[_Group]):
         code += "\n"
         return code
 
-    def md(self) -> str:
+    def md(self, terminals: Terminals) -> str:
         if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], oneof):
-            return f"_[_{self.rules.rules[0].md(False, False)}_]_"
+            return f"_[_{self.rules.rules[0].md(terminals, False, False)}_]_"
 
-        return f"_[_{self.rules.md()}_]_"
+        return f"_[_{self.rules.md(terminals)}_]_"
 
 
 class Switch(_Rule[_Group]):
@@ -136,11 +137,11 @@ class Switch(_Rule[_Group]):
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return self.rules(indent, level, ambiguous)
 
-    def md(self) -> str:
-        return f"<code>{self.rules.md()}</code>[^{self.__class__.__name__}]"
+    def md(self, terminals: Terminals) -> str:
+        return f"<code>{self.rules.md(terminals)}</code>[^{self.__class__.__name__}]"
 
 
-class repeat(_Rule[_Group]):  # pylint: disable=C0103
+class repeat(_Rule[_Group]):  # pylint: disable=invalid-name
     def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(_Group(templates))
 
@@ -165,14 +166,14 @@ class repeat(_Rule[_Group]):  # pylint: disable=C0103
         code += "\n"
         return code
 
-    def md(self) -> str:
+    def md(self, terminals: Terminals) -> str:
         if len(self.rules.rules) == 1 and isinstance(self.rules.rules[0], oneof):
-            return f"_{{_{self.rules.rules[0].md(False, False)}_}}_"
+            return f"_{{_{self.rules.rules[0].md(terminals, False, False)}_}}_"
 
-        return f"_{{_{self.rules.md()}_}}_"
+        return f"_{{_{self.rules.md(terminals)}_}}_"
 
 
-class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
+class oneof(_Rule[list[_Rule]]):  # pylint: disable=invalid-name
     def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__([_Rule.get(template) for template in templates])
         self.filtered_rules = self._filter(self.rules)
@@ -230,7 +231,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
         code += "\n"
         return code
 
-    def md(self, top: bool = False, paren: bool = True) -> str:
+    def md(self, terminals: Terminals, top: bool = False, paren: bool = True) -> str:
         code: str = ""
         first: bool = True
         one_of: bool = top and all(isinstance(rule, _Symbol) for rule in self.rules)
@@ -243,7 +244,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=C0103
             code += "_(_"
 
         for rule in self.rules:
-            code += f'{separator if not first else ""}{rule.md()}'
+            code += f'{separator if not first else ""}{rule.md(terminals)}'
 
             if first:
                 first = False
@@ -261,8 +262,14 @@ class _Symbol(_Rule[str]):
     def __call__(self, indent: int, level: int, ambiguous: bool) -> str:
         return f"\n{'    ' * indent}paths{level} = self._process_paths(paths{level}, {self.rules})"
 
-    def md(self) -> str:
-        return f"_[{self.rules}](#{self.rules})_"
+    def md(self, terminals: Terminals) -> str:
+        if self.rules in terminals:
+            if terminals[self.rules] is None:
+                return "_{}_".format(self.rules.replace("_", "\\_"))
+
+            return "**{}**".format(terminals[self.rules].replace("_", "\\_").replace("*", "\\*"))  # type: ignore[union-attr]
+
+        return "_[{}](#{})_".format(self.rules.replace("_", "\\_"), self.rules)
 
 
 class ProductionTemplate:
@@ -272,7 +279,7 @@ class ProductionTemplate:
 
     @classmethod
     def generate(cls) -> str:
-        if isinstance(cls._template, Switch) and not cls._template.enabled:  # pylint: disable=E1101
+        if isinstance(cls._template, Switch) and not cls._template.enabled:  # pylint: disable=no-member
             return ""
 
         rule: _Rule = _Rule.get(cls._template)
@@ -297,16 +304,19 @@ class ProductionTemplate:
         return code
 
     @classmethod
-    def generate_md(cls, level: int, link: str | None = None) -> str:
+    def generate_md(cls, level: int, terminals: Terminals, link: str | None = None) -> str:
+        terminals = terminals | {cls.__name__: None}
         rule: _Rule = _Rule.get(cls._template)
         code: str
 
         if link is not None:
-            code = f'{"#" * level} [{cls.__name__}]({link}#{cls.__name__}):'
+            code = "{} [{}]({}#{}):".format("#" * level, cls.__name__.replace("_", "\\_"), link, cls.__name__)
         else:
-            code = f'{"#" * level} {cls.__name__}:'
+            code = "{} {}:".format("#" * level, cls.__name__.replace("_", "\\_"))
 
-        # pylint: disable-next=E1121
-        code += f'\n&emsp;&emsp;{(rule.md(True) if isinstance(rule, oneof) else rule.md()).replace("__", "").replace("_ _", " ")}  '
+        code += "\n&emsp;&emsp;{}  ".format(  # pylint: disable=consider-using-f-string
+            # pylint: disable-next=too-many-function-args
+            (rule.md(terminals, True) if isinstance(rule, oneof) else rule.md(terminals)).replace("__", "").replace("_ _", " ").replace("** **", " ")
+        )
 
         return code
