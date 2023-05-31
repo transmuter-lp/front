@@ -9,7 +9,7 @@ Front-end libraries and utilities for the Alchemist compiler infrastructure.
 - Incremental (TO DO) and on-demand lexing;
 - Supports multiple independent consumers without re-lexing;
 
-There is an example [C lexer](alchemist/front/C/lexer.py) included.
+There is an example [C lexicon](examples/C/lexicon.py) included.
 
 ## Parser
 The generated parser is a recursive descent parser based on [Frost, Hafiz & Callaghan (2007)](https://doi.org/10.3115/1621410.1621425) and [Scott & Johnstone (2010)](https://doi.org/10.1016/j.entcs.2010.08.041), which:
