@@ -78,7 +78,7 @@ class GraphNode:
     def __hash__(self) -> int:
         return hash((self.path, self.value))
 
-    def accept(self, visitor: "Visitor", top_down: bool = True, left_to_right: bool = True) -> None:
+    def accept(self, visitor: "GraphVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
         if top_down:
             if left_to_right:
                 visitor.visit_top_down_left_to_right(self)
@@ -103,7 +103,7 @@ class GraphNode:
                 visitor.visit_bottom_up_right_to_left(self)
 
 
-class Visitor:
+class GraphVisitor:
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         pass
 
@@ -240,33 +240,32 @@ class Production:
     def _derive(self) -> None:
         raise NotImplementedError()
 
-    def accept(self, visitor: Visitor, top_down: bool = True, path: "Terminal | None" = None) -> None:
+    def accept(self, visitor: GraphVisitor, top_down: bool = True, path: "Terminal | None" = None) -> None:
         children: set[GraphNode] = self.children if path is None else self.output_paths[path]
         next_children: set[GraphNode] = set()
 
         while len(children) > 0:
             for child in children:
                 child.accept(visitor, top_down, path is None)
-
                 next_children |= (child.next if path is None else child.previous) - children
 
             children = next_children
             next_children = set()
 
 
-class PruneOutputPaths(Visitor):
+class PruneOutputPaths(GraphVisitor):
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         if isinstance(node.value, Production):
             node.value.output_paths = {}
 
 
-class PruneTokens(Visitor):
+class PruneTokens(GraphVisitor):
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         if not isinstance(node.value, Production):
             node.value.next = None
 
 
-class PruneIncompletePaths(Visitor):
+class PruneIncompletePaths(GraphVisitor):
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         if not node.visited:
             for next_node in node.next:
@@ -279,7 +278,7 @@ class PruneIncompletePaths(Visitor):
         node.visited = True
 
 
-class PrettyPrint(Visitor):
+class PrettyPrint(GraphVisitor):
     def __init__(self) -> None:
         self.__indent: list[int] = [0]
 
