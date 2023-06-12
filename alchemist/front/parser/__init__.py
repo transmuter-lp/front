@@ -281,17 +281,18 @@ class PruneIncompletePaths(GraphVisitor):
 class PrettyPrint(GraphVisitor):
     def __init__(self) -> None:
         self.__indent: list[int] = [0]
+        self.output: str = ""
 
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         if isinstance(node.value, Production):
-            print(f'{" " * self.__indent[-1]}{node.value.__class__.__name__}')
+            self.output += f'\n{" " * self.__indent[-1]}{node.value.__class__.__name__}'
 
             if len(node.next) == 0:
                 self.__indent[-1] += 1
             else:
                 self.__indent.append(self.__indent[-1] + 1)
         else:
-            print(f'{" " * self.__indent[-1]}{node.value.str}')
+            self.output += f'\n{" " * self.__indent[-1]}{node.value.str}'
 
             if len(node.next) == 0:
                 self.__indent.pop()
