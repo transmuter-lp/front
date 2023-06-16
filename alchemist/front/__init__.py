@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 class TreeNode:  # pylint: disable=too-few-public-methods
     _keep: bool = True
     
-    def process_parent(self, parent: "TreeNode") -> None:
+    def _process_parent(self, parent: "TreeNode") -> None:
         pass
 
 
