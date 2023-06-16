@@ -20,6 +20,7 @@ from .. import TreeNode, CompilerError
 from ..lexer import CompilerEOIError
 
 if TYPE_CHECKING:
+    from .. import TreeVisitor
     from ..lexer import Lexer, Terminal
 
 Paths = dict["Terminal", set["GraphNode"]]
@@ -117,20 +118,6 @@ class GraphVisitor:
         pass
 
 
-class TreeVisitor:
-    def visit_top_down_left_to_right(self, node: TreeNode) -> None:
-        pass
-
-    def visit_top_down_right_to_left(self, node: TreeNode) -> None:
-        pass
-
-    def visit_bottom_up_left_to_right(self, node: TreeNode) -> None:
-        pass
-
-    def visit_bottom_up_right_to_left(self, node: TreeNode) -> None:
-        pass
-
-
 class Production:
     _left_recursive: bool = True
     
@@ -153,7 +140,7 @@ class Production:
             for child in children:
                 self.add_child(child)
         
-        def accept(self, visitor: TreeVisitor, top_down: bool = True, left_to_right: bool = True) -> None:
+        def accept(self, visitor: "TreeVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
             if top_down:
                 if left_to_right:
                     visitor.visit_top_down_left_to_right(self)
