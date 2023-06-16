@@ -33,6 +33,7 @@ class Identifier(Terminal):
 
 
 class Keyword(Identifier):
+    _keep = False
     _pattern = ""
     soft_match = False
 
@@ -46,6 +47,7 @@ class StringLiteral(Terminal):
 
 
 class Punctuator(Terminal):
+    _keep = False
     _pattern = ""
 
 
