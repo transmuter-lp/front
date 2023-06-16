@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 
 
 class TreeNode:  # pylint: disable=too-few-public-methods
-    pass
+    _keep: bool = True
 
 
 class CompilerError(Exception):
