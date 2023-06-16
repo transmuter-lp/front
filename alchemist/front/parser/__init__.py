@@ -16,7 +16,7 @@
 
 from typing import cast, TYPE_CHECKING
 
-from .. import CompilerError
+from .. import TreeNode, CompilerError
 from ..lexer import CompilerEOIError
 
 if TYPE_CHECKING:
@@ -119,6 +119,28 @@ class GraphVisitor:
 
 class Production:
     _left_recursive: bool = True
+    
+    class NonTerminal(TreeNode):
+        def __init__(self, ast: bool = False) -> None:
+            self.__ast: bool = ast
+            self.children: list[TreeNode] = []
+
+        def add_child(self, child: TreeNode) -> None:
+            if self.__ast:
+                child._process_parent(self)  # pylint: disable=protected-access
+                self._process_child(child)
+
+                if child._keep:  # pylint: disable=protected-access
+                    self.children.append(child)
+            else:
+                self.children.append(child)
+
+        def add_children(self, children: list[TreeNode]) -> None:
+            for child in children:
+                self.add_child(child)
+
+        def _process_child(self, child: TreeNode) -> None:
+            pass
 
     @staticmethod
     def process_left_recursion(
