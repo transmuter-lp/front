@@ -117,6 +117,20 @@ class GraphVisitor:
         pass
 
 
+class TreeVisitor:
+    def visit_top_down_left_to_right(self, node: TreeNode) -> None:
+        pass
+
+    def visit_top_down_right_to_left(self, node: TreeNode) -> None:
+        pass
+
+    def visit_bottom_up_left_to_right(self, node: TreeNode) -> None:
+        pass
+
+    def visit_bottom_up_right_to_left(self, node: TreeNode) -> None:
+        pass
+
+
 class Production:
     _left_recursive: bool = True
     
@@ -138,6 +152,22 @@ class Production:
         def add_children(self, children: list[TreeNode]) -> None:
             for child in children:
                 self.add_child(child)
+        
+        def accept(self, visitor: TreeVisitor, top_down: bool = True, left_to_right: bool = True) -> None:
+            if top_down:
+                if left_to_right:
+                    visitor.visit_top_down_left_to_right(self)
+                else:
+                    visitor.visit_top_down_right_to_left(self)
+
+            for child in self.children if left_to_right else reversed(self.children):
+                child.accept(visitor, top_down, left_to_right)
+
+            if not top_down:
+                if left_to_right:
+                    visitor.visit_bottom_up_left_to_right(self)
+                else:
+                    visitor.visit_bottom_up_right_to_left(self)
 
         def _process_child(self, child: TreeNode) -> None:
             pass
