@@ -24,3 +24,9 @@ The generated parser is a recursive descent parser based on [Frost, Hafiz & Call
 - Generates CSTs (TO DO) and ASTs (TO DO) automatically
 - Displays useful error messages (TO DO)
 - Supports incremental parsing (TO DO)
+
+## Semantic Analyzer
+
+- Type safety framework (TO DO)
+- Memory safety framework (TO DO)
+- Thread safety framework (TO DO)
