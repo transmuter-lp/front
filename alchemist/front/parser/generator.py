@@ -30,16 +30,6 @@ Terminals = dict[str, str | None]
 
 class _Rule(Generic[_T]):
     @staticmethod
-    def _filter(rules: list["_Rule"]) -> list["_Rule"]:
-        filtered_rules: list[_Rule] = [rule for rule in rules if not isinstance(rule, Switch) or rule.enabled]
-        filtered_rules = [
-            rule for rule in filtered_rules
-            if isinstance(rule, _Symbol)
-            or len(rule.filtered_rules.filtered_rules if isinstance(rule.filtered_rules, _Group) else rule.filtered_rules) > 0
-        ]
-        return filtered_rules
-
-    @staticmethod
     def get(template: _RuleTemplate) -> "_Rule":
         if isinstance(template, tuple):
             return _Group(template)
@@ -51,6 +41,16 @@ class _Rule(Generic[_T]):
             return _Symbol(template)
 
         return template
+
+    @staticmethod
+    def _filter(rules: list["_Rule"]) -> list["_Rule"]:
+        filtered_rules: list[_Rule] = [rule for rule in rules if not isinstance(rule, Switch) or rule.enabled]
+        filtered_rules = [
+            rule for rule in filtered_rules
+            if isinstance(rule, _Symbol)
+            or len(rule.filtered_rules.filtered_rules if isinstance(rule.filtered_rules, _Group) else rule.filtered_rules) > 0
+        ]
+        return filtered_rules
 
     def __init__(self, rules: _T) -> None:
         self.rules: _T = rules
