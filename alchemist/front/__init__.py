@@ -22,10 +22,10 @@ if TYPE_CHECKING:
 
 class TreeNode:  # pylint: disable=too-few-public-methods
     _keep: bool = True
-    
+
     def accept(self, visitor: "TreeVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
         raise NotImplementedError()
-    
+
     def _process_parent(self, parent: "TreeNode") -> None:
         pass
 

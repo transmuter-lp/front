@@ -123,7 +123,7 @@ class GraphVisitor:
 
 class Production:
     _left_recursive: bool = True
-    
+
     class NonTerminal(TreeNode):
         def __init__(self, ast: bool = False) -> None:
             self.__ast: bool = ast
@@ -142,7 +142,7 @@ class Production:
         def add_children(self, children: list[TreeNode]) -> None:
             for child in children:
                 self.add_child(child)
-        
+
         def accept(self, visitor: "TreeVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
             if top_down:
                 if left_to_right:
@@ -316,10 +316,16 @@ class PruneIncompletePaths(GraphVisitor):
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         if not node.visited:
             for next_node in node.next:
-                next_node.previous.remove(node)
+                for previous_node in next_node.previous:
+                    if previous_node == node:
+                        next_node.previous.remove(previous_node)
+                        break
 
             for previous_node in node.previous:
-                previous_node.next.remove(node)
+                for next_node in previous_node.next:
+                    if next_node == node:
+                        previous_node.next.remove(next_node)
+                        break
 
     def visit_top_down_right_to_left(self, node: GraphNode) -> None:
         node.visited = True
@@ -334,10 +340,11 @@ class PrettyPrint(GraphVisitor):
         if isinstance(node.value, Production):
             self.output += f'\n{" " * self.__indent[-1]}{node.value.__class__.__name__}'
 
-            if len(node.next) == 0:
-                self.__indent[-1] += 1
-            else:
-                self.__indent.append(self.__indent[-1] + 1)
+            if len(node.value.children) > 0:
+                if len(node.next) == 0:
+                    self.__indent[-1] += 1
+                else:
+                    self.__indent.append(self.__indent[-1] + 1)
         else:
             self.output += f'\n{" " * self.__indent[-1]}{node.value.str}'
 

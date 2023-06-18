@@ -294,10 +294,13 @@ class ProductionTemplate:
             code += "\n"
 
         code += "\n    def _derive(self) -> None:"
-        code += "\n        input_path = cast(GraphNode, self.input_path)"
-        code += '\n        paths0: Paths = {cast("Terminal", input_path.path): {input_path}}'
+        code += "\n        input_path: GraphNode = self.input_path"
+        code += "\n        paths0: Paths = {input_path.path: {input_path}}"
         code += rule(2, 0, cls._ambiguous).replace("\n\n\n", "\n\n")
         code += "\n        self.output_paths = paths0"
+        code += "\n"
+        code += "\n    class NonTerminal(Production.NonTerminal):"
+        code += "\n        pass"
         return code
 
     @classmethod
