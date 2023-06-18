@@ -15,11 +15,14 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import cast, TYPE_CHECKING
+from copy import deepcopy
 
 from .. import TreeNode, CompilerError
 from ..lexer import CompilerEOIError
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from .. import TreeVisitor
     from ..lexer import Lexer, Terminal
 
@@ -105,6 +108,22 @@ class GraphNode:
                 visitor.visit_bottom_up_left_to_right(self)
             else:
                 visitor.visit_bottom_up_right_to_left(self)
+
+    def get_children_lists(self, ast: bool = False) -> "Generator[list[TreeNode], None, None]":
+        if len(self.previous) > 0:
+            for node in self.previous:
+                for children_list in node.get_children_lists(ast):
+                    if isinstance(self.value, Production):
+                        for tree in self.value.get_path_trees(self.path, ast):
+                            yield deepcopy(children_list) + [tree]
+                    else:  # Terminal
+                        yield children_list + [self.value]
+        else:
+            if isinstance(self.value, Production):
+                for tree in self.value.get_path_trees(self.path, ast):
+                    yield [tree]
+            else:  # Terminal
+                yield [self.value]
 
 
 class GraphVisitor:
@@ -221,6 +240,24 @@ class Production:
 
                 children = next_children
                 next_children = set()
+
+    def get_path_trees(self, path: "Terminal", ast: bool = False) -> "Generator[Production.NonTerminal, None, None]":
+        if self.output_paths is not None:
+            for node in self.output_paths[path]:
+                for children_list in node.get_children_lists(ast):
+                    tree: Production.NonTerminal = self.NonTerminal(ast)
+                    tree.add_children(children_list)
+                    yield tree
+        else:
+            yield self.NonTerminal(ast)
+
+    def get_trees(self, ast: bool = False) -> "Generator[Production.NonTerminal, None, None]":
+        if self.output_paths is not None:
+            for path in self.output_paths:
+                for tree in self.get_path_trees(path, ast):
+                    yield tree
+        else:
+            yield self.NonTerminal(ast)
 
     def _process_paths(self, paths: Paths, symbol: type["Terminal"] | type["Production"]) -> Paths:
         nextpaths: Paths = {}
