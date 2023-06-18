@@ -27,20 +27,6 @@ Paths = dict["Terminal", set["GraphNode"]]
 
 class GraphNode:
     @staticmethod
-    def __merge_sets(set1: set["GraphNode"], set2: set["GraphNode"]) -> None:
-        for node2 in set2:
-            if node2 in set1:
-                for node1 in set1:
-                    if node2 == node1:
-                        if node2 is not node1:
-                            GraphNode.__merge_sets(node1.previous, node2.previous)
-                            GraphNode.__merge_sets(node1.next, node2.next)
-
-                        break
-            else:
-                set1.add(node2)
-
-    @staticmethod
     def merge_paths(paths1: Paths, paths2: Paths) -> None:
         for path in paths2:
             if path in paths1:
@@ -64,6 +50,20 @@ class GraphNode:
 
             for node in previous:
                 GraphNode.__merge_sets(node.next, _next[path])
+
+    @staticmethod
+    def __merge_sets(set1: set["GraphNode"], set2: set["GraphNode"]) -> None:
+        for node2 in set2:
+            if node2 in set1:
+                for node1 in set1:
+                    if node2 == node1:
+                        if node2 is not node1:
+                            GraphNode.__merge_sets(node1.previous, node2.previous)
+                            GraphNode.__merge_sets(node1.next, node2.next)
+
+                        break
+            else:
+                set1.add(node2)
 
     def __init__(self, path: "Terminal", value: "Terminal | Production") -> None:
         self.path: "Terminal | None" = path
@@ -164,25 +164,17 @@ class Production:
         self.parent = None
         self.input_path = None
 
-    def __left_recursive(self, paths: Paths, production: type["Production"]) -> bool:
-        input_path = cast(GraphNode, self.input_path)
-        if input_path.path in paths and (input_path.path, production) not in self.parser.productions:
-            parent: Production | None = self
-            recursive_path: set[type[Production]] = set()
+    def accept(self, visitor: GraphVisitor, top_down: bool = True, path: "Terminal | None" = None) -> None:
+        children: set[GraphNode] = self.children if path is None else self.output_paths[path]
+        next_children: set[GraphNode] = set()
 
-            while parent is not None and parent.input_path == self.input_path:
-                if parent.__class__ is production:
-                    if parent.recursive_path is None:
-                        parent.recursive_path = recursive_path
-                    else:
-                        parent.recursive_path |= recursive_path
+        while len(children) > 0:
+            for child in children:
+                child.accept(visitor, top_down, path is None)
+                next_children |= (child.next if path is None else child.previous) - children
 
-                    return True
-
-                recursive_path.add(parent.__class__)
-                parent = parent.parent
-
-        return False
+            children = next_children
+            next_children = set()
 
     def _process_paths(self, paths: Paths, symbol: type["Terminal"] | type["Production"]) -> Paths:
         nextpaths: Paths = {}
@@ -240,17 +232,26 @@ class Production:
     def _derive(self) -> None:
         raise NotImplementedError()
 
-    def accept(self, visitor: GraphVisitor, top_down: bool = True, path: "Terminal | None" = None) -> None:
-        children: set[GraphNode] = self.children if path is None else self.output_paths[path]
-        next_children: set[GraphNode] = set()
+    def __left_recursive(self, paths: Paths, production: type["Production"]) -> bool:
+        input_path = cast(GraphNode, self.input_path)
 
-        while len(children) > 0:
-            for child in children:
-                child.accept(visitor, top_down, path is None)
-                next_children |= (child.next if path is None else child.previous) - children
+        if input_path.path in paths and (input_path.path, production) not in self.parser.productions:
+            parent: Production | None = self
+            recursive_path: set[type[Production]] = set()
 
-            children = next_children
-            next_children = set()
+            while parent is not None and parent.input_path == self.input_path:
+                if parent.__class__ is production:
+                    if parent.recursive_path is None:
+                        parent.recursive_path = recursive_path
+                    else:
+                        parent.recursive_path |= recursive_path
+
+                    return True
+
+                recursive_path.add(parent.__class__)
+                parent = parent.parent
+
+        return False
 
 
 class PruneOutputPaths(GraphVisitor):
@@ -280,8 +281,8 @@ class PruneIncompletePaths(GraphVisitor):
 
 class PrettyPrint(GraphVisitor):
     def __init__(self) -> None:
-        self.__indent: list[int] = [0]
         self.output: str = ""
+        self.__indent: list[int] = [0]
 
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         if isinstance(node.value, Production):

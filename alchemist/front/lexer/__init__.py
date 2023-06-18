@@ -56,10 +56,10 @@ class InputHandler:
 
 
 class Terminal(TreeNode):
+    soft_match: bool = True
     _pattern: "str | re.Pattern" = ""
     _index: int = 0
     _weight: float = 0.0
-    soft_match: bool = True
 
     @classmethod
     def key(cls) -> tuple[bool, int, float]:
@@ -117,26 +117,6 @@ class Lexer:
         self.input: InputHandler = _input
         self.__token: Terminal = _Start(_input)
 
-    def __match_terminal(self, terminals: _TerminalList, token: Terminal | None = None) -> tuple[Terminal, _TerminalList] | None:
-        for term in terminals:
-            terminal: type[Terminal]
-            children: _TerminalList
-
-            if isinstance(term, tuple):
-                terminal, children = term
-            else:  # type[Terminal]
-                terminal = term
-                children = []
-
-            try:
-                ctoken: Terminal = terminal(self.input)
-                assert token is None or len(ctoken.str) == len(token.str)
-                return ctoken, children
-            except (_CompilerTerminalError, AssertionError):
-                pass
-
-        return None
-
     def get_state(self) -> Terminal:
         return self.__token
 
@@ -183,6 +163,26 @@ class Lexer:
         self.__token.next = token
         self.__token = self.__token.next
         return self.__token
+
+    def __match_terminal(self, terminals: _TerminalList, token: Terminal | None = None) -> tuple[Terminal, _TerminalList] | None:
+        for term in terminals:
+            terminal: type[Terminal]
+            children: _TerminalList
+
+            if isinstance(term, tuple):
+                terminal, children = term
+            else:  # type[Terminal]
+                terminal = term
+                children = []
+
+            try:
+                ctoken: Terminal = terminal(self.input)
+                assert token is None or len(ctoken.str) == len(token.str)
+                return ctoken, children
+            except (_CompilerTerminalError, AssertionError):
+                pass
+
+        return None
 
 
 class _CompilerLexicalError(CompilerError):
