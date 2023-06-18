@@ -21,7 +21,27 @@ if TYPE_CHECKING:
 
 
 class TreeNode:  # pylint: disable=too-few-public-methods
-    pass
+    _keep: bool = True
+
+    def accept(self, visitor: "TreeVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
+        raise NotImplementedError()
+
+    def _process_parent(self, parent: "TreeNode") -> None:
+        pass
+
+
+class TreeVisitor:
+    def visit_top_down_left_to_right(self, node: TreeNode) -> None:
+        pass
+
+    def visit_top_down_right_to_left(self, node: TreeNode) -> None:
+        pass
+
+    def visit_bottom_up_left_to_right(self, node: TreeNode) -> None:
+        pass
+
+    def visit_bottom_up_right_to_left(self, node: TreeNode) -> None:
+        pass
 
 
 class CompilerError(Exception):

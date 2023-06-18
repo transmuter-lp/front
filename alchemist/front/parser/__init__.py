@@ -15,11 +15,15 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from typing import cast, TYPE_CHECKING
+from copy import deepcopy
 
-from .. import CompilerError
+from .. import TreeNode, CompilerError
 from ..lexer import CompilerEOIError
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
+    from .. import TreeVisitor
     from ..lexer import Lexer, Terminal
 
 Paths = dict["Terminal", set["GraphNode"]]
@@ -105,6 +109,22 @@ class GraphNode:
             else:
                 visitor.visit_bottom_up_right_to_left(self)
 
+    def get_children_lists(self, ast: bool = False) -> "Generator[list[TreeNode], None, None]":
+        if len(self.previous) > 0:
+            for node in self.previous:
+                for children_list in node.get_children_lists(ast):
+                    if isinstance(self.value, Production):
+                        for tree in self.value.get_path_trees(self.path, ast):
+                            yield deepcopy(children_list) + [tree]
+                    else:  # Terminal
+                        yield children_list + [self.value]
+        else:
+            if isinstance(self.value, Production):
+                for tree in self.value.get_path_trees(self.path, ast):
+                    yield [tree]
+            else:  # Terminal
+                yield [self.value]
+
 
 class GraphVisitor:
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
@@ -122,6 +142,44 @@ class GraphVisitor:
 
 class Production:
     _left_recursive: bool = True
+
+    class NonTerminal(TreeNode):
+        def __init__(self, ast: bool = False) -> None:
+            self.__ast: bool = ast
+            self.children: list[TreeNode] = []
+
+        def add_child(self, child: TreeNode) -> None:
+            if self.__ast:
+                child._process_parent(self)  # pylint: disable=protected-access
+                self._process_child(child)
+
+                if child._keep:  # pylint: disable=protected-access
+                    self.children.append(child)
+            else:
+                self.children.append(child)
+
+        def add_children(self, children: list[TreeNode]) -> None:
+            for child in children:
+                self.add_child(child)
+
+        def accept(self, visitor: "TreeVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
+            if top_down:
+                if left_to_right:
+                    visitor.visit_top_down_left_to_right(self)
+                else:
+                    visitor.visit_top_down_right_to_left(self)
+
+            for child in self.children if left_to_right else reversed(self.children):
+                child.accept(visitor, top_down, left_to_right)
+
+            if not top_down:
+                if left_to_right:
+                    visitor.visit_bottom_up_left_to_right(self)
+                else:
+                    visitor.visit_bottom_up_right_to_left(self)
+
+        def _process_child(self, child: TreeNode) -> None:
+            pass
 
     @staticmethod
     def process_left_recursion(
@@ -182,6 +240,24 @@ class Production:
 
                 children = next_children
                 next_children = set()
+
+    def get_path_trees(self, path: "Terminal", ast: bool = False) -> "Generator[Production.NonTerminal, None, None]":
+        if self.output_paths is not None:
+            for node in self.output_paths[path]:
+                for children_list in node.get_children_lists(ast):
+                    tree: Production.NonTerminal = self.NonTerminal(ast)
+                    tree.add_children(children_list)
+                    yield tree
+        else:
+            yield self.NonTerminal(ast)
+
+    def get_trees(self, ast: bool = False) -> "Generator[Production.NonTerminal, None, None]":
+        if self.output_paths is not None:
+            for path in self.output_paths:
+                for tree in self.get_path_trees(path, ast):
+                    yield tree
+        else:
+            yield self.NonTerminal(ast)
 
     def _process_paths(self, paths: Paths, symbol: type["Terminal"] | type["Production"]) -> Paths:
         nextpaths: Paths = {}
@@ -277,10 +353,16 @@ class PruneIncompletePaths(GraphVisitor):
     def visit_top_down_left_to_right(self, node: GraphNode) -> None:
         if not node.visited:
             for next_node in node.next:
-                next_node.previous.remove(node)
+                for previous_node in next_node.previous:
+                    if previous_node == node:
+                        next_node.previous.remove(previous_node)
+                        break
 
             for previous_node in node.previous:
-                previous_node.next.remove(node)
+                for next_node in previous_node.next:
+                    if next_node == node:
+                        previous_node.next.remove(next_node)
+                        break
 
     def visit_top_down_right_to_left(self, node: GraphNode) -> None:
         node.visited = True
@@ -295,10 +377,11 @@ class PrettyPrint(GraphVisitor):
         if isinstance(node.value, Production):
             self.output += f'\n{" " * self.__indent[-1]}{node.value.__class__.__name__}'
 
-            if len(node.next) == 0:
-                self.__indent[-1] += 1
-            else:
-                self.__indent.append(self.__indent[-1] + 1)
+            if len(node.value.children) > 0:
+                if len(node.next) == 0:
+                    self.__indent[-1] += 1
+                else:
+                    self.__indent.append(self.__indent[-1] + 1)
         else:
             self.output += f'\n{" " * self.__indent[-1]}{node.value.str}'
 

@@ -21,6 +21,8 @@ from .. import TreeNode, CompilerError
 if TYPE_CHECKING:
     import re
 
+    from .. import TreeVisitor
+
 
 class InputHandler:
     def __init__(self, _input: str, filename: str = "<stdin>", startpos: int = 0, endpos: int | None = None, newline: str = "\n") -> None:
@@ -92,6 +94,18 @@ class Terminal(TreeNode):
     def advance(self, _input: InputHandler) -> None:
         _input.advance(len(self.str))
         self.end = _input.get_state()
+
+    def accept(self, visitor: "TreeVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
+        if top_down:
+            if left_to_right:
+                visitor.visit_top_down_left_to_right(self)
+            else:
+                visitor.visit_top_down_right_to_left(self)
+        else:
+            if left_to_right:
+                visitor.visit_bottom_up_left_to_right(self)
+            else:
+                visitor.visit_bottom_up_right_to_left(self)
 
 
 class _Start(Terminal):
