@@ -21,7 +21,7 @@ The generated parser is a recursive descent parser based on [Frost, Hafiz & Call
 - Is efficient enough to parse most simple grammars in linear time, with cubic (TODO proof) worst-case performance
 - Is stupidly simple to understand and customize
 - Builds the syntax forest automatically
-- Generates CSTs (TO DO) and ASTs (TO DO) automatically
+- Generates CSTs and ASTs automatically
 - Displays useful error messages (TO DO)
 - Supports incremental parsing (TO DO)
 
