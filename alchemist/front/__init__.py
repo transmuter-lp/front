@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from .lexer import InputHandler
+    from .parser import Production
 
 
 class TreeNode:  # pylint: disable=too-few-public-methods
@@ -26,7 +27,7 @@ class TreeNode:  # pylint: disable=too-few-public-methods
     def accept(self, visitor: "TreeVisitor", top_down: bool = True, left_to_right: bool = True) -> None:
         raise NotImplementedError()
 
-    def _process_parent(self, parent: "TreeNode") -> None:
+    def _process_parent(self, parent: "Production.NonTerminal") -> None:
         pass
 
 

@@ -92,18 +92,10 @@ class GraphNode:
             else:
                 visitor.visit_top_down_right_to_left(self)
 
-            if isinstance(self.value, Production):
-                if left_to_right:
-                    self.value.accept(visitor, True)
-                else:
-                    self.value.accept(visitor, True, self.path)
-        else:
-            if isinstance(self.value, Production):
-                if left_to_right:
-                    self.value.accept(visitor, False)
-                else:
-                    self.value.accept(visitor, False, self.path)
+        if isinstance(self.value, Production):
+            self.value.accept(visitor, top_down, self.path if not left_to_right else None)
 
+        if not top_down:
             if left_to_right:
                 visitor.visit_bottom_up_left_to_right(self)
             else:
