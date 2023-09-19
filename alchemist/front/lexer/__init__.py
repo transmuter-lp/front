@@ -50,6 +50,7 @@ class InputHandler:
             lines: int = self.input.count(self.__newline, self.position, self.position + length)
 
             if lines > 0:
+                # <new_column> = <new_position> - <start_of_last_line>
                 self.poslc = self.poslc[0] + lines, self.position + length - self.input.rfind(self.__newline, self.position, self.position + length)
             else:
                 self.poslc = self.poslc[0], self.poslc[1] + length
