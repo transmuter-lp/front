@@ -69,6 +69,7 @@ class _Group(_Rule[list[_Rule]]):
         self.filtered_rules = self._filter(self.rules)
         i: int = 0
 
+        # Simplify nested groups
         while i < len(self.filtered_rules):
             if isinstance(self.filtered_rules[i], _Group):
                 rules: list[_Rule] = self.filtered_rules[i].filtered_rules
@@ -102,6 +103,7 @@ class _Optional(_Rule[_Group]):
     def __init__(self, templates: list[_RuleTemplate]) -> None:
         super().__init__(_Group(templates))
 
+        # Simplify nested optional
         if len(self.filtered_rules.filtered_rules) == 1 and isinstance(self.filtered_rules.filtered_rules[0], _Optional):
             self.filtered_rules = self.filtered_rules.filtered_rules[0].filtered_rules
 
@@ -145,6 +147,7 @@ class repeat(_Rule[_Group]):  # pylint: disable=invalid-name
     def __init__(self, *templates: _RuleTemplate) -> None:
         super().__init__(_Group(templates))
 
+        # Simplify nested repeat
         if len(self.filtered_rules.filtered_rules) == 1 and isinstance(self.filtered_rules.filtered_rules[0], repeat):
             self.filtered_rules = self.filtered_rules.filtered_rules[0].filtered_rules
 
@@ -179,6 +182,7 @@ class oneof(_Rule[list[_Rule]]):  # pylint: disable=invalid-name
         self.filtered_rules = self._filter(self.rules)
         i: int = 0
 
+        # Simplify nested oneofs
         while i < len(self.filtered_rules):
             if isinstance(self.filtered_rules[i], oneof):
                 rules: list[_Rule] = self.filtered_rules[i].filtered_rules
