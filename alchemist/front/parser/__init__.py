@@ -44,7 +44,7 @@ class GraphNode:
 
     @staticmethod
     def from_production(production: "Production") -> Paths:
-        if production.output_paths is not None:
+        if production.output_paths is not None:  # Production not empty
             return {path: {GraphNode(path, production)} for path in production.output_paths}
 
         return {production.input_path.path: {GraphNode(production.input_path.path, production)}}
@@ -205,22 +205,25 @@ class Production:
         self.parser: Parser = parser
         self.output_paths: Paths | None = {}
         state: "Terminal" = parser.lexer.get_state()
-        self.input_path: GraphNode = GraphNode(state, state)
+        self.input_path: GraphNode = GraphNode(state, state)  # Initial node
         self.recursive_path: set[type[Production]] | None = None
         self.children: set[GraphNode] = set()
         self._derive()
 
-        if len(self.output_paths) == 1 and state in self.output_paths:
+        if len(self.output_paths) == 1 and state in self.output_paths:  # Production empty
             self.output_paths = None
 
         self.children = self.input_path.next
 
+        # Remove references to initial node
         for child in self.children:
             child.previous.clear()
 
         self.parent = None
 
     def accept(self, visitor: GraphVisitor, top_down: bool = True, path: "Terminal | None" = None) -> None:
+        # path is None -> left to right
+        # path is not None -> right to left
         if path is None or self.output_paths is not None:
             children: set[GraphNode] = self.children if path is None else cast(dict["Terminal", set[GraphNode]], self.output_paths)[path]
             next_children: set[GraphNode] = set()
@@ -234,7 +237,7 @@ class Production:
                 next_children = set()
 
     def get_path_trees(self, path: "Terminal", ast: bool = False) -> "Generator[Production.NonTerminal, None, None]":
-        if self.output_paths is not None:
+        if self.output_paths is not None:  # Production not empty
             for node in self.output_paths[path]:
                 for children_list in node.get_children_lists(ast):
                     tree: Production.NonTerminal = self.NonTerminal(ast)
@@ -244,7 +247,7 @@ class Production:
             yield self.NonTerminal(ast)
 
     def get_trees(self, ast: bool = False) -> "Generator[Production.NonTerminal, None, None]":
-        if self.output_paths is not None:
+        if self.output_paths is not None:  # Production not empty
             for path in self.output_paths:
                 for tree in self.get_path_trees(path, ast):
                     yield tree
@@ -403,7 +406,7 @@ class Parser:
         return forest
 
     def prune_incomplete_paths(self, forest: Production) -> None:
-        if forest.output_paths is not None:
+        if forest.output_paths is not None:  # Production not empty
             output_path: "Terminal | None" = None
 
             for path in forest.output_paths:
