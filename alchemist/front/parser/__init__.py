@@ -14,8 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from typing import cast, TYPE_CHECKING
+from abc import ABC, abstractmethod
 from copy import deepcopy
+from typing import cast, TYPE_CHECKING
 
 from .. import TreeNode, CompilerError
 from ..lexer import CompilerEOIError
@@ -132,7 +133,7 @@ class GraphVisitor:
         pass
 
 
-class Production:
+class Production(ABC):
     _left_recursive: bool = True
 
     class NonTerminal(TreeNode):
@@ -307,8 +308,9 @@ class Production:
 
         return nextpaths
 
+    @abstractmethod
     def _derive(self) -> None:
-        raise NotImplementedError()
+        pass
 
     def __left_recursive(self, paths: Paths, production: type["Production"]) -> bool:
         input_path: GraphNode = self.input_path
@@ -385,7 +387,7 @@ class PrettyPrint(GraphVisitor):
 
 
 class Parser:
-    _start: type[Production] = Production
+    _start: type[Production]
 
     def __init__(self, lexer: "Lexer") -> None:
         self.lexer: "Lexer" = lexer
