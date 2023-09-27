@@ -66,7 +66,7 @@ class TreeNode(ABC):  # pylint: disable=too-few-public-methods
         """
 
 
-class TreeVisitor(ABC):
+class TreeVisitor:
     """
     Base visitor for :class:`TreeNode`s.
     """
@@ -108,7 +108,7 @@ class TreeVisitor(ABC):
         """
 
 
-class CompilerError(Exception, ABC):
+class CompilerError(Exception):
     """
     Base exception for all compiler errors.
     """
