@@ -1,0 +1,57 @@
+Whitespace(discard): [\t ]+ | \r? \n ;
+
+Identifier(OrdChar): [A-Z_a-z][0-9A-Z_a-z]* ;
+
+Colon(OrdChar): : ;
+
+Semicolon: \; ;
+
+CommercialAt(OrdChar): @ ;
+
+LeftParenthesis: \( ;
+
+RightParenthesis: \) ;
+
+GreaterThanSign@lexical(OrdChar): > ;
+
+VerticalLine: \| ;
+
+DoubleVerticalLine: \|\| ;
+
+Comma(OrdChar): , ;
+
+DoubleAmpersand(OrdChar): && ;
+
+Discard@lexical(OrdChar) > Identifier: discard ;
+
+Optional@lexical(OrdChar) > Identifier: optional ;
+
+Start@syntactic > Identifier: start ;
+
+Unambiguous@syntactic > Identifier: unambiguous ;
+
+Asterisk@lexical: \* ;
+
+PlusSign@lexical: \+ ;
+
+QuestionMark@lexical: \? ;
+
+ExpressionRange@lexical: \{ (0 | [1-9][0-9]*) (, (0 | [1-9][0-9]*)?)? } ;
+
+LeftCurlyBracket@syntactic: \{ ;
+
+RightCurlyBracket@syntactic: } ;
+
+OrdChar@lexical: [^\000-\037\177 ;^.[$()|*+?{\\] ;
+
+QuotedChar@lexical: \\ ([abtnvfr ;^.[$()|*+?{\\] | [01][0-7]{2}) ;
+
+FullStop@lexical: \. ;
+
+BracketExpression@lexical: \[ (\^? ([^\000-\037\177\\^] | \\ ([abtnvfr\\] | [01][0-7]{2})) | \^ \^) (- ([^]\000-\037\177\\] | \\ ([abtnvfr\\] | [01][0-7]{2})))? (([^]\000-\037\177\\-] | \\ ([abtnvfr\\] | [01][0-7]{2})) (- ([^]\000-\037\177\\] | \\ ([abtnvfr\\] | [01][0-7]{2})))?)* -? ] ;
+
+ExclamationMark(OrdChar): ! ;
+
+LeftSquareBracket@syntactic: \[ ;
+
+RightSquareBracket@syntactic: ] ;
