@@ -1,4 +1,4 @@
-Whitespace(discard): [\t ]+ | \r? \n ;
+Whitespace(ignore): [\t ]+ | \r? \n ;
 
 Identifier(OrdChar): [A-Z_a-z][0-9A-Z_a-z]* ;
 
@@ -24,7 +24,7 @@ Comma(OrdChar): , ;
 
 DoubleAmpersand(OrdChar): && ;
 
-Discard@lexical(OrdChar) > Identifier: discard ;
+Ignore@lexical(OrdChar) > Identifier: ignore ;
 
 Optional@lexical(OrdChar) > Identifier: optional ;
 

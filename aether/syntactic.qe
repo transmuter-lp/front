@@ -40,7 +40,7 @@ ConjunctionCondition(DisjunctionCondition):
 
 ProductionSpecifier:
     Identifier /
-    ((Discard / Optional)@lexical / Start@syntactic) [/Condition] ;
+    ((Ignore / Optional)@lexical / Start@syntactic) [/Condition] ;
 
 ProductionPrecedence:
     Identifier ;
