@@ -16,6 +16,8 @@ GreaterThanSign@lexical(OrdChar): > ;
 
 VerticalLine: \| ;
 
+Solidus@syntactic: / ;
+
 DoubleVerticalLine: \|\| ;
 
 Comma(OrdChar): , ;
@@ -28,8 +30,6 @@ Optional@lexical(OrdChar) > Identifier: optional ;
 
 Start@syntactic > Identifier: start ;
 
-Unambiguous@syntactic > Identifier: unambiguous ;
-
 Asterisk@lexical: \* ;
 
 PlusSign@lexical: \+ ;
@@ -39,6 +39,8 @@ QuestionMark@lexical: \? ;
 ExpressionRange@lexical: \{ (0 | [1-9][0-9]*) (, (0 | [1-9][0-9]*)?)? } ;
 
 LeftCurlyBracket@syntactic: \{ ;
+
+LeftCurlyBracketSolidus@syntactic: \{/ ;
 
 RightCurlyBracket@syntactic: } ;
 
@@ -53,5 +55,7 @@ BracketExpression@lexical: \[ (\^? ([^\000-\037\177\\^] | \\ ([abtnvfr\\] | [01]
 ExclamationMark(OrdChar): ! ;
 
 LeftSquareBracket@syntactic: \[ ;
+
+LeftSquareBracketSolidus@syntactic: \[/ ;
 
 RightSquareBracket@syntactic: ] ;

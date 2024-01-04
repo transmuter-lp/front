@@ -1,11 +1,11 @@
 Grammar(start):
-    Production {Production} ;
+    Production {/Production} ;
 
 Production:
     ProductionHeader ProductionBody ;
 
 ProductionHeader:
-    Identifier [Condition]@lexical [ProductionSpecifiers] [ProductionPrecedences]@lexical Colon ;
+    Identifier [/Condition]@lexical [/ProductionSpecifiers] [/ProductionPrecedences]@lexical Colon ;
 
 ProductionBody:
     SelectionExpression Semicolon ;
@@ -20,45 +20,45 @@ ProductionPrecedences:
     GreaterThanSign ProductionPrecedenceList ;
 
 SelectionExpression:
-    SequenceExpression {VerticalLine SequenceExpression} ;
+    SequenceExpression {/(VerticalLine / Solidus@syntactic) SequenceExpression} ;
 
 DisjunctionCondition:
-    ConjunctionCondition {DoubleVerticalLine ConjunctionCondition} ;
+    ConjunctionCondition {/DoubleVerticalLine ConjunctionCondition} ;
 
 ProductionSpecifierList:
-    ProductionSpecifier {Comma ProductionSpecifier} ;
+    ProductionSpecifier {/Comma ProductionSpecifier} ;
 
 ProductionPrecedenceList:
-    ProductionPrecedence {Comma ProductionPrecedence} ;
+    ProductionPrecedence {/Comma ProductionPrecedence} ;
 
 SequenceExpression(SelectionExpression):
-    (IterationExpression {IterationExpression})@lexical |
-    (PrimaryExpression {PrimaryExpression})@syntactic ;
+    (IterationExpression {/IterationExpression})@lexical /
+    (PrimaryExpression {/PrimaryExpression})@syntactic ;
 
 ConjunctionCondition(DisjunctionCondition):
-    NegationCondition {DoubleAmpersand NegationCondition} ;
+    NegationCondition {/DoubleAmpersand NegationCondition} ;
 
 ProductionSpecifier:
-    Identifier | ((Discard | Optional)@lexical | (Start | Unambiguous)@syntactic) [Condition] ;
+    Identifier / ((Discard / Optional)@lexical / Start@syntactic) [/Condition] ;
 
 ProductionPrecedence:
     Identifier ;
 
 IterationExpression(SequenceExpression):
-    (PrimaryExpression [Asterisk | PlusSign | QuestionMark | ExpressionRange])@lexical |
-    (LeftCurlyBracket SelectionExpression RightCurlyBracket)@syntactic ;
+    (PrimaryExpression [/Asterisk / PlusSign / QuestionMark / ExpressionRange])@lexical /
+    ((LeftCurlyBracket / LeftCurlyBracketSolidus) SelectionExpression RightCurlyBracket)@syntactic ;
 
 PrimaryExpression(SequenceExpression):
-    (OrdChar | QuotedChar | FullStop | BracketExpression)@lexical |
-    (Identifier [Condition])@syntactic |
-    LeftParenthesis SelectionExpression RightParenthesis [Condition]@syntactic |
-    ((OptionalExpression | IterationExpression) [Condition])@syntactic ;
+    (OrdChar / QuotedChar / FullStop / BracketExpression)@lexical /
+    (Identifier [/Condition])@syntactic /
+    LeftParenthesis SelectionExpression RightParenthesis [/Condition]@syntactic /
+    ((OptionalExpression / IterationExpression) [/Condition])@syntactic ;
 
 NegationCondition(ConjunctionCondition):
-    {ExclamationMark} PrimitiveCondition ;
+    {/ExclamationMark} PrimitiveCondition ;
 
 OptionalExpression(PrimaryExpression):
-    LeftSquareBracket SelectionExpression RightSquareBracket ;
+    (LeftSquareBracket / LeftSquareBracketSolidus) SelectionExpression RightSquareBracket ;
 
 PrimitiveCondition(NegationCondition):
     Identifier
