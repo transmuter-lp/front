@@ -39,7 +39,8 @@ ConjunctionCondition(DisjunctionCondition):
     NegationCondition {/DoubleAmpersand NegationCondition} ;
 
 ProductionSpecifier:
-    Identifier / ((Discard / Optional)@lexical / Start@syntactic) [/Condition] ;
+    Identifier /
+    ((Discard / Optional)@lexical / Start@syntactic) [/Condition] ;
 
 ProductionPrecedence:
     Identifier ;
@@ -61,5 +62,5 @@ OptionalExpression(PrimaryExpression):
     (LeftSquareBracket / LeftSquareBracketSolidus) SelectionExpression RightSquareBracket ;
 
 PrimitiveCondition(NegationCondition):
-    Identifier
+    Identifier /
     LeftParenthesis DisjunctionCondition RightParenthesis ;
