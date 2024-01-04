@@ -31,36 +31,35 @@ ProductionSpecifierList:
 ProductionPrecedenceList:
     ProductionPrecedence {Comma ProductionPrecedence} ;
 
-SequenceExpression:
+SequenceExpression(SelectionExpression):
     (IterationExpression {IterationExpression})@lexical |
     (PrimaryExpression {PrimaryExpression})@syntactic ;
 
-ConjunctionCondition:
+ConjunctionCondition(DisjunctionCondition):
     NegationCondition {DoubleAmpersand NegationCondition} ;
 
 ProductionSpecifier:
-    (Identifier | (Discard | Optional) [Condition])@lexical |
-    ((Start | Unambiguous) [Condition])@syntactic ;
+    Identifier | ((Discard | Optional)@lexical | (Start | Unambiguous)@syntactic) [Condition] ;
 
 ProductionPrecedence:
     Identifier ;
 
-IterationExpression:
+IterationExpression(SequenceExpression):
     (PrimaryExpression [Asterisk | PlusSign | QuestionMark | ExpressionRange])@lexical |
     (LeftCurlyBracket SelectionExpression RightCurlyBracket)@syntactic ;
 
-PrimaryExpression:
+PrimaryExpression(SequenceExpression):
     (OrdChar | QuotedChar | FullStop | BracketExpression)@lexical |
     (Identifier [Condition])@syntactic |
     LeftParenthesis SelectionExpression RightParenthesis [Condition]@syntactic |
     ((OptionalExpression | IterationExpression) [Condition])@syntactic ;
 
-NegationCondition:
+NegationCondition(ConjunctionCondition):
     {ExclamationMark} PrimitiveCondition ;
 
-OptionalExpression:
+OptionalExpression(PrimaryExpression):
     LeftSquareBracket SelectionExpression RightSquareBracket ;
 
-PrimitiveCondition:
+PrimitiveCondition(NegationCondition):
     Identifier
     LeftParenthesis DisjunctionCondition RightParenthesis ;
