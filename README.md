@@ -1,4 +1,4 @@
-# Alchemist front-end libraries
+# Alchemist front-end
 
 Front-end libraries and utilities for the Alchemist compiler infrastructure.
 
@@ -10,8 +10,6 @@ Front-end libraries and utilities for the Alchemist compiler infrastructure.
 - OO-based hierarchical token specialization/generalization
 - Incremental (TO DO) and on-demand lexing
 - Supports multiple independent consumers without re-lexing
-
-There is an example [C lexicon](examples/C/lexicon.py) included.
 
 ## Parser
 
