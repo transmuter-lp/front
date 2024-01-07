@@ -28,38 +28,32 @@ class Token:
 
 
 @dataclass
-class Lexer:
+class BaseLexer:
     input: str
     filename: str
-    newline: str
+    condition: Flag
     start: Token | None = field(default=None, init=False, repr=False)
 
-    def advance(self, position: tuple[int, int, int], length: int) -> tuple[int, int, int]:
-        if position[0] + length <= len(self.input):
-            lines = self.input.count(self.newline, position[0], position[0] + length)
-
-            if lines > 0:
-                position = (
-                    position[0] + length,
-                    position[1] + lines,
-                    position[0] + length - self.input.rfind(self.newline, position[0], position[0] + length)
-                )
+    def advance_position(self, position: tuple[int, int, int]) -> tuple[int, int, int]:
+        if position[0] < len(self.input):
+            if self.input[position[0]] == "\n":
+                position = (position[0] + 1, position[1] + 1, 1)
             else:
-                position = (position[0] + length, position[1], position[2] + length)
+                position = (position[0] + 1, position[1], position[2] + 1)
 
         return position
 
-    def next_token(self, token: Token | None) -> Token:
-        if token is None:
+    def next_token(self, current_token: Token | None) -> Token:
+        if current_token is None:
             if self.start is None:
                 self.start = self.tokenize((0, 1, 1))
 
             return self.start
 
-        if token.next is None:
-            token.next = self.tokenize(token.end_position)
+        if current_token.next is None:
+            current_token.next = self.tokenize(current_token.end_position)
 
-        return token.next
+        return current_token.next
 
-    def tokenize(self, position: tuple[int, int, int]) -> Token:
+    def tokenize(self, start_position: tuple[int, int, int]) -> Token:
         raise NotImplementedError()
