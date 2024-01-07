@@ -17,6 +17,8 @@
 from dataclasses import dataclass, field
 from enum import Flag
 
+from .common import AlchemistException
+
 
 @dataclass
 class Token:
@@ -35,13 +37,11 @@ class BaseLexer:
     start: Token | None = field(default=None, init=False, repr=False)
 
     def advance_position(self, position: tuple[int, int, int]) -> tuple[int, int, int]:
-        if position[0] < len(self.input):
-            if self.input[position[0]] == "\n":
-                position = (position[0] + 1, position[1] + 1, 1)
-            else:
-                position = (position[0] + 1, position[1], position[2] + 1)
-
-        return position
+        return (
+            position[0] + 1,
+            position[1] + (1 if self.input[position[0]] == "\n" else 0),
+            1 if self.input[position[0]] == "\n" else position[2] + 1
+        )
 
     def next_token(self, current_token: Token | None) -> Token:
         if current_token is None:
@@ -57,3 +57,18 @@ class BaseLexer:
 
     def tokenize(self, start_position: tuple[int, int, int]) -> Token:
         raise NotImplementedError()
+
+
+class AlchemistLexicalError(AlchemistException):
+    def __init__(self, filename: str, position: tuple[int, int, int], description: str) -> None:
+        super().__init__(filename, position, "Lexical Error", description)
+
+
+class AlchemistEOIError(AlchemistLexicalError):
+    def __init__(self, filename: str, position: tuple[int, int, int]) -> None:
+        super().__init__(filename, position, "Unexpected end of input.")
+
+
+class AlchemistNoTokenError(AlchemistLexicalError):
+    def __init__(self, filename: str, position: tuple[int, int, int]) -> None:
+        super().__init__(filename, position, "Could not match any token.")
