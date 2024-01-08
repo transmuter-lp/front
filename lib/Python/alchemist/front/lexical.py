@@ -22,18 +22,7 @@ from .common import BaseCondition, Position, AlchemistException
 
 @dataclass
 class BaseTokenType:
-    IGNORE: ClassVar[set["BaseTokenType"]]
-
     optional: bool
-
-
-@dataclass
-class BaseState:
-    ACCEPT: ClassVar["BaseState"]
-    START: ClassVar[set["BaseState"]]
-
-
-BaseState.ACCEPT = BaseState()
 
 
 @dataclass
@@ -47,9 +36,9 @@ class Token:
 
 @dataclass
 class BaseLexer:
-    Condition: ClassVar[type[BaseCondition]]
-    TokenType: ClassVar[type[BaseTokenType]]
-    State: ClassVar[type[BaseState]]
+    STATE_ACCEPT: ClassVar[int] = 0
+    STATE_START: ClassVar[set[int]]
+    TOKENTYPE_IGNORE: ClassVar[set[BaseTokenType]]
 
     input: str
     filename: str
@@ -74,21 +63,20 @@ class BaseLexer:
             accepted_position = start_position
             current_token_type = set()
             current_position = start_position
-            current_state = self.State.START
+            current_state = self.STATE_START
 
             while current_state:
-                if BaseState.ACCEPT in current_state:
+                if self.STATE_ACCEPT in current_state:
                     accepted_token_type = current_token_type
                     accepted_position = current_position
-                    current_token_type = set()
 
                 if current_position.index_ == len(self.input):
-                    if accepted_token_type - self.TokenType.IGNORE:
+                    if accepted_token_type - self.TOKENTYPE_IGNORE:
                         break
 
                     raise AlchemistEOIError(self.filename, current_position)
 
-                current_token_type, current_state = self.nfa(current_token_type, current_position, current_state)
+                current_token_type, current_state = self.nfa(self.input[current_position.index_], current_state)
                 current_position = Position(
                     current_position.index_ + 1,
                     current_position.line + (1 if self.input[current_position.index_] == "\n" else 0),
@@ -98,9 +86,9 @@ class BaseLexer:
             if not accepted_token_type:
                 raise AlchemistNoTokenError(self.filename, current_position)
 
-            if accepted_token_type - self.TokenType.IGNORE:
+            if accepted_token_type - self.TOKENTYPE_IGNORE:
                 return Token(
-                    accepted_token_type - self.TokenType.IGNORE,
+                    accepted_token_type - self.TOKENTYPE_IGNORE,
                     start_position,
                     accepted_position,
                     self.input[start_position.index_:accepted_position.index_]
@@ -109,8 +97,8 @@ class BaseLexer:
             start_position = accepted_position
 
     def nfa(
-        self, current_token_type: set[BaseTokenType], current_position: Position, current_state: set[BaseState]
-    ) -> tuple[set[BaseTokenType], set[BaseState]]:
+        self, char: str, current_state: set[int]
+    ) -> tuple[set[BaseTokenType], set[int]]:
         raise NotImplementedError()
 
 
