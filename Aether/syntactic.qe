@@ -1,0 +1,66 @@
+Grammar(start):
+    Production {/Production} ;
+
+Production:
+    ProductionHeader ProductionBody ;
+
+ProductionHeader:
+    Identifier [/Condition]@lexical [/ProductionSpecifiers] [/ProductionPrecedences]@lexical Colon ;
+
+ProductionBody:
+    SelectionExpression Semicolon ;
+
+Condition:
+    CommercialAt DisjunctionCondition ;
+
+ProductionSpecifiers:
+    LeftParenthesis ProductionSpecifierList RightParenthesis ;
+
+ProductionPrecedences:
+    GreaterThanSign ProductionPrecedenceList ;
+
+SelectionExpression:
+    SequenceExpression {/(VerticalLine / Solidus@syntactic) SequenceExpression} ;
+
+DisjunctionCondition:
+    ConjunctionCondition {/DoubleVerticalLine ConjunctionCondition} ;
+
+ProductionSpecifierList:
+    ProductionSpecifier {/Comma ProductionSpecifier} ;
+
+ProductionPrecedenceList:
+    ProductionPrecedence {/Comma ProductionPrecedence} ;
+
+SequenceExpression(SelectionExpression):
+    (IterationExpression {/IterationExpression})@lexical /
+    (PrimaryExpression {/PrimaryExpression})@syntactic ;
+
+ConjunctionCondition(DisjunctionCondition):
+    NegationCondition {/DoubleAmpersand NegationCondition} ;
+
+ProductionSpecifier:
+    Identifier /
+    ((Ignore / Optional)@lexical / Start@syntactic) [/Condition] ;
+
+ProductionPrecedence:
+    Identifier ;
+
+IterationExpression(SequenceExpression):
+    (PrimaryExpression [/Asterisk / PlusSign / QuestionMark / ExpressionRange])@lexical /
+    ((LeftCurlyBracket / LeftCurlyBracketSolidus) SelectionExpression RightCurlyBracket)@syntactic ;
+
+PrimaryExpression(SequenceExpression):
+    (OrdChar / QuotedChar / FullStop / BracketExpression)@lexical /
+    (Identifier [/Condition])@syntactic /
+    LeftParenthesis SelectionExpression RightParenthesis [/Condition]@syntactic /
+    ((OptionalExpression / IterationExpression) [/Condition])@syntactic ;
+
+NegationCondition(ConjunctionCondition):
+    {/ExclamationMark} PrimitiveCondition ;
+
+OptionalExpression(PrimaryExpression):
+    (LeftSquareBracket / LeftSquareBracketSolidus) SelectionExpression RightSquareBracket ;
+
+PrimitiveCondition(NegationCondition):
+    Identifier /
+    LeftParenthesis DisjunctionCondition RightParenthesis ;

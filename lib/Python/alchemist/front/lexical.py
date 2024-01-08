@@ -1,0 +1,129 @@
+# Alchemist front-end, front-end libraries and utilities for the Alchemist compiler infrastructure
+# Copyright (C) 2021, 2023, 2024  Natan Junges <natanajunges@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+from dataclasses import dataclass, field
+from typing import ClassVar
+
+from .common import BaseCondition, Position, AlchemistException
+
+
+@dataclass
+class BaseTokenType:
+    IGNORE: ClassVar[set["BaseTokenType"]]
+
+    optional: bool
+
+
+@dataclass
+class BaseState:
+    ACCEPT: ClassVar["BaseState"]
+    START: ClassVar[set["BaseState"]]
+
+
+BaseState.ACCEPT = BaseState()
+
+
+@dataclass
+class Token:
+    type: set[BaseTokenType]
+    start_position: Position
+    end_position: Position
+    value: str
+    next: "Token | None" = field(default=None, init=False, repr=False)
+
+
+@dataclass
+class BaseLexer:
+    Condition: ClassVar[type[BaseCondition]]
+    TokenType: ClassVar[type[BaseTokenType]]
+    State: ClassVar[type[BaseState]]
+
+    input: str
+    filename: str
+    condition: set[BaseCondition]
+    start: Token | None = field(default=None, init=False, repr=False)
+
+    def next_token(self, current_token: Token | None) -> Token:
+        if current_token is None:
+            if self.start is None:
+                self.start = self.tokenize(Position(0, 1, 1))
+
+            return self.start
+
+        if current_token.next is None:
+            current_token.next = self.tokenize(current_token.end_position)
+
+        return current_token.next
+
+    def tokenize(self, start_position: Position) -> Token:
+        while True:
+            accepted_token_type = set()
+            accepted_position = start_position
+            current_token_type = set()
+            current_position = start_position
+            current_state = self.State.START
+
+            while current_state:
+                if BaseState.ACCEPT in current_state:
+                    accepted_token_type = current_token_type
+                    accepted_position = current_position
+                    current_token_type = set()
+
+                if current_position.index_ == len(self.input):
+                    if accepted_token_type - self.TokenType.IGNORE:
+                        break
+
+                    raise AlchemistEOIError(self.filename, current_position)
+
+                current_token_type, current_state = self.nfa(current_token_type, current_position, current_state)
+                current_position = Position(
+                    current_position.index_ + 1,
+                    current_position.line + (1 if self.input[current_position.index_] == "\n" else 0),
+                    1 if self.input[current_position.index_] == "\n" else current_position.column + 1
+                )
+
+            if not accepted_token_type:
+                raise AlchemistNoTokenError(self.filename, current_position)
+
+            if accepted_token_type - self.TokenType.IGNORE:
+                return Token(
+                    accepted_token_type - self.TokenType.IGNORE,
+                    start_position,
+                    accepted_position,
+                    self.input[start_position.index_:accepted_position.index_]
+                )
+
+            start_position = accepted_position
+
+    def nfa(
+        self, current_token_type: set[BaseTokenType], current_position: Position, current_state: set[BaseState]
+    ) -> tuple[set[BaseTokenType], set[BaseState]]:
+        raise NotImplementedError()
+
+
+class AlchemistLexicalError(AlchemistException):
+    def __init__(self, filename: str, position: Position, description: str) -> None:
+        super().__init__(filename, position, "Lexical Error", description)
+
+
+class AlchemistEOIError(AlchemistLexicalError):
+    def __init__(self, filename: str, position: Position) -> None:
+        super().__init__(filename, position, "Unexpected end of input.")
+
+
+class AlchemistNoTokenError(AlchemistLexicalError):
+    def __init__(self, filename: str, position: Position) -> None:
+        super().__init__(filename, position, "Could not match any token.")
