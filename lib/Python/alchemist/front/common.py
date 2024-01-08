@@ -14,6 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from dataclasses import dataclass
+
+
+@dataclass
+class BaseCondition:
+    pass
+
+
+@dataclass
+class Position:
+    index_: int
+    line: int
+    column: int
+
+
 class AlchemistException(Exception):
-    def __init__(self, filename: str, position: tuple[int, int, int], type_: str, description: str) -> None:
-        super().__init__(f"{filename}:{position[1]}:{position[2]}: {type_}: {description}")
+    def __init__(self, filename: str, position: Position, type_: str, description: str) -> None:
+        super().__init__(f"{filename}:{position.line}:{position.column}: {type_}: {description}")

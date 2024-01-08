@@ -15,38 +15,51 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
-from enum import Flag
+from typing import ClassVar
 
-from .common import AlchemistException
+from .common import BaseCondition, Position, AlchemistException
+
+
+@dataclass
+class BaseTokenType:
+    IGNORE: ClassVar[set["BaseTokenType"]]
+
+    optional: bool
+
+
+@dataclass
+class BaseState:
+    ACCEPT: ClassVar["BaseState"]
+    START: ClassVar[set["BaseState"]]
+
+
+BaseState.ACCEPT = BaseState()
 
 
 @dataclass
 class Token:
-    type: Flag
-    start_position: tuple[int, int, int]
-    end_position: tuple[int, int, int]
+    type: set[BaseTokenType]
+    start_position: Position
+    end_position: Position
     value: str
     next: "Token | None" = field(default=None, init=False, repr=False)
 
 
 @dataclass
 class BaseLexer:
+    Condition: ClassVar[type[BaseCondition]]
+    TokenType: ClassVar[type[BaseTokenType]]
+    State: ClassVar[type[BaseState]]
+
     input: str
     filename: str
-    condition: Flag
+    condition: set[BaseCondition]
     start: Token | None = field(default=None, init=False, repr=False)
-
-    def advance_position(self, position: tuple[int, int, int]) -> tuple[int, int, int]:
-        return (
-            position[0] + 1,
-            position[1] + (1 if self.input[position[0]] == "\n" else 0),
-            1 if self.input[position[0]] == "\n" else position[2] + 1
-        )
 
     def next_token(self, current_token: Token | None) -> Token:
         if current_token is None:
             if self.start is None:
-                self.start = self.tokenize((0, 1, 1))
+                self.start = self.tokenize(Position(0, 1, 1))
 
             return self.start
 
@@ -55,20 +68,62 @@ class BaseLexer:
 
         return current_token.next
 
-    def tokenize(self, start_position: tuple[int, int, int]) -> Token:
+    def tokenize(self, start_position: Position) -> Token:
+        while True:
+            accepted_token_type = set()
+            accepted_position = start_position
+            current_token_type = set()
+            current_position = start_position
+            current_state = self.State.START
+
+            while current_state:
+                if BaseState.ACCEPT in current_state:
+                    accepted_token_type = current_token_type
+                    accepted_position = current_position
+                    current_token_type = set()
+
+                if current_position.index_ == len(self.input):
+                    if accepted_token_type - self.TokenType.IGNORE:
+                        break
+
+                    raise AlchemistEOIError(self.filename, current_position)
+
+                current_token_type, current_state = self.nfa(current_token_type, current_position, current_state)
+                current_position = Position(
+                    current_position.index_ + 1,
+                    current_position.line + (1 if self.input[current_position.index_] == "\n" else 0),
+                    1 if self.input[current_position.index_] == "\n" else current_position.column + 1
+                )
+
+            if not accepted_token_type:
+                raise AlchemistNoTokenError(self.filename, current_position)
+
+            if accepted_token_type - self.TokenType.IGNORE:
+                return Token(
+                    accepted_token_type - self.TokenType.IGNORE,
+                    start_position,
+                    accepted_position,
+                    self.input[start_position.index_:accepted_position.index_]
+                )
+
+            start_position = accepted_position
+
+    def nfa(
+        self, current_token_type: set[BaseTokenType], current_position: Position, current_state: set[BaseState]
+    ) -> tuple[set[BaseTokenType], set[BaseState]]:
         raise NotImplementedError()
 
 
 class AlchemistLexicalError(AlchemistException):
-    def __init__(self, filename: str, position: tuple[int, int, int], description: str) -> None:
+    def __init__(self, filename: str, position: Position, description: str) -> None:
         super().__init__(filename, position, "Lexical Error", description)
 
 
 class AlchemistEOIError(AlchemistLexicalError):
-    def __init__(self, filename: str, position: tuple[int, int, int]) -> None:
+    def __init__(self, filename: str, position: Position) -> None:
         super().__init__(filename, position, "Unexpected end of input.")
 
 
 class AlchemistNoTokenError(AlchemistLexicalError):
-    def __init__(self, filename: str, position: tuple[int, int, int]) -> None:
+    def __init__(self, filename: str, position: Position) -> None:
         super().__init__(filename, position, "Could not match any token.")
