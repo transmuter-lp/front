@@ -96,9 +96,7 @@ class BaseLexer:
 
             start_position = accepted_position
 
-    def nfa(
-        self, char: str, current_state: set[int]
-    ) -> tuple[set[BaseTokenType], set[int]]:
+    def nfa(self, char: str, current_state: set[int]) -> tuple[set[BaseTokenType], set[int]]:
         raise NotImplementedError()
 
 
