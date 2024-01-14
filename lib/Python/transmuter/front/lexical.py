@@ -1,4 +1,5 @@
-# Alchemist front-end, front-end libraries and utilities for the Alchemist compiler infrastructure
+# Transmuter front-end, front-end libraries and utilities for the
+# Transmuter language processing infrastructure
 # Copyright (C) 2021, 2023, 2024  Natan Junges <natanajunges@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,7 +18,7 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import BaseCondition, Position, AlchemistException
+from .common import BaseCondition, Position, TransmuterException
 
 
 @dataclass
@@ -74,7 +75,7 @@ class BaseLexer:
                     if accepted_token_type - self.TOKENTYPE_IGNORE:
                         break
 
-                    raise AlchemistEOIError(self.filename, current_position)
+                    raise TransmuterEOIError(self.filename, current_position)
 
                 current_token_type, current_state = self.nfa(self.input[current_position.index_], current_state)
                 current_position = Position(
@@ -84,7 +85,7 @@ class BaseLexer:
                 )
 
             if not accepted_token_type:
-                raise AlchemistNoTokenError(self.filename, current_position)
+                raise TransmuterNoTokenError(self.filename, current_position)
 
             if accepted_token_type - self.TOKENTYPE_IGNORE:
                 return Token(
@@ -100,16 +101,16 @@ class BaseLexer:
         raise NotImplementedError()
 
 
-class AlchemistLexicalError(AlchemistException):
+class TransmuterLexicalError(TransmuterException):
     def __init__(self, filename: str, position: Position, description: str) -> None:
         super().__init__(filename, position, "Lexical Error", description)
 
 
-class AlchemistEOIError(AlchemistLexicalError):
+class TransmuterEOIError(TransmuterLexicalError):
     def __init__(self, filename: str, position: Position) -> None:
         super().__init__(filename, position, "Unexpected end of input.")
 
 
-class AlchemistNoTokenError(AlchemistLexicalError):
+class TransmuterNoTokenError(TransmuterLexicalError):
     def __init__(self, filename: str, position: Position) -> None:
         super().__init__(filename, position, "Could not match any token.")

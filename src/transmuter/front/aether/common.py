@@ -1,4 +1,5 @@
-# Alchemist front-end, front-end libraries and utilities for the Alchemist compiler infrastructure
+# Transmuter front-end, front-end libraries and utilities for the
+# Transmuter language processing infrastructure
 # Copyright (C) 2024  Natan Junges <natanajunges@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify

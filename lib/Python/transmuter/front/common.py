@@ -1,4 +1,5 @@
-# Alchemist front-end, front-end libraries and utilities for the Alchemist compiler infrastructure
+# Transmuter front-end, front-end libraries and utilities for the
+# Transmuter language processing infrastructure
 # Copyright (C) 2021, 2023, 2024  Natan Junges <natanajunges@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -29,6 +30,6 @@ class Position:
     column: int
 
 
-class AlchemistException(Exception):
+class TransmuterException(Exception):
     def __init__(self, filename: str, position: Position, type_: str, description: str) -> None:
         super().__init__(f"{filename}:{position.line}:{position.column}: {type_}: {description}")

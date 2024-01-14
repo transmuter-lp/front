@@ -1,6 +1,6 @@
-# Alchemist front-end
+# Transmuter front-end
 
-Front-end libraries and utilities for the Alchemist compiler infrastructure.
+Front-end libraries and utilities for the Transmuter language processing infrastructure.
 
 ## Lexer
 
