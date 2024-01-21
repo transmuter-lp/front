@@ -19,5 +19,5 @@ from ..common import BaseCondition
 
 
 class Condition(BaseCondition):
-    lexical = BaseCondition()
-    syntactic = BaseCondition()
+    lexical = BaseCondition("lexical")
+    syntactic = BaseCondition("syntactic")

@@ -21,8 +21,9 @@ from typing import ClassVar
 from .common import BaseCondition, Position, TransmuterException
 
 
-@dataclass
+@dataclass(frozen=True)
 class BaseTokenType:
+    name: str
     optional: bool
 
 
