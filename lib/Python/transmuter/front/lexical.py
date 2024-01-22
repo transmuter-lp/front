@@ -18,18 +18,18 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import BaseCondition, Position, TransmuterException
+from .common import Condition, Position, TransmuterException
 
 
 @dataclass(frozen=True)
-class BaseTokenType:
+class TokenType:
     name: str
     optional: bool
 
 
 @dataclass
 class Token:
-    type: set[BaseTokenType]
+    types: set[TokenType]
     start_position: Position
     end_position: Position
     value: str
@@ -39,12 +39,12 @@ class Token:
 @dataclass
 class BaseLexer:
     STATE_ACCEPT: ClassVar[int] = 0
-    STATE_START: ClassVar[set[int]]
-    TOKENTYPE_IGNORE: ClassVar[set[BaseTokenType]]
+    STATES_START: ClassVar[set[int]]
+    TOKENTYPES_IGNORE: ClassVar[set[TokenType]]
 
     input: str
     filename: str
-    condition: set[BaseCondition]
+    conditions: set[Condition]
     start: Token | None = field(default=None, init=False, repr=False)
 
     def next_token(self, current_token: Token | None) -> Token:
@@ -61,36 +61,36 @@ class BaseLexer:
 
     def tokenize(self, start_position: Position) -> Token:
         while True:
-            accepted_token_type = set()
+            accepted_token_types = set()
             accepted_position = start_position
-            current_token_type = set()
+            current_token_types = set()
             current_position = start_position
-            current_state = self.STATE_START
+            current_states = self.STATES_START
 
-            while current_state:
-                if self.STATE_ACCEPT in current_state:
-                    accepted_token_type = current_token_type
+            while current_states:
+                if self.STATE_ACCEPT in current_states:
+                    accepted_token_types = current_token_types
                     accepted_position = current_position
 
                 if current_position.index_ == len(self.input):
-                    if accepted_token_type - self.TOKENTYPE_IGNORE:
+                    if accepted_token_types - self.TOKENTYPES_IGNORE:
                         break
 
                     raise TransmuterEOIError(self.filename, current_position)
 
-                current_token_type, current_state = self.nfa(self.input[current_position.index_], current_state)
+                current_token_types, current_states = self.nfa(self.input[current_position.index_], current_states)
                 current_position = Position(
                     current_position.index_ + 1,
                     current_position.line + (1 if self.input[current_position.index_] == "\n" else 0),
                     1 if self.input[current_position.index_] == "\n" else current_position.column + 1
                 )
 
-            if not accepted_token_type:
+            if not accepted_token_types:
                 raise TransmuterNoTokenError(self.filename, current_position)
 
-            if accepted_token_type - self.TOKENTYPE_IGNORE:
+            if accepted_token_types - self.TOKENTYPES_IGNORE:
                 return Token(
-                    accepted_token_type - self.TOKENTYPE_IGNORE,
+                    accepted_token_types - self.TOKENTYPES_IGNORE,
                     start_position,
                     accepted_position,
                     self.input[start_position.index_:accepted_position.index_]
@@ -98,7 +98,7 @@ class BaseLexer:
 
             start_position = accepted_position
 
-    def nfa(self, char: str, current_state: set[int]) -> tuple[set[BaseTokenType], set[int]]:
+    def nfa(self, char: str, current_states: set[int]) -> tuple[set[TokenType], set[int]]:
         raise NotImplementedError()
 
 

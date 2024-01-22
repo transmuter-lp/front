@@ -19,7 +19,7 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
-class BaseCondition:
+class Condition:
     name: str
 
 

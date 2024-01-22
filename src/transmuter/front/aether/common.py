@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import BaseCondition
+from ..common import Condition
 
 
-class Condition(BaseCondition):
-    lexical = BaseCondition("lexical")
-    syntactic = BaseCondition("syntactic")
+class Conditions:
+    lexical = Condition("lexical")
+    syntactic = Condition("syntactic")
