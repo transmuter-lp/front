@@ -15,56 +15,149 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from ..common import Condition
 from ..lexical import TokenType, BaseLexer
-from .common import Conditions
+from .common import lexical, syntactic
 
 
-class TokenTypes:
-    Whitespace = TokenType("Whitespace", False)
-    Identifier = TokenType("Identifier", False)
-    Colon = TokenType("Colon", False)
-    Semicolon = TokenType("Semicolon", False)
-    CommercialAt = TokenType("CommercialAt", False)
-    LeftParenthesis = TokenType("LeftParenthesis", False)
-    RightParenthesis = TokenType("RightParenthesis", False)
-    GreaterThanSign = TokenType("GreaterThanSign", False)
-    VerticalLine = TokenType("VerticalLine", False)
-    Solidus = TokenType("Solidus", False)
-    DoubleVerticalLine = TokenType("DoubleVerticalLine", False)
-    Comma = TokenType("Comma", False)
-    DoubleAmpersand = TokenType("DoubleAmpersand", False)
-    Ignore = TokenType("Ignore", False)
-    Optional = TokenType("Optional", False)
-    Start = TokenType("Start", False)
-    Asterisk = TokenType("Asterisk", False)
-    PlusSign = TokenType("PlusSign", False)
-    QuestionMark = TokenType("QuestionMark", False)
-    ExpressionRange = TokenType("ExpressionRange", False)
-    LeftCurlyBracket = TokenType("LeftCurlyBracket", False)
-    LeftCurlyBracketSolidus = TokenType("LeftCurlyBracketSolidus", False)
-    RightCurlyBracket = TokenType("RightCurlyBracket", False)
-    OrdChar = TokenType("OrdChar", False)
-    QuotedChar = TokenType("QuotedChar", False)
-    FullStop = TokenType("FullStop", False)
-    BracketExpression = TokenType("BracketExpression", False)
-    ExclamationMark = TokenType("ExclamationMark", False)
-    LeftSquareBracket = TokenType("LeftSquareBracket", False)
-    LeftSquareBracketSolidus = TokenType("LeftSquareBracketSolidus", False)
-    RightSquareBracket = TokenType("RightSquareBracket", False)
+class Whitespace(TokenType):
+    @staticmethod
+    def ignore(conditions: set[type[Condition]]) -> bool:
+        return True
+
+
+class OrdChar(TokenType):
+    pass
+
+
+class Identifier(OrdChar):
+    pass
+
+
+class Colon(OrdChar):
+    pass
+
+
+class Semicolon(TokenType):
+    pass
+
+
+class CommercialAt(OrdChar):
+    pass
+
+
+class LeftParenthesis(TokenType):
+    pass
+
+
+class RightParenthesis(TokenType):
+    pass
+
+
+class GreaterThanSign(OrdChar):
+    pass
+
+
+class VerticalLine(TokenType):
+    pass
+
+
+class Solidus(TokenType):
+    pass
+
+
+class DoubleVerticalLine(TokenType):
+    pass
+
+
+class Comma(OrdChar):
+    pass
+
+
+class DoubleAmpersand(OrdChar):
+    pass
+
+
+class Ignore(OrdChar):
+    pass
+
+
+class Optional(OrdChar):
+    pass
+
+
+class Start(TokenType):
+    pass
+
+
+class Asterisk(TokenType):
+    pass
+
+
+class PlusSign(TokenType):
+    pass
+
+
+class QuestionMark(TokenType):
+    pass
+
+
+class ExpressionRange(TokenType):
+    pass
+
+
+class LeftCurlyBracket(TokenType):
+    pass
+
+
+class LeftCurlyBracketSolidus(TokenType):
+    pass
+
+
+class RightCurlyBracket(TokenType):
+    pass
+
+
+class QuotedChar(TokenType):
+    pass
+
+
+class FullStop(TokenType):
+    pass
+
+
+class BracketExpression(TokenType):
+    pass
+
+
+class ExclamationMark(OrdChar):
+    pass
+
+
+class LeftSquareBracket(TokenType):
+    pass
+
+
+class LeftSquareBracketSolidus(TokenType):
+    pass
+
+
+class RightSquareBracket(TokenType):
+    pass
 
 
 class Lexer(BaseLexer):
     STATES_START = {1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 25, 33, 38, 39, 40, 41, 50, 51, 53, 54, 55, 60, 61, 93, 94, 95, 97}
-    TOKENTYPES_IGNORE = {TokenTypes.Whitespace}
+    TOKENTYPES = {Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket}
 
-    def nfa(self, char: str, current_states: set[int]) -> tuple[set[TokenType], set[int]]:
+    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TokenType]], set[int]]:
         current_token_types = set()
         next_states = set()
 
         # Whitespace
         # 1:12
         if 1 in current_states and (char == "\t" or char == " "):
-            current_token_types |= {TokenTypes.Whitespace}
+            current_token_types |= {Whitespace}
             next_states |= {1, self.STATE_ACCEPT}
 
         # 1:30
@@ -73,66 +166,66 @@ class Lexer(BaseLexer):
 
         # 1:34
         if 3 in current_states and (char == "\n"):
-            current_token_types |= {TokenTypes.Whitespace}
+            current_token_types |= {Whitespace}
             next_states |= {self.STATE_ACCEPT}
 
         # Identifier
         # 3:22
-        if 4 in current_states and not current_token_types & {TokenTypes.Ignore, TokenTypes.Optional, TokenTypes.Start} and ("A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
-            current_token_types |= {TokenTypes.Identifier, TokenTypes.OrdChar}
+        if 4 in current_states and not current_token_types & {Ignore, Optional, Start} and ("A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
+            current_token_types |= {Identifier, OrdChar}
             next_states |= {5, self.STATE_ACCEPT}
 
         # 3:31
-        if 5 in current_states and not current_token_types & {TokenTypes.Ignore, TokenTypes.Optional, TokenTypes.Start} and ("0" <= char <= "9" or "A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
-            current_token_types |= {TokenTypes.Identifier, TokenTypes.OrdChar}
+        if 5 in current_states and not current_token_types & {Ignore, Optional, Start} and ("0" <= char <= "9" or "A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
+            current_token_types |= {Identifier, OrdChar}
             next_states |= {5, self.STATE_ACCEPT}
 
         # Colon
         # 5:17
         if 6 in current_states and (char == ":"):
-            current_token_types |= {TokenTypes.Colon, TokenTypes.OrdChar}
+            current_token_types |= {Colon, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # Semicolon
         # 7:12
         if 7 in current_states and (char == ";"):
-            current_token_types |= {TokenTypes.Semicolon}
+            current_token_types |= {Semicolon}
             next_states |= {self.STATE_ACCEPT}
 
         # CommercialAt
         # 9:24
         if 8 in current_states and (char == "@"):
-            current_token_types |= {TokenTypes.CommercialAt, TokenTypes.OrdChar}
+            current_token_types |= {CommercialAt, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # LeftParenthesis
         # 11:18
         if 9 in current_states and (char == "("):
-            current_token_types |= {TokenTypes.LeftParenthesis}
+            current_token_types |= {LeftParenthesis}
             next_states |= {self.STATE_ACCEPT}
 
         # RightParenthesis
         # 13:19
         if 10 in current_states and (char == ")"):
-            current_token_types |= {TokenTypes.RightParenthesis}
+            current_token_types |= {RightParenthesis}
             next_states |= {self.STATE_ACCEPT}
 
         # GreaterThanSign
         # 15:35
-        if 11 in current_states and (Conditions.lexical in self.conditions) and (char == ">"):
-            current_token_types |= {TokenTypes.GreaterThanSign, TokenTypes.OrdChar}
+        if 11 in current_states and (lexical in self.conditions) and (char == ">"):
+            current_token_types |= {GreaterThanSign, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # VerticalLine
         # 17:15
         if 12 in current_states and (char == "|"):
-            current_token_types |= {TokenTypes.VerticalLine}
+            current_token_types |= {VerticalLine}
             next_states |= {self.STATE_ACCEPT}
 
         # Solidus
         # 19:20
-        if 13 in current_states and (Conditions.syntactic in self.conditions) and (char == "/"):
-            current_token_types |= {TokenTypes.Solidus}
+        if 13 in current_states and (syntactic in self.conditions) and (char == "/"):
+            current_token_types |= {Solidus}
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleVerticalLine
@@ -142,13 +235,13 @@ class Lexer(BaseLexer):
 
         # 21:23
         if 15 in current_states and (char == "|"):
-            current_token_types |= {TokenTypes.DoubleVerticalLine}
+            current_token_types |= {DoubleVerticalLine}
             next_states |= {self.STATE_ACCEPT}
 
         # Comma
         # 23:17
         if 16 in current_states and (char == ","):
-            current_token_types |= {TokenTypes.Comma, TokenTypes.OrdChar}
+            current_token_types |= {Comma, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleAmpersand
@@ -158,12 +251,12 @@ class Lexer(BaseLexer):
 
         # 25:28
         if 18 in current_states and (char == "&"):
-            current_token_types |= {TokenTypes.DoubleAmpersand, TokenTypes.OrdChar}
+            current_token_types |= {DoubleAmpersand, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # Ignore
         # 27:39
-        if 19 in current_states and (Conditions.lexical in self.conditions) and (char == "i"):
+        if 19 in current_states and (lexical in self.conditions) and (char == "i"):
             next_states |= {20}
 
         # 27:40
@@ -184,13 +277,13 @@ class Lexer(BaseLexer):
 
         # 27:44
         if 24 in current_states and (char == "e"):
-            current_token_types |= {TokenTypes.Ignore, TokenTypes.OrdChar}
-            current_token_types -= {TokenTypes.Identifier}
+            current_token_types |= {Ignore, OrdChar}
+            current_token_types -= {Identifier}
             next_states |= {self.STATE_ACCEPT}
 
         # Optional
         # 29:41
-        if 25 in current_states and (Conditions.lexical in self.conditions) and (char == "o"):
+        if 25 in current_states and (lexical in self.conditions) and (char == "o"):
             next_states |= {26}
 
         # 29:42
@@ -219,13 +312,13 @@ class Lexer(BaseLexer):
 
         # 29:48
         if 32 in current_states and (char == "l"):
-            current_token_types |= {TokenTypes.Optional, TokenTypes.OrdChar}
-            current_token_types -= {TokenTypes.Identifier}
+            current_token_types |= {Optional, OrdChar}
+            current_token_types -= {Identifier}
             next_states |= {self.STATE_ACCEPT}
 
         # Start
         # 31:31
-        if 33 in current_states and (Conditions.syntactic in self.conditions) and (char == "s"):
+        if 33 in current_states and (syntactic in self.conditions) and (char == "s"):
             next_states |= {34}
 
         # 31:32
@@ -242,31 +335,31 @@ class Lexer(BaseLexer):
 
         # 31:35
         if 37 in current_states and (char == "t"):
-            current_token_types |= {TokenTypes.Start}
-            current_token_types -= {TokenTypes.Identifier}
+            current_token_types |= {Start}
+            current_token_types -= {Identifier}
             next_states |= {self.STATE_ACCEPT}
 
         # Asterisk
         # 33:19
-        if 38 in current_states and (Conditions.lexical in self.conditions) and (char == "*"):
-            current_token_types |= {TokenTypes.Asterisk}
+        if 38 in current_states and (lexical in self.conditions) and (char == "*"):
+            current_token_types |= {Asterisk}
             next_states |= {self.STATE_ACCEPT}
 
         # PlusSign
         # 35:19
-        if 39 in current_states and (Conditions.lexical in self.conditions) and (char == "+"):
-            current_token_types |= {TokenTypes.PlusSign}
+        if 39 in current_states and (lexical in self.conditions) and (char == "+"):
+            current_token_types |= {PlusSign}
             next_states |= {self.STATE_ACCEPT}
 
         # QuestionMark
         # 37:23
-        if 40 in current_states and (Conditions.lexical in self.conditions) and (char == "?"):
-            current_token_types |= {TokenTypes.QuestionMark}
+        if 40 in current_states and (lexical in self.conditions) and (char == "?"):
+            current_token_types |= {QuestionMark}
             next_states |= {self.STATE_ACCEPT}
 
         # ExpressionRange
         # 39:26
-        if 41 in current_states and (Conditions.lexical in self.conditions) and (char == "{"):
+        if 41 in current_states and (lexical in self.conditions) and (char == "{"):
             next_states |= {42, 43}
 
         # 39:30
@@ -299,45 +392,45 @@ class Lexer(BaseLexer):
 
         # 39:71
         if 49 in current_states and (char == "}"):
-            current_token_types |= {TokenTypes.ExpressionRange}
+            current_token_types |= {ExpressionRange}
             next_states |= {self.STATE_ACCEPT}
 
         # LeftCurlyBracket
         # 41:29
-        if 50 in current_states and (Conditions.syntactic in self.conditions) and (char == "{"):
-            current_token_types |= {TokenTypes.LeftCurlyBracket}
+        if 50 in current_states and (syntactic in self.conditions) and (char == "{"):
+            current_token_types |= {LeftCurlyBracket}
             next_states |= {self.STATE_ACCEPT}
 
         # LeftCurlyBracketSolidus
         # 43:36
-        if 51 in current_states and (Conditions.syntactic in self.conditions) and (char == "{"):
+        if 51 in current_states and (syntactic in self.conditions) and (char == "{"):
             next_states |= {52}
 
         # 43:38
         if 52 in current_states and (char == "/"):
-            current_token_types |= {TokenTypes.LeftCurlyBracketSolidus}
+            current_token_types |= {LeftCurlyBracketSolidus}
             next_states |= {self.STATE_ACCEPT}
 
         # RightCurlyBracket
         # 45:30
-        if 53 in current_states and (Conditions.syntactic in self.conditions) and (char == "}"):
-            current_token_types |= {TokenTypes.RightCurlyBracket}
+        if 53 in current_states and (syntactic in self.conditions) and (char == "}"):
+            current_token_types |= {RightCurlyBracket}
             next_states |= {self.STATE_ACCEPT}
 
         # OrdChar
         # 47:18
-        if 54 in current_states and (Conditions.lexical in self.conditions) and not current_token_types & {TokenTypes.Identifier, TokenTypes.Colon, TokenTypes.CommercialAt, TokenTypes.GreaterThanSign, TokenTypes.Comma, TokenTypes.DoubleAmpersand, TokenTypes.Ignore, TokenTypes.Optional, TokenTypes.ExclamationMark} and (not ("\000" <= char <= "\037" or char == "\177" or char == " " or char == ";" or char == "^" or char == "." or char == "[" or char == "$" or char == "(" or char == ")" or char == "|" or char == "*" or char == "+" or char == "?" or char == "{" or char == "\\")):
-            current_token_types |= {TokenTypes.OrdChar}
+        if 54 in current_states and (lexical in self.conditions) and not current_token_types & {Identifier, Colon, CommercialAt, GreaterThanSign, Comma, DoubleAmpersand, Ignore, Optional, ExclamationMark} and (not ("\000" <= char <= "\037" or char == "\177" or char == " " or char == ";" or char == "^" or char == "." or char == "[" or char == "$" or char == "(" or char == ")" or char == "|" or char == "*" or char == "+" or char == "?" or char == "{" or char == "\\")):
+            current_token_types |= {OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # QuotedChar
         # 49:21
-        if 55 in current_states and (Conditions.lexical in self.conditions) and (char == "\\"):
+        if 55 in current_states and (lexical in self.conditions) and (char == "\\"):
             next_states |= {56, 57}
 
         # 49:25
         if 56 in current_states and (char == "a" or char == "b" or char == "t" or char == "n" or char == "v" or char == "f" or char == "r" or char == " " or char == ";" or char == "^" or char == "." or char == "[" or char == "$" or char == "(" or char == ")" or char == "|" or char == "*" or char == "+" or char == "?" or char == "{" or char == "\\"):
-            current_token_types |= {TokenTypes.QuotedChar}
+            current_token_types |= {QuotedChar}
             next_states |= {self.STATE_ACCEPT}
 
         # 49:52
@@ -350,18 +443,18 @@ class Lexer(BaseLexer):
 
         # 49:56:2
         if 59 in current_states and ("0" <= char <= "7"):
-            current_token_types |= {TokenTypes.QuotedChar}
+            current_token_types |= {QuotedChar}
             next_states |= {self.STATE_ACCEPT}
 
         # FullStop
         # 51:19
-        if 60 in current_states and (Conditions.lexical in self.conditions) and (char == "."):
-            current_token_types |= {TokenTypes.FullStop}
+        if 60 in current_states and (lexical in self.conditions) and (char == "."):
+            current_token_types |= {FullStop}
             next_states |= {self.STATE_ACCEPT}
 
         # BracketExpression
         # 53:28
-        if 61 in current_states and (Conditions.lexical in self.conditions) and (char == "["):
+        if 61 in current_states and (lexical in self.conditions) and (char == "["):
             next_states |= {62, 63, 64, 69}
 
         # 53:32
@@ -486,35 +579,35 @@ class Lexer(BaseLexer):
 
         # 53:286
         if 92 in current_states and (char == "]"):
-            current_token_types |= {TokenTypes.BracketExpression}
+            current_token_types |= {BracketExpression}
             next_states |= {self.STATE_ACCEPT}
 
         # ExclamationMark
         # 55:27
         if 93 in current_states and (char == "!"):
-            current_token_types |= {TokenTypes.ExclamationMark, TokenTypes.OrdChar}
+            current_token_types |= {ExclamationMark, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # LeftSquareBracket
         # 57:30
-        if 94 in current_states and (Conditions.syntactic in self.conditions) and (char == "["):
-            current_token_types |= {TokenTypes.LeftSquareBracket}
+        if 94 in current_states and (syntactic in self.conditions) and (char == "["):
+            current_token_types |= {LeftSquareBracket}
             next_states |= {self.STATE_ACCEPT}
 
         # LeftSquareBracketSolidus
         # 59:37
-        if 95 in current_states and (Conditions.syntactic in self.conditions) and (char == "["):
+        if 95 in current_states and (syntactic in self.conditions) and (char == "["):
             next_states |= {96}
 
         # 59:39
         if 96 in current_states and (char == "/"):
-            current_token_types |= {TokenTypes.LeftSquareBracketSolidus}
+            current_token_types |= {LeftSquareBracketSolidus}
             next_states |= {self.STATE_ACCEPT}
 
         # RightSquareBracket
         # 61:31
-        if 97 in current_states and (Conditions.syntactic in self.conditions) and (char == "]"):
-            current_token_types |= {TokenTypes.RightSquareBracket}
+        if 97 in current_states and (syntactic in self.conditions) and (char == "]"):
+            current_token_types |= {RightSquareBracket}
             next_states |= {self.STATE_ACCEPT}
 
         return (current_token_types, next_states)

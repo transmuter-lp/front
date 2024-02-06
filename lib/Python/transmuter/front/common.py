@@ -18,9 +18,8 @@
 from dataclasses import dataclass
 
 
-@dataclass(frozen=True)
 class Condition:
-    name: str
+    pass
 
 
 @dataclass

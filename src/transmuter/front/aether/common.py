@@ -18,6 +18,9 @@
 from ..common import Condition
 
 
-class Conditions:
-    lexical = Condition("lexical")
-    syntactic = Condition("syntactic")
+class lexical(Condition):
+    pass
+
+
+class syntactic(Condition):
+    pass

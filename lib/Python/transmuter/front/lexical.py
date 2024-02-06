@@ -21,15 +21,19 @@ from typing import ClassVar
 from .common import Condition, Position, TransmuterException
 
 
-@dataclass(frozen=True)
 class TokenType:
-    name: str
-    optional: bool
+    @staticmethod
+    def ignore(conditions: set[type[Condition]]) -> bool:
+        return False
+
+    @staticmethod
+    def optional(conditions: set[type[Condition]]) -> bool:
+        return False
 
 
 @dataclass
 class Token:
-    types: set[TokenType]
+    types: set[type[TokenType]]
     start_position: Position
     end_position: Position
     value: str
@@ -40,12 +44,16 @@ class Token:
 class BaseLexer:
     STATE_ACCEPT: ClassVar[int] = 0
     STATES_START: ClassVar[set[int]]
-    TOKENTYPES_IGNORE: ClassVar[set[TokenType]]
+    TOKENTYPES: ClassVar[set[type[TokenType]]]
 
     input: str
     filename: str
-    conditions: set[Condition]
+    conditions: set[type[Condition]]
+    tokentypes_ignore: set[type[TokenType]] = field(init=False, repr=False)
     start: Token | None = field(default=None, init=False, repr=False)
+
+    def __post_init__(self):
+        self.tokentypes_ignore = {tokentype for tokentype in self.TOKENTYPES if tokentype.ignore(self.conditions)}
 
     def next_token(self, current_token: Token | None) -> Token:
         if current_token is None:
@@ -73,7 +81,7 @@ class BaseLexer:
                     accepted_position = current_position
 
                 if current_position.index_ == len(self.input):
-                    if accepted_token_types - self.TOKENTYPES_IGNORE:
+                    if accepted_token_types - self.tokentypes_ignore:
                         break
 
                     raise TransmuterEOIError(self.filename, current_position)
@@ -88,9 +96,9 @@ class BaseLexer:
             if not accepted_token_types:
                 raise TransmuterNoTokenError(self.filename, current_position)
 
-            if accepted_token_types - self.TOKENTYPES_IGNORE:
+            if accepted_token_types - self.tokentypes_ignore:
                 return Token(
-                    accepted_token_types - self.TOKENTYPES_IGNORE,
+                    accepted_token_types - self.tokentypes_ignore,
                     start_position,
                     accepted_position,
                     self.input[start_position.index_:accepted_position.index_]
@@ -98,7 +106,7 @@ class BaseLexer:
 
             start_position = accepted_position
 
-    def nfa(self, char: str, current_states: set[int]) -> tuple[set[TokenType], set[int]]:
+    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TokenType]], set[int]]:
         raise NotImplementedError()
 
 
