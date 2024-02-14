@@ -175,7 +175,7 @@ class Lexer(BaseLexer):
             current_token_types |= {Identifier, OrdChar}
             next_states |= {self.STATE_ACCEPT, 5}
 
-        # 3:31
+        # 3:32
         if 5 in current_states and not current_token_types & {Ignore, Optional, Start} and ("0" <= char <= "9" or "A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
             current_token_types |= {Identifier, OrdChar}
             next_states |= {self.STATE_ACCEPT, 5}
@@ -370,27 +370,27 @@ class Lexer(BaseLexer):
         if 43 in current_states and ("1" <= char <= "9"):
             next_states |= {44, 45, 49}
 
-        # 39:39
+        # 39:40
         if 44 in current_states and ("0" <= char <= "9"):
             next_states |= {44, 45, 49}
 
-        # 39:48
+        # 39:49
         if 45 in current_states and (char == ","):
             next_states |= {46, 47, 49}
 
-        # 39:51
+        # 39:52
         if 46 in current_states and (char == "0"):
             next_states |= {49}
 
-        # 39:55
+        # 39:56
         if 47 in current_states and ("1" <= char <= "9"):
             next_states |= {48, 49}
 
-        # 39:60
+        # 39:62
         if 48 in current_states and ("0" <= char <= "9"):
             next_states |= {48, 49}
 
-        # 39:71
+        # 39:73
         if 49 in current_states and (char == "}"):
             current_token_types |= {ExpressionRange}
             next_states |= {self.STATE_ACCEPT}
@@ -406,7 +406,7 @@ class Lexer(BaseLexer):
         if 51 in current_states and (syntactic in self.conditions) and (char == "{"):
             next_states |= {52}
 
-        # 43:38
+        # 43:39
         if 52 in current_states and (char == "/"):
             current_token_types |= {LeftCurlyBracketSolidus}
             next_states |= {self.STATE_ACCEPT}
@@ -437,11 +437,11 @@ class Lexer(BaseLexer):
         if 57 in current_states and (char == "0" or char == "1"):
             next_states |= {58}
 
-        # 49:56:1
+        # 49:57:1
         if 58 in current_states and ("0" <= char <= "7"):
             next_states |= {59}
 
-        # 49:56:2
+        # 49:57:2
         if 59 in current_states and ("0" <= char <= "7"):
             current_token_types |= {QuotedChar}
             next_states |= {self.STATE_ACCEPT}
@@ -477,107 +477,107 @@ class Lexer(BaseLexer):
         if 66 in current_states and (char == "0" or char == "1"):
             next_states |= {67}
 
-        # 53:81:1
+        # 53:82:1
         if 67 in current_states and ("0" <= char <= "7"):
             next_states |= {68}
 
-        # 53:81:2
+        # 53:82:2
         if 68 in current_states and ("0" <= char <= "7"):
             next_states |= {71, 78, 79, 91, 92}
 
-        # 53:94
+        # 53:95
         if 69 in current_states and (char == "^"):
             next_states |= {70}
 
-        # 53:97
+        # 53:98
         if 70 in current_states and (char == "^"):
             next_states |= {71, 78, 79, 91, 92}
 
-        # 53:102
+        # 53:103
         if 71 in current_states and (char == "-"):
             next_states |= {72, 73}
 
-        # 53:105
+        # 53:106
         if 72 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\\" or char == "\177")):
             next_states |= {78, 79, 91, 92}
 
-        # 53:127
+        # 53:128
         if 73 in current_states and (char == "\\"):
             next_states |= {74, 75}
 
-        # 53:131
+        # 53:132
         if 74 in current_states and (char == "\\" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v"):
             next_states |= {78, 79, 91, 92}
 
-        # 53:145
+        # 53:146
         if 75 in current_states and (char == "0" or char == "1"):
             next_states |= {76}
 
-        # 53:149:1
+        # 53:151:1
         if 76 in current_states and ("0" <= char <= "7"):
             next_states |= {77}
 
-        # 53:149:2
+        # 53:151:2
         if 77 in current_states and ("0" <= char <= "7"):
             next_states |= {78, 79, 91, 92}
 
-        # 53:164
+        # 53:166
         if 78 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\\" or char == "\177" or char == "-")):
             next_states |= {78, 79, 84, 91, 92}
 
-        # 53:187
+        # 53:189
         if 79 in current_states and (char == "\\"):
             next_states |= {80, 81}
 
-        # 53:191
+        # 53:193
         if 80 in current_states and (char == "\\" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v"):
             next_states |= {78, 79, 84, 91, 92}
 
-        # 53:205
+        # 53:207
         if 81 in current_states and (char == "0" or char == "1"):
             next_states |= {82}
 
-        # 53:209:1
+        # 53:212:1
         if 82 in current_states and ("0" <= char <= "7"):
             next_states |= {83}
 
-        # 53:209:2
+        # 53:212:2
         if 83 in current_states and ("0" <= char <= "7"):
             next_states |= {78, 79, 84, 91, 92}
 
-        # 53:221
+        # 53:224
         if 84 in current_states and (char == "-"):
             next_states |= {85, 86}
 
-        # 53:224
+        # 53:227
         if 85 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\\" or char == "\177")):
             next_states |= {78, 79, 91, 92}
 
-        # 53:246
+        # 53:249
         if 86 in current_states and (char == "\\"):
             next_states |= {87, 88}
 
-        # 53:250
+        # 53:253
         if 87 in current_states and (char == "\\" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v"):
             next_states |= {78, 79, 91, 92}
 
-        # 53:264
+        # 53:267
         if 88 in current_states and (char == "0" or char == "1"):
             next_states |= {89}
 
-        # 53:268:1
+        # 53:272:1
         if 89 in current_states and ("0" <= char <= "7"):
             next_states |= {90}
 
-        # 53:268:2
+        # 53:272:2
         if 90 in current_states and ("0" <= char <= "7"):
             next_states |= {78, 79, 91, 92}
 
-        # 53:283
+        # 53:287
         if 91 in current_states and (char == "-"):
             next_states |= {92}
 
-        # 53:286
+        # 53:290
         if 92 in current_states and (char == "]"):
             current_token_types |= {BracketExpression}
             next_states |= {self.STATE_ACCEPT}
@@ -599,7 +599,7 @@ class Lexer(BaseLexer):
         if 95 in current_states and (syntactic in self.conditions) and (char == "["):
             next_states |= {96}
 
-        # 59:39
+        # 59:40
         if 96 in current_states and (char == "/"):
             current_token_types |= {LeftSquareBracketSolidus}
             next_states |= {self.STATE_ACCEPT}

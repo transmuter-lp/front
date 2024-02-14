@@ -1,6 +1,6 @@
 Whitespace(ignore): [\t ]+ | \r? \n ;
 
-Identifier(OrdChar): [A-Z_a-z][0-9A-Z_a-z]* ;
+Identifier(OrdChar): [A-Z_a-z] [0-9A-Z_a-z]* ;
 
 Colon(OrdChar): : ;
 
@@ -36,26 +36,26 @@ PlusSign@lexical: \+ ;
 
 QuestionMark@lexical: \? ;
 
-ExpressionRange@lexical: \{ (0 | [1-9][0-9]*) (, (0 | [1-9][0-9]*)?)? } ;
+ExpressionRange@lexical: \{ (0 | [1-9] [0-9]*) (, (0 | [1-9] [0-9]*)?)? } ;
 
 LeftCurlyBracket@syntactic: \{ ;
 
-LeftCurlyBracketSolidus@syntactic: \{/ ;
+LeftCurlyBracketSolidus@syntactic: \{ / ;
 
 RightCurlyBracket@syntactic: } ;
 
 OrdChar@lexical: [^\000-\037 $()*+.;?[\\^{|\177] ;
 
-QuotedChar@lexical: \\ ([ $()*+.;?[\\^abfnrtv{|] | [01][0-7]{2}) ;
+QuotedChar@lexical: \\ ([ $()*+.;?[\\^abfnrtv{|] | [01] [0-7]{2}) ;
 
 FullStop@lexical: \. ;
 
-BracketExpression@lexical: \[ (\^? ([^\000-\037\\^\177] | \\ ([\\abfnrtv] | [01][0-7]{2})) | \^ \^) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01][0-7]{2})))? (([^]\000-\037\\\177-] | \\ ([\\abfnrtv] | [01][0-7]{2})) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01][0-7]{2})))?)* -? ] ;
+BracketExpression@lexical: \[ (\^? ([^\000-\037\\^\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})) | \^ \^) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})))? (([^]\000-\037\\\177-] | \\ ([\\abfnrtv] | [01] [0-7]{2})) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})))?)* -? ] ;
 
 ExclamationMark(OrdChar): ! ;
 
 LeftSquareBracket@syntactic: \[ ;
 
-LeftSquareBracketSolidus@syntactic: \[/ ;
+LeftSquareBracketSolidus@syntactic: \[ / ;
 
 RightSquareBracket@syntactic: ] ;
