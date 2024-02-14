@@ -155,10 +155,10 @@ class Lexer(BaseLexer):
         next_states = set()
 
         # Whitespace
-        # 1:12
+        # 1:21
         if 1 in current_states and (char == "\t" or char == " "):
             current_token_types |= {Whitespace}
-            next_states |= {1, self.STATE_ACCEPT}
+            next_states |= {self.STATE_ACCEPT, 1}
 
         # 1:30
         if 2 in current_states and (char == "\r"):
@@ -173,12 +173,12 @@ class Lexer(BaseLexer):
         # 3:22
         if 4 in current_states and not current_token_types & {Ignore, Optional, Start} and ("A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
             current_token_types |= {Identifier, OrdChar}
-            next_states |= {5, self.STATE_ACCEPT}
+            next_states |= {self.STATE_ACCEPT, 5}
 
         # 3:31
         if 5 in current_states and not current_token_types & {Ignore, Optional, Start} and ("0" <= char <= "9" or "A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
             current_token_types |= {Identifier, OrdChar}
-            next_states |= {5, self.STATE_ACCEPT}
+            next_states |= {self.STATE_ACCEPT, 5}
 
         # Colon
         # 5:17
@@ -419,7 +419,7 @@ class Lexer(BaseLexer):
 
         # OrdChar
         # 47:18
-        if 54 in current_states and (lexical in self.conditions) and not current_token_types & {Identifier, Colon, CommercialAt, GreaterThanSign, Comma, DoubleAmpersand, Ignore, Optional, ExclamationMark} and (not ("\000" <= char <= "\037" or char == "\177" or char == " " or char == ";" or char == "^" or char == "." or char == "[" or char == "$" or char == "(" or char == ")" or char == "|" or char == "*" or char == "+" or char == "?" or char == "{" or char == "\\")):
+        if 54 in current_states and (lexical in self.conditions) and not current_token_types & {Identifier, Colon, CommercialAt, GreaterThanSign, Comma, DoubleAmpersand, Ignore, Optional, ExclamationMark} and (not ("\000" <= char <= "\037" or char == " " or char == "$" or char == "(" or char == ")" or char == "*" or char == "+" or char == "." or char == ";" or char == "?" or char == "[" or char == "\\" or char == "^" or char == "{" or char == "|" or char == "\177")):
             current_token_types |= {OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
@@ -429,7 +429,7 @@ class Lexer(BaseLexer):
             next_states |= {56, 57}
 
         # 49:25
-        if 56 in current_states and (char == "a" or char == "b" or char == "t" or char == "n" or char == "v" or char == "f" or char == "r" or char == " " or char == ";" or char == "^" or char == "." or char == "[" or char == "$" or char == "(" or char == ")" or char == "|" or char == "*" or char == "+" or char == "?" or char == "{" or char == "\\"):
+        if 56 in current_states and (char == " " or char == "$" or char == "(" or char == ")" or char == "*" or char == "+" or char == "." or char == ";" or char == "?" or char == "[" or char == "\\" or char == "^" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v" or char == "{" or char == "|"):
             current_token_types |= {QuotedChar}
             next_states |= {self.STATE_ACCEPT}
 
@@ -462,7 +462,7 @@ class Lexer(BaseLexer):
             next_states |= {63, 64}
 
         # 53:37
-        if 63 in current_states and (not ("\000" <= char <= "\037" or char == "\177" or char == "\\" or char == "^")):
+        if 63 in current_states and (not ("\000" <= char <= "\037" or char == "\\" or char == "^" or char == "\177")):
             next_states |= {71, 78, 79, 91, 92}
 
         # 53:59
@@ -470,7 +470,7 @@ class Lexer(BaseLexer):
             next_states |= {65, 66}
 
         # 53:63
-        if 65 in current_states and (char == "a" or char == "b" or char == "t" or char == "n" or char == "v" or char == "f" or char == "r" or char == "\\"):
+        if 65 in current_states and (char == "\\" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v"):
             next_states |= {71, 78, 79, 91, 92}
 
         # 53:77
@@ -498,7 +498,7 @@ class Lexer(BaseLexer):
             next_states |= {72, 73}
 
         # 53:105
-        if 72 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\177" or char == "\\")):
+        if 72 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\\" or char == "\177")):
             next_states |= {78, 79, 91, 92}
 
         # 53:127
@@ -506,7 +506,7 @@ class Lexer(BaseLexer):
             next_states |= {74, 75}
 
         # 53:131
-        if 74 in current_states and (char == "a" or char == "b" or char == "t" or char == "n" or char == "v" or char == "f" or char == "r" or char == "\\"):
+        if 74 in current_states and (char == "\\" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v"):
             next_states |= {78, 79, 91, 92}
 
         # 53:145
@@ -522,7 +522,7 @@ class Lexer(BaseLexer):
             next_states |= {78, 79, 91, 92}
 
         # 53:164
-        if 78 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\177" or char == "\\" or char == "-")):
+        if 78 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\\" or char == "\177" or char == "-")):
             next_states |= {78, 79, 84, 91, 92}
 
         # 53:187
@@ -530,7 +530,7 @@ class Lexer(BaseLexer):
             next_states |= {80, 81}
 
         # 53:191
-        if 80 in current_states and (char == "a" or char == "b" or char == "t" or char == "n" or char == "v" or char == "f" or char == "r" or char == "\\"):
+        if 80 in current_states and (char == "\\" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v"):
             next_states |= {78, 79, 84, 91, 92}
 
         # 53:205
@@ -550,7 +550,7 @@ class Lexer(BaseLexer):
             next_states |= {85, 86}
 
         # 53:224
-        if 85 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\177" or char == "\\")):
+        if 85 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char == "\\" or char == "\177")):
             next_states |= {78, 79, 91, 92}
 
         # 53:246
@@ -558,7 +558,7 @@ class Lexer(BaseLexer):
             next_states |= {87, 88}
 
         # 53:250
-        if 87 in current_states and (char == "a" or char == "b" or char == "t" or char == "n" or char == "v" or char == "f" or char == "r" or char == "\\"):
+        if 87 in current_states and (char == "\\" or char == "a" or char == "b" or char == "f" or char == "n" or char == "r" or char == "t" or char == "v"):
             next_states |= {78, 79, 91, 92}
 
         # 53:264

@@ -44,13 +44,13 @@ LeftCurlyBracketSolidus@syntactic: \{/ ;
 
 RightCurlyBracket@syntactic: } ;
 
-OrdChar@lexical: [^\000-\037\177 ;^.[$()|*+?{\\] ;
+OrdChar@lexical: [^\000-\037 $()*+.;?[\\^{|\177] ;
 
-QuotedChar@lexical: \\ ([abtnvfr ;^.[$()|*+?{\\] | [01][0-7]{2}) ;
+QuotedChar@lexical: \\ ([ $()*+.;?[\\^abfnrtv{|] | [01][0-7]{2}) ;
 
 FullStop@lexical: \. ;
 
-BracketExpression@lexical: \[ (\^? ([^\000-\037\177\\^] | \\ ([abtnvfr\\] | [01][0-7]{2})) | \^ \^) (- ([^]\000-\037\177\\] | \\ ([abtnvfr\\] | [01][0-7]{2})))? (([^]\000-\037\177\\-] | \\ ([abtnvfr\\] | [01][0-7]{2})) (- ([^]\000-\037\177\\] | \\ ([abtnvfr\\] | [01][0-7]{2})))?)* -? ] ;
+BracketExpression@lexical: \[ (\^? ([^\000-\037\\^\177] | \\ ([\\abfnrtv] | [01][0-7]{2})) | \^ \^) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01][0-7]{2})))? (([^]\000-\037\\\177-] | \\ ([\\abfnrtv] | [01][0-7]{2})) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01][0-7]{2})))?)* -? ] ;
 
 ExclamationMark(OrdChar): ! ;
 
