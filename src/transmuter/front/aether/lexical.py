@@ -66,7 +66,7 @@ class Solidus(TokenType):
     pass
 
 
-class DoubleVerticalLine(TokenType):
+class DoubleVerticalLine(OrdChar):
     pass
 
 
@@ -229,13 +229,13 @@ class Lexer(BaseLexer):
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleVerticalLine
-        # 21:21
+        # 21:30
         if 14 in current_states and (char == "|"):
             next_states |= {15}
 
-        # 21:23
+        # 21:31
         if 15 in current_states and (char == "|"):
-            current_token_types |= {DoubleVerticalLine}
+            current_token_types |= {DoubleVerticalLine, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # Comma
@@ -419,7 +419,7 @@ class Lexer(BaseLexer):
 
         # OrdChar
         # 47:18
-        if 54 in current_states and (lexical in self.conditions) and not current_token_types & {Identifier, Colon, CommercialAt, GreaterThanSign, Comma, DoubleAmpersand, Ignore, Optional, ExclamationMark} and (not ("\000" <= char <= "\037" or char == " " or char == "$" or char == "(" or char == ")" or char == "*" or char == "+" or char == "." or char == ";" or char == "?" or char == "[" or char == "\\" or char == "^" or char == "{" or char == "|" or char == "\177")):
+        if 54 in current_states and (lexical in self.conditions) and not current_token_types & {Identifier, Colon, CommercialAt, GreaterThanSign, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, ExclamationMark} and (not ("\000" <= char <= "\037" or char == " " or char == "$" or char == "(" or char == ")" or char == "*" or char == "+" or char == "." or char == ";" or char == "?" or char == "[" or char == "\\" or char == "^" or char == "{" or char == "|" or char == "\177")):
             current_token_types |= {OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
