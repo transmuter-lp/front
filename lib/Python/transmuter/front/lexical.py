@@ -57,16 +57,16 @@ class BaseLexer:
     def next_terminal(self, current_terminal: Terminal | None) -> Terminal:
         if current_terminal is None:
             if self.start is None:
-                self.start = self.tokenize(Position(0, 1, 1))
+                self.start = self.get_terminal(Position(0, 1, 1))
 
             return self.start
 
         if current_terminal.next is None:
-            current_terminal.next = self.tokenize(current_terminal.end_position)
+            current_terminal.next = self.get_terminal(current_terminal.end_position)
 
         return current_terminal.next
 
-    def tokenize(self, start_position: Position) -> Terminal:
+    def get_terminal(self, start_position: Position) -> Terminal:
         while True:
             accepted_terminal_types = set()
             accepted_position = start_position

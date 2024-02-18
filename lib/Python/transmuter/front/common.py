@@ -37,6 +37,7 @@ class SymbolType:
 class Symbol:
     start_position: Position
 
+
 class TransmuterException(Exception):
     def __init__(self, filename: str, position: Position, type_: str, description: str) -> None:
         super().__init__(f"{filename}:{position.line}:{position.column}: {type_}: {description}")
