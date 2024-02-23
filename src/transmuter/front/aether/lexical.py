@@ -22,132 +22,252 @@ from .common import lexical, syntactic
 
 class Whitespace(TerminalTag):
     @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {1, 2, 3}
+
+    @staticmethod
     def ignore(conditions: set[type[Condition]]) -> bool:
         return True
 
 
-class OrdChar(TerminalTag):
-    pass
-
-
 class Identifier(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {4}
 
 
 class Colon(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {6}
 
 
 class Semicolon(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {7}
 
 
 class CommercialAt(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {8}
 
 
 class LeftParenthesis(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {9}
 
 
 class RightParenthesis(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {10}
 
 
 class GreaterThanSign(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {11}
+
+        return set()
 
 
 class VerticalLine(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {12}
 
 
 class Solidus(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {13}
+
+        return set()
 
 
 class DoubleVerticalLine(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {14}
 
 
 class Comma(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {16}
 
 
 class DoubleAmpersand(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {17}
 
 
 class Ignore(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {19}
+
+        return set()
 
 
 class Optional(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {25}
+
+        return set()
 
 
 class Start(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {33}
+
+        return set()
 
 
 class Asterisk(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {38}
+
+        return set()
 
 
 class PlusSign(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {39}
+
+        return set()
 
 
 class QuestionMark(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {40}
+
+        return set()
 
 
 class ExpressionRange(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {41}
+
+        return set()
 
 
 class LeftCurlyBracket(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {50}
+
+        return set()
 
 
 class LeftCurlyBracketSolidus(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {51}
+
+        return set()
 
 
 class RightCurlyBracket(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {53}
+
+        return set()
+
+
+class OrdChar(TerminalTag):
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {54}
+
+        return set()
 
 
 class QuotedChar(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {55}
+
+        return set()
 
 
 class FullStop(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {60}
+
+        return set()
 
 
 class BracketExpression(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if lexical in conditions:
+            return {61}
+
+        return set()
 
 
 class ExclamationMark(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        return {93}
 
 
 class LeftSquareBracket(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {94}
+
+        return set()
 
 
 class LeftSquareBracketSolidus(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {95}
+
+        return set()
 
 
 class RightSquareBracket(TerminalTag):
-    pass
+    @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        if syntactic in conditions:
+            return {97}
+
+        return set()
 
 
 class Lexer(BaseLexer):
-    STATES_START = {1, 2, 3, 4, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16, 17, 19, 25, 33, 38, 39, 40, 41, 50, 51, 53, 54, 55, 60, 61, 93, 94, 95, 97}
     TERMINAL_TAGS = {Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket}
 
     def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TerminalTag]], set[int]]:
@@ -212,7 +332,7 @@ class Lexer(BaseLexer):
 
         # GreaterThanSign
         # 15:35
-        if 11 in current_states and (lexical in self.conditions) and (char == ">"):
+        if 11 in current_states and (char == ">"):
             current_terminal_tags |= {GreaterThanSign, OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
@@ -224,7 +344,7 @@ class Lexer(BaseLexer):
 
         # Solidus
         # 19:20
-        if 13 in current_states and (syntactic in self.conditions) and (char == "/"):
+        if 13 in current_states and (char == "/"):
             current_terminal_tags |= {Solidus}
             next_states |= {self.STATE_ACCEPT}
 
@@ -256,7 +376,7 @@ class Lexer(BaseLexer):
 
         # Ignore
         # 27:39
-        if 19 in current_states and (lexical in self.conditions) and (char == "i"):
+        if 19 in current_states and (char == "i"):
             next_states |= {20}
 
         # 27:40
@@ -283,7 +403,7 @@ class Lexer(BaseLexer):
 
         # Optional
         # 29:41
-        if 25 in current_states and (lexical in self.conditions) and (char == "o"):
+        if 25 in current_states and (char == "o"):
             next_states |= {26}
 
         # 29:42
@@ -318,7 +438,7 @@ class Lexer(BaseLexer):
 
         # Start
         # 31:31
-        if 33 in current_states and (syntactic in self.conditions) and (char == "s"):
+        if 33 in current_states and (char == "s"):
             next_states |= {34}
 
         # 31:32
@@ -341,25 +461,25 @@ class Lexer(BaseLexer):
 
         # Asterisk
         # 33:19
-        if 38 in current_states and (lexical in self.conditions) and (char == "*"):
+        if 38 in current_states and (char == "*"):
             current_terminal_tags |= {Asterisk}
             next_states |= {self.STATE_ACCEPT}
 
         # PlusSign
         # 35:19
-        if 39 in current_states and (lexical in self.conditions) and (char == "+"):
+        if 39 in current_states and (char == "+"):
             current_terminal_tags |= {PlusSign}
             next_states |= {self.STATE_ACCEPT}
 
         # QuestionMark
         # 37:23
-        if 40 in current_states and (lexical in self.conditions) and (char == "?"):
+        if 40 in current_states and (char == "?"):
             current_terminal_tags |= {QuestionMark}
             next_states |= {self.STATE_ACCEPT}
 
         # ExpressionRange
         # 39:26
-        if 41 in current_states and (lexical in self.conditions) and (char == "{"):
+        if 41 in current_states and (char == "{"):
             next_states |= {42, 43}
 
         # 39:30
@@ -397,13 +517,13 @@ class Lexer(BaseLexer):
 
         # LeftCurlyBracket
         # 41:29
-        if 50 in current_states and (syntactic in self.conditions) and (char == "{"):
+        if 50 in current_states and (char == "{"):
             current_terminal_tags |= {LeftCurlyBracket}
             next_states |= {self.STATE_ACCEPT}
 
         # LeftCurlyBracketSolidus
         # 43:36
-        if 51 in current_states and (syntactic in self.conditions) and (char == "{"):
+        if 51 in current_states and (char == "{"):
             next_states |= {52}
 
         # 43:39
@@ -413,19 +533,19 @@ class Lexer(BaseLexer):
 
         # RightCurlyBracket
         # 45:30
-        if 53 in current_states and (syntactic in self.conditions) and (char == "}"):
+        if 53 in current_states and (char == "}"):
             current_terminal_tags |= {RightCurlyBracket}
             next_states |= {self.STATE_ACCEPT}
 
         # OrdChar
         # 47:18
-        if 54 in current_states and (lexical in self.conditions) and not current_terminal_tags & {Identifier, Colon, CommercialAt, GreaterThanSign, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional} and (not ("\000" <= char <= "\037" or char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "{", "|", "\177"})):
+        if 54 in current_states and not current_terminal_tags & {Identifier, Colon, CommercialAt, GreaterThanSign, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional} and (not ("\000" <= char <= "\037" or char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "{", "|", "\177"})):
             current_terminal_tags |= {OrdChar}
             next_states |= {self.STATE_ACCEPT}
 
         # QuotedChar
         # 49:21
-        if 55 in current_states and (lexical in self.conditions) and (char == "\\"):
+        if 55 in current_states and (char == "\\"):
             next_states |= {56, 57}
 
         # 49:25
@@ -448,13 +568,13 @@ class Lexer(BaseLexer):
 
         # FullStop
         # 51:19
-        if 60 in current_states and (lexical in self.conditions) and (char == "."):
+        if 60 in current_states and (char == "."):
             current_terminal_tags |= {FullStop}
             next_states |= {self.STATE_ACCEPT}
 
         # BracketExpression
         # 53:28
-        if 61 in current_states and (lexical in self.conditions) and (char == "["):
+        if 61 in current_states and (char == "["):
             next_states |= {62, 63, 64, 69}
 
         # 53:32
@@ -590,13 +710,13 @@ class Lexer(BaseLexer):
 
         # LeftSquareBracket
         # 57:30
-        if 94 in current_states and (syntactic in self.conditions) and (char == "["):
+        if 94 in current_states and (char == "["):
             current_terminal_tags |= {LeftSquareBracket}
             next_states |= {self.STATE_ACCEPT}
 
         # LeftSquareBracketSolidus
         # 59:37
-        if 95 in current_states and (syntactic in self.conditions) and (char == "["):
+        if 95 in current_states and (char == "["):
             next_states |= {96}
 
         # 59:40
@@ -606,7 +726,7 @@ class Lexer(BaseLexer):
 
         # RightSquareBracket
         # 61:31
-        if 97 in current_states and (syntactic in self.conditions) and (char == "]"):
+        if 97 in current_states and (char == "]"):
             current_terminal_tags |= {RightSquareBracket}
             next_states |= {self.STATE_ACCEPT}
 

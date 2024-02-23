@@ -23,6 +23,10 @@ from .common import Condition, Position, SymbolType, Symbol, TransmuterException
 
 class TerminalTag(SymbolType):
     @staticmethod
+    def states_start(conditions: set[type[Condition]]) -> set[int]:
+        raise NotImplementedError()
+
+    @staticmethod
     def ignore(conditions: set[type[Condition]]) -> bool:
         return False
 
@@ -42,17 +46,21 @@ class Terminal(Symbol):
 @dataclass
 class BaseLexer:
     STATE_ACCEPT: ClassVar[int] = 0
-    STATES_START: ClassVar[set[int]]
     TERMINAL_TAGS: ClassVar[set[type[TerminalTag]]]
 
     input: str
     filename: str
     conditions: set[type[Condition]]
     terminal_tags_ignore: set[type[TerminalTag]] = field(init=False, repr=False)
+    states_start: set[int] = field(init=False, repr=False)
     start: Terminal | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         self.terminal_tags_ignore = {terminal_tag for terminal_tag in self.TERMINAL_TAGS if terminal_tag.ignore(self.conditions)}
+        self.states_start = set()
+
+        for terminal_tag in self.TERMINAL_TAGS:
+            self.states_start |= terminal_tag.states_start(self.conditions)
 
     def next_terminal(self, current_terminal: Terminal | None) -> Terminal:
         if current_terminal is None:
@@ -72,7 +80,7 @@ class BaseLexer:
             accepted_position = start_position
             current_terminal_tags = set()
             current_position = start_position
-            current_states = self.STATES_START
+            current_states = self.states_start
 
             while current_states:
                 if self.STATE_ACCEPT in current_states:
