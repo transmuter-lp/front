@@ -21,7 +21,7 @@ from typing import ClassVar
 from .common import Condition, Position, SymbolType, Symbol, TransmuterException
 
 
-class TerminalType(SymbolType):
+class TerminalTag(SymbolType):
     @staticmethod
     def ignore(conditions: set[type[Condition]]) -> bool:
         return False
@@ -34,7 +34,7 @@ class TerminalType(SymbolType):
 @dataclass
 class Terminal(Symbol):
     end_position: Position
-    types: set[type[TerminalType]]
+    tags: set[type[TerminalTag]]
     value: str
     next: "Terminal | None" = field(default=None, init=False, repr=False)
 
@@ -43,16 +43,16 @@ class Terminal(Symbol):
 class BaseLexer:
     STATE_ACCEPT: ClassVar[int] = 0
     STATES_START: ClassVar[set[int]]
-    TERMINAL_TYPES: ClassVar[set[type[TerminalType]]]
+    TERMINAL_TAGS: ClassVar[set[type[TerminalTag]]]
 
     input: str
     filename: str
     conditions: set[type[Condition]]
-    terminal_types_ignore: set[type[TerminalType]] = field(init=False, repr=False)
+    terminal_tags_ignore: set[type[TerminalTag]] = field(init=False, repr=False)
     start: Terminal | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
-        self.terminal_types_ignore = {terminal_type for terminal_type in self.TERMINAL_TYPES if terminal_type.ignore(self.conditions)}
+        self.terminal_tags_ignore = {terminal_tag for terminal_tag in self.TERMINAL_TAGS if terminal_tag.ignore(self.conditions)}
 
     def next_terminal(self, current_terminal: Terminal | None) -> Terminal:
         if current_terminal is None:
@@ -68,44 +68,44 @@ class BaseLexer:
 
     def get_terminal(self, start_position: Position) -> Terminal:
         while True:
-            accepted_terminal_types = set()
+            accepted_terminal_tags = set()
             accepted_position = start_position
-            current_terminal_types = set()
+            current_terminal_tags = set()
             current_position = start_position
             current_states = self.STATES_START
 
             while current_states:
                 if self.STATE_ACCEPT in current_states:
-                    accepted_terminal_types = current_terminal_types
+                    accepted_terminal_tags = current_terminal_tags
                     accepted_position = current_position
 
                 if current_position.index_ == len(self.input):
-                    if accepted_terminal_types - self.terminal_types_ignore:
+                    if accepted_terminal_tags - self.terminal_tags_ignore:
                         break
 
                     raise TransmuterEOIError(self.filename, current_position)
 
-                current_terminal_types, current_states = self.nfa(self.input[current_position.index_], current_states)
+                current_terminal_tags, current_states = self.nfa(self.input[current_position.index_], current_states)
                 current_position = Position(
                     current_position.index_ + 1,
                     current_position.line + (1 if self.input[current_position.index_] == "\n" else 0),
                     1 if self.input[current_position.index_] == "\n" else current_position.column + 1
                 )
 
-            if not accepted_terminal_types:
+            if not accepted_terminal_tags:
                 raise TransmuterNoTerminalError(self.filename, current_position)
 
-            if accepted_terminal_types - self.terminal_types_ignore:
+            if accepted_terminal_tags - self.terminal_tags_ignore:
                 return Terminal(
                     start_position,
                     accepted_position,
-                    accepted_terminal_types - self.terminal_types_ignore,
+                    accepted_terminal_tags - self.terminal_tags_ignore,
                     self.input[start_position.index_:accepted_position.index_]
                 )
 
             start_position = accepted_position
 
-    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TerminalType]], set[int]]:
+    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TerminalTag]], set[int]]:
         raise NotImplementedError()
 
 
