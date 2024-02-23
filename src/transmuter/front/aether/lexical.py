@@ -30,11 +30,11 @@ class OrdChar(TerminalTag):
     pass
 
 
-class Identifier(OrdChar):
+class Identifier(TerminalTag):
     pass
 
 
-class Colon(OrdChar):
+class Colon(TerminalTag):
     pass
 
 
@@ -42,7 +42,7 @@ class Semicolon(TerminalTag):
     pass
 
 
-class CommercialAt(OrdChar):
+class CommercialAt(TerminalTag):
     pass
 
 
@@ -54,7 +54,7 @@ class RightParenthesis(TerminalTag):
     pass
 
 
-class GreaterThanSign(OrdChar):
+class GreaterThanSign(TerminalTag):
     pass
 
 
@@ -66,23 +66,23 @@ class Solidus(TerminalTag):
     pass
 
 
-class DoubleVerticalLine(OrdChar):
+class DoubleVerticalLine(TerminalTag):
     pass
 
 
-class Comma(OrdChar):
+class Comma(TerminalTag):
     pass
 
 
-class DoubleAmpersand(OrdChar):
+class DoubleAmpersand(TerminalTag):
     pass
 
 
-class Ignore(OrdChar):
+class Ignore(TerminalTag):
     pass
 
 
-class Optional(OrdChar):
+class Optional(TerminalTag):
     pass
 
 
@@ -130,7 +130,7 @@ class BracketExpression(TerminalTag):
     pass
 
 
-class ExclamationMark(OrdChar):
+class ExclamationMark(TerminalTag):
     pass
 
 
