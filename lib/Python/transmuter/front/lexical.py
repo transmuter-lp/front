@@ -18,10 +18,10 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import Condition, Position, SymbolType, Symbol, TransmuterException
+from .common import Condition, Position, TransmuterException
 
 
-class TerminalTag(SymbolType):
+class TerminalTag:
     @staticmethod
     def states_start(conditions: set[type[Condition]]) -> set[int]:
         raise NotImplementedError()
@@ -36,7 +36,8 @@ class TerminalTag(SymbolType):
 
 
 @dataclass
-class Terminal(Symbol):
+class Terminal:
+    start_position: Position
     end_position: Position
     tags: set[type[TerminalTag]]
     value: str
