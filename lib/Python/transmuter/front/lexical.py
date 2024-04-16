@@ -97,8 +97,8 @@ class BaseLexer:
                 current_terminal_tags, current_states = self.nfa(self.input[current_position.index_], current_states)
                 current_position = Position(
                     current_position.index_ + 1,
-                    current_position.line + (1 if self.input[current_position.index_] == "\n" else 0),
-                    1 if self.input[current_position.index_] == "\n" else current_position.column + 1
+                    current_position.line + (0 if self.input[current_position.index_] != "\n" else 1),
+                    current_position.column + 1 if self.input[current_position.index_] != "\n" else 1
                 )
 
             if not accepted_terminal_tags:
