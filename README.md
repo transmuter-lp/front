@@ -1,6 +1,6 @@
-# Alchemist front-end libraries
+# Transmuter front-end
 
-Front-end libraries and utilities for the Alchemist compiler infrastructure.
+Front-end libraries and utilities for the Transmuter language processing infrastructure.
 
 ## Lexer
 
@@ -11,11 +11,9 @@ Front-end libraries and utilities for the Alchemist compiler infrastructure.
 - Incremental (TO DO) and on-demand lexing
 - Supports multiple independent consumers without re-lexing
 
-There is an example [C lexicon](examples/C/lexicon.py) included.
-
 ## Parser
 
-The generated parser is a recursive descent parser based on [Frost, Hafiz & Callaghan (2007)](https://doi.org/10.3115/1621410.1621425) and [Scott & Johnstone (2010)](https://doi.org/10.1016/j.entcs.2010.08.041), which:
+The generated parser is a recursive descent parser based on [Frost, Hafiz & Callaghan (2007)](https://doi.org/10.3115/1621410.1621425), [Scott & Johnstone (2010)](https://doi.org/10.1016/j.entcs.2010.08.041) and [Scott, Johnstone & Binsbergen (2019)](https://doi.org/10.1016/j.scico.2019.01.008), which:
 
 - Is powerful enough to parse any CFG, including left-recursive and ambiguous grammars
 - Is efficient enough to parse most simple grammars in linear time, with cubic (TODO proof) worst-case performance
