@@ -34,6 +34,9 @@ class NonterminalType:
         for current_terminal in current_terminals:
             next_terminals |= cls.call_single(parser, current_terminal)
 
+        if len(next_terminals) == 0:
+            raise TransmuterSymbolMatchError(parser.lexer.filename)
+
         return next_terminals
 
     @classmethod
@@ -42,7 +45,10 @@ class NonterminalType:
             parser.memo[cls] = {}
 
         if current_terminal not in parser.memo[cls]:
-            parser.memo[cls][current_terminal] = cls.descend(parser, current_terminal)
+            try:
+                parser.memo[cls][current_terminal] = cls.descend(parser, current_terminal)
+            except TransmuterSymbolMatchError:
+                parser.memo[cls][current_terminal] = set()
 
         return parser.memo[cls][current_terminal]
 
@@ -87,3 +93,8 @@ class TransmuterNoStartError(TransmuterSyntacticError):
 class TransmuterMultipleStartError(TransmuterSyntacticError):
     def __init__(self) -> None:
         super().__init__("<conditions>", Position(0, 0, 0), "Matched multiple starting symbols from given conditions.")
+
+
+class TransmuterSymbolMatchError(TransmuterSyntacticError):
+    def __init__(self, filename: str):
+        super().__init__(filename, Position(0, 0, 0), "Could not match symbol.")
