@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar
 
 from .common import Condition, Position, TransmuterException
+from .syntactic import TransmuterSymbolMatchError
 
 
 class TerminalTag:
@@ -33,6 +34,39 @@ class TerminalTag:
     @staticmethod
     def optional(conditions: set[type[Condition]]) -> bool:
         return False
+
+    @classmethod
+    def call(cls, lexer: "BaseLexer", current_terminals: set["Terminal"]) -> set["Terminal"]:
+        next_terminals = set()
+
+        for current_terminal in current_terminals:
+            next_terminal = cls.call_single(parser, current_terminal)
+
+            if next_terminal is not None:
+                next_terminals.add(next_terminal)
+
+        if len(next_terminals) == 0:
+            raise TransmuterSymbolMatchError(lexer.filename)
+
+        return next_terminals
+
+    @classmethod
+    def call_single(cls, lexer: "BaseLexer", current_terminal: "Terminal") -> "Terminal | None":
+        while True:
+            next_terminal = lexer.next_terminal(current_terminal)
+
+            if next_terminal is None:
+                return None
+
+            if cls not in next_terminal.tags:
+                for terminal_tag in next_terminal.tags:
+                    if not terminal_tag.optional(lexer.conditions):
+                        return None
+
+                current_terminal = next_terminal
+                continue
+
+            return next_terminal
 
 
 @dataclass
@@ -63,7 +97,7 @@ class BaseLexer:
         for terminal_tag in self.TERMINAL_TAGS:
             self.states_start |= terminal_tag.states_start(self.conditions)
 
-    def next_terminal(self, current_terminal: Terminal | None) -> Terminal:
+    def next_terminal(self, current_terminal: Terminal | None) -> Terminal | None:
         if current_terminal is None:
             if self.start is None:
                 self.start = self.get_terminal(Position(0, 1, 1))
@@ -75,7 +109,7 @@ class BaseLexer:
 
         return current_terminal.next
 
-    def get_terminal(self, start_position: Position) -> Terminal:
+    def get_terminal(self, start_position: Position) -> Terminal | None:
         while True:
             accepted_terminal_tags = set()
             accepted_position = start_position
@@ -92,7 +126,7 @@ class BaseLexer:
                     if accepted_terminal_tags - self.terminal_tags_ignore:
                         break
 
-                    raise TransmuterEOIError(self.filename, current_position)
+                    return None
 
                 current_terminal_tags, current_states = self.nfa(self.input[current_position.index_], current_states)
                 current_position = Position(
@@ -121,11 +155,6 @@ class BaseLexer:
 class TransmuterLexicalError(TransmuterException):
     def __init__(self, filename: str, position: Position, description: str) -> None:
         super().__init__(filename, position, "Lexical Error", description)
-
-
-class TransmuterEOIError(TransmuterLexicalError):
-    def __init__(self, filename: str, position: Position) -> None:
-        super().__init__(filename, position, "Unexpected end of input.")
 
 
 class TransmuterNoTerminalError(TransmuterLexicalError):
