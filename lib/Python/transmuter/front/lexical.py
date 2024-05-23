@@ -46,7 +46,7 @@ class TerminalTag:
                 next_terminals.add(next_terminal)
 
         if len(next_terminals) == 0:
-            raise TransmuterSymbolMatchError(lexer.filename)
+            raise TransmuterSymbolMatchError()
 
         return next_terminals
 

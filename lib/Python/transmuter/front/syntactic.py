@@ -19,7 +19,10 @@ from dataclasses import dataclass, field
 from typing import ClassVar
 
 from .common import Condition, Position, TransmuterException
-from .lexical import BaseLexer, Terminal
+from .lexical import BaseLexer, Terminal, TransmuterNoTerminalError
+
+
+once: bool = True
 
 
 class NonterminalType:
@@ -35,7 +38,7 @@ class NonterminalType:
             next_terminals |= cls.call_single(parser, current_terminal)
 
         if len(next_terminals) == 0:
-            raise TransmuterSymbolMatchError(parser.lexer.filename)
+            raise TransmuterSymbolMatchError()
 
         return next_terminals
 
@@ -76,8 +79,15 @@ class BaseParser:
 
         self.nonterminal_types_start = nonterminal_types_start.pop()
 
-    def parse(self) -> None:
-        self.nonterminal_types_start.call(self, {self.lexer.next_terminal(None)})
+    def parse(self) -> bool:
+        try:
+            self.nonterminal_types_start.call(self, {self.lexer.next_terminal(None)})
+            return True
+        except TransmuterNoTerminalError as e:
+            print(e)
+            return False
+        except TransmuterSymbolMatchError:
+            return False
 
 
 class TransmuterSyntacticError(TransmuterException):
@@ -96,5 +106,5 @@ class TransmuterMultipleStartError(TransmuterSyntacticError):
 
 
 class TransmuterSymbolMatchError(TransmuterSyntacticError):
-    def __init__(self, filename: str):
-        super().__init__(filename, Position(0, 0, 0), "Could not match symbol.")
+    def __init__(self):
+        super().__init__("<internal>", Position(0, 0, 0), "Could not match symbol.")
