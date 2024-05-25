@@ -15,60 +15,60 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import Condition
+from ..common import ConditionVar
 from ..lexical import TerminalTag, BaseLexer
 from .common import lexical, syntactic
 
 
 class Whitespace(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {1, 2, 3}
 
     @staticmethod
-    def ignore(conditions: set[type[Condition]]) -> bool:
+    def ignore(conditions: set[type[ConditionVar]]) -> bool:
         return True
 
 
 class Identifier(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {4}
 
 
 class Colon(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {6}
 
 
 class Semicolon(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {7}
 
 
 class CommercialAt(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {8}
 
 
 class LeftParenthesis(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {9}
 
 
 class RightParenthesis(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {10}
 
 
 class GreaterThanSign(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {11}
 
@@ -77,13 +77,13 @@ class GreaterThanSign(TerminalTag):
 
 class VerticalLine(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {12}
 
 
 class Solidus(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {13}
 
@@ -92,25 +92,25 @@ class Solidus(TerminalTag):
 
 class DoubleVerticalLine(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {14}
 
 
 class Comma(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {16}
 
 
 class DoubleAmpersand(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {17}
 
 
 class Ignore(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {19}
 
@@ -119,7 +119,7 @@ class Ignore(TerminalTag):
 
 class Optional(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {25}
 
@@ -128,7 +128,7 @@ class Optional(TerminalTag):
 
 class Start(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {33}
 
@@ -137,7 +137,7 @@ class Start(TerminalTag):
 
 class Asterisk(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {38}
 
@@ -146,7 +146,7 @@ class Asterisk(TerminalTag):
 
 class PlusSign(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {39}
 
@@ -155,7 +155,7 @@ class PlusSign(TerminalTag):
 
 class QuestionMark(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {40}
 
@@ -164,7 +164,7 @@ class QuestionMark(TerminalTag):
 
 class ExpressionRange(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {41}
 
@@ -173,7 +173,7 @@ class ExpressionRange(TerminalTag):
 
 class LeftCurlyBracket(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {50}
 
@@ -182,7 +182,7 @@ class LeftCurlyBracket(TerminalTag):
 
 class LeftCurlyBracketSolidus(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {51}
 
@@ -191,7 +191,7 @@ class LeftCurlyBracketSolidus(TerminalTag):
 
 class RightCurlyBracket(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {53}
 
@@ -200,7 +200,7 @@ class RightCurlyBracket(TerminalTag):
 
 class OrdChar(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {54}
 
@@ -209,7 +209,7 @@ class OrdChar(TerminalTag):
 
 class QuotedChar(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {55}
 
@@ -218,7 +218,7 @@ class QuotedChar(TerminalTag):
 
 class FullStop(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {60}
 
@@ -227,7 +227,7 @@ class FullStop(TerminalTag):
 
 class BracketExpression(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if lexical in conditions:
             return {61}
 
@@ -236,13 +236,13 @@ class BracketExpression(TerminalTag):
 
 class ExclamationMark(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         return {93}
 
 
 class LeftSquareBracket(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {94}
 
@@ -251,7 +251,7 @@ class LeftSquareBracket(TerminalTag):
 
 class LeftSquareBracketSolidus(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {95}
 
@@ -260,7 +260,7 @@ class LeftSquareBracketSolidus(TerminalTag):
 
 class RightSquareBracket(TerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         if syntactic in conditions:
             return {97}
 

@@ -18,7 +18,7 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import Condition, Position, TransmuterException
+from .common import ConditionVar, Position, TransmuterException
 from .lexical import BaseLexer, Terminal, TransmuterNoTerminalError
 
 
@@ -27,7 +27,7 @@ once: bool = True
 
 class NonterminalType:
     @staticmethod
-    def start(conditions: set[type[Condition]]) -> bool:
+    def start(conditions: set[type[ConditionVar]]) -> bool:
         return False
 
     @classmethod

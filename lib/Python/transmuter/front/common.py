@@ -18,7 +18,7 @@
 from dataclasses import dataclass
 
 
-class Condition:
+class ConditionVar:
     pass
 
 

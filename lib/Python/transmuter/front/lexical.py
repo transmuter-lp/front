@@ -18,21 +18,21 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import Condition, Position, TransmuterException
+from .common import ConditionVar, Position, TransmuterException
 from .syntactic import TransmuterSymbolMatchError
 
 
 class TerminalTag:
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
         raise NotImplementedError()
 
     @staticmethod
-    def ignore(conditions: set[type[Condition]]) -> bool:
+    def ignore(conditions: set[type[ConditionVar]]) -> bool:
         return False
 
     @staticmethod
-    def optional(conditions: set[type[Condition]]) -> bool:
+    def optional(conditions: set[type[ConditionVar]]) -> bool:
         return False
 
     @classmethod
@@ -40,7 +40,7 @@ class TerminalTag:
         next_terminals = set()
 
         for current_terminal in current_terminals:
-            next_terminal = cls.call_single(parser, current_terminal)
+            next_terminal = cls.call_single(lexer, current_terminal)
 
             if next_terminal is not None:
                 next_terminals.add(next_terminal)
@@ -85,7 +85,7 @@ class BaseLexer:
 
     input: str
     filename: str
-    conditions: set[type[Condition]]
+    conditions: set[type[ConditionVar]]
     terminal_tags_ignore: set[type[TerminalTag]] = field(init=False, repr=False)
     states_start: set[int] = field(init=False, repr=False)
     start: Terminal | None = field(default=None, init=False, repr=False)
