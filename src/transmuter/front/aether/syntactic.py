@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import ConditionVar
+from ..common import ConditionVar, TransmuterSymbolMatchError
 from ..lexical import Terminal
-from ..syntactic import once, NonterminalType, BaseParser, TransmuterSymbolMatchError
+from ..syntactic import once, NonterminalType, BaseParser
 from .common import lexical, syntactic
 from .lexical import Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
 

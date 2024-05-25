@@ -18,8 +18,7 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import ConditionVar, Position, TransmuterException
-from .syntactic import TransmuterSymbolMatchError
+from .common import ConditionVar, Position, TransmuterException, TransmuterSymbolMatchError
 
 
 class TerminalTag:
