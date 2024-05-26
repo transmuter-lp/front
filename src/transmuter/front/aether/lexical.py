@@ -15,262 +15,262 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import ConditionVar
-from ..lexical import TerminalTag, BaseLexer
+from ..common import TransmuterCondition
+from ..lexical import TransmuterTerminalTag, TransmuterLexer
 from .common import lexical, syntactic
 
 
-class Whitespace(TerminalTag):
+class Whitespace(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {1, 2, 3}
 
     @staticmethod
-    def ignore(conditions: set[type[ConditionVar]]) -> bool:
+    def ignore(conditions: set[type[TransmuterCondition]]) -> bool:
         return True
 
 
-class Identifier(TerminalTag):
+class Identifier(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {4}
 
 
-class Colon(TerminalTag):
+class Colon(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {6}
 
 
-class Semicolon(TerminalTag):
+class Semicolon(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {7}
 
 
-class CommercialAt(TerminalTag):
+class CommercialAt(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {8}
 
 
-class LeftParenthesis(TerminalTag):
+class LeftParenthesis(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {9}
 
 
-class RightParenthesis(TerminalTag):
+class RightParenthesis(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {10}
 
 
-class GreaterThanSign(TerminalTag):
+class GreaterThanSign(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {11}
 
         return set()
 
 
-class VerticalLine(TerminalTag):
+class VerticalLine(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {12}
 
 
-class Solidus(TerminalTag):
+class Solidus(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {13}
 
         return set()
 
 
-class DoubleVerticalLine(TerminalTag):
+class DoubleVerticalLine(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {14}
 
 
-class Comma(TerminalTag):
+class Comma(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {16}
 
 
-class DoubleAmpersand(TerminalTag):
+class DoubleAmpersand(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {17}
 
 
-class Ignore(TerminalTag):
+class Ignore(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {19}
 
         return set()
 
 
-class Optional(TerminalTag):
+class Optional(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {25}
 
         return set()
 
 
-class Start(TerminalTag):
+class Start(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {33}
 
         return set()
 
 
-class Asterisk(TerminalTag):
+class Asterisk(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {38}
 
         return set()
 
 
-class PlusSign(TerminalTag):
+class PlusSign(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {39}
 
         return set()
 
 
-class QuestionMark(TerminalTag):
+class QuestionMark(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {40}
 
         return set()
 
 
-class ExpressionRange(TerminalTag):
+class ExpressionRange(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {41}
 
         return set()
 
 
-class LeftCurlyBracket(TerminalTag):
+class LeftCurlyBracket(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {50}
 
         return set()
 
 
-class LeftCurlyBracketSolidus(TerminalTag):
+class LeftCurlyBracketSolidus(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {51}
 
         return set()
 
 
-class RightCurlyBracket(TerminalTag):
+class RightCurlyBracket(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {53}
 
         return set()
 
 
-class OrdChar(TerminalTag):
+class OrdChar(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {54}
 
         return set()
 
 
-class QuotedChar(TerminalTag):
+class QuotedChar(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {55}
 
         return set()
 
 
-class FullStop(TerminalTag):
+class FullStop(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {60}
 
         return set()
 
 
-class BracketExpression(TerminalTag):
+class BracketExpression(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if lexical in conditions:
             return {61}
 
         return set()
 
 
-class ExclamationMark(TerminalTag):
+class ExclamationMark(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         return {93}
 
 
-class LeftSquareBracket(TerminalTag):
+class LeftSquareBracket(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {94}
 
         return set()
 
 
-class LeftSquareBracketSolidus(TerminalTag):
+class LeftSquareBracketSolidus(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {95}
 
         return set()
 
 
-class RightSquareBracket(TerminalTag):
+class RightSquareBracket(TransmuterTerminalTag):
     @staticmethod
-    def states_start(conditions: set[type[ConditionVar]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         if syntactic in conditions:
             return {97}
 
         return set()
 
 
-class Lexer(BaseLexer):
+class Lexer(TransmuterLexer):
     TERMINAL_TAGS = {Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket}
 
-    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TerminalTag]], set[int]]:
+    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
         current_terminal_tags = set()
         next_states = set()
 

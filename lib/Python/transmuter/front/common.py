@@ -18,25 +18,25 @@
 from dataclasses import dataclass
 
 
-class ConditionVar:
+class TransmuterCondition:
     pass
 
 
 @dataclass
-class Position:
+class TransmuterPosition:
     index_: int
     line: int
     column: int
 
 
 class TransmuterException(Exception):
-    def __init__(self, filename: str, position: Position, type_: str, description: str) -> None:
+    def __init__(self, filename: str, position: TransmuterPosition, type_: str, description: str) -> None:
         super().__init__(f"{filename}:{position.line}:{position.column}: {type_}: {description}")
 
 
 class TransmuterInternalError(TransmuterException):
     def __init__(self, description: str) -> None:
-        super().__init__("<internal>", Position(0, 0, 0), "Internal Error", description)
+        super().__init__("<internal>", TransmuterPosition(0, 0, 0), "Internal Error", description)
 
 
 class TransmuterSymbolMatchError(TransmuterInternalError):

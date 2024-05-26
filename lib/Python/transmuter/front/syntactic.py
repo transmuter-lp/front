@@ -18,20 +18,20 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import ConditionVar, Position, TransmuterException, TransmuterSymbolMatchError
-from .lexical import BaseLexer, Terminal, TransmuterNoTerminalError
+from .common import TransmuterCondition, TransmuterPosition, TransmuterException, TransmuterSymbolMatchError
+from .lexical import TransmuterLexer, TransmuterTerminal, TransmuterNoTerminalError
 
 
-once: bool = True
+transmuter_once: bool = True
 
 
-class NonterminalType:
+class TransmuterNonterminalType:
     @staticmethod
-    def start(conditions: set[type[ConditionVar]]) -> bool:
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
 
     @classmethod
-    def call(cls, parser: "BaseParser", current_terminals: set[Terminal | None]) -> set[Terminal]:
+    def call(cls, parser: "TransmuterParser", current_terminals: set[TransmuterTerminal | None]) -> set[TransmuterTerminal]:
         next_terminals = set()
 
         for current_terminal in current_terminals:
@@ -43,7 +43,7 @@ class NonterminalType:
         return next_terminals
 
     @classmethod
-    def call_single(cls, parser: "BaseParser", current_terminal: Terminal | None) -> set[Terminal]:
+    def call_single(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         if cls not in parser.memo:
             parser.memo[cls] = {}
 
@@ -56,17 +56,21 @@ class NonterminalType:
         return parser.memo[cls][current_terminal]
 
     @classmethod
-    def descend(cls, parser: "BaseParser", current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         raise NotImplementedError()
 
 
 @dataclass
-class BaseParser:
-    NONTERMINAL_TYPES: ClassVar[set[type[NonterminalType]]]
+class TransmuterParser:
+    NONTERMINAL_TYPES: ClassVar[set[type[TransmuterNonterminalType]]]
 
-    lexer: BaseLexer
-    nonterminal_types_start: type[NonterminalType] = field(init=False, repr=False)
-    memo: dict[type[NonterminalType], dict[Terminal | None, set[Terminal]]] = field(default_factory=dict, init=False, repr=False)
+    lexer: TransmuterLexer
+    nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
+    memo: dict[type[TransmuterNonterminalType], dict[TransmuterTerminal | None, set[TransmuterTerminal]]] = field(
+        default_factory=dict,
+        init=False,
+        repr=False
+    )
 
     def __post_init__(self):
         nonterminal_types_start = {nonterminal_type for nonterminal_type in self.NONTERMINAL_TYPES if nonterminal_type.start(self.lexer.conditions)}
@@ -91,15 +95,15 @@ class BaseParser:
 
 
 class TransmuterSyntacticError(TransmuterException):
-    def __init__(self, filename: str, position: Position, description: str) -> None:
+    def __init__(self, filename: str, position: TransmuterPosition, description: str) -> None:
         super().__init__(filename, position, "Syntactic Error", description)
 
 
 class TransmuterNoStartError(TransmuterSyntacticError):
     def __init__(self) -> None:
-        super().__init__("<conditions>", Position(0, 0, 0), "Could not match any starting symbol from given conditions.")
+        super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Could not match any starting symbol from given conditions.")
 
 
 class TransmuterMultipleStartError(TransmuterSyntacticError):
     def __init__(self) -> None:
-        super().__init__("<conditions>", Position(0, 0, 0), "Matched multiple starting symbols from given conditions.")
+        super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Matched multiple starting symbols from given conditions.")

@@ -15,20 +15,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import ConditionVar, TransmuterSymbolMatchError
-from ..lexical import Terminal
-from ..syntactic import once, NonterminalType, BaseParser
+from ..common import TransmuterCondition, TransmuterSymbolMatchError
+from ..lexical import TransmuterTerminal
+from ..syntactic import transmuter_once, TransmuterNonterminalType, TransmuterParser
 from .common import lexical, syntactic
 from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
 
 
-class Grammar(NonterminalType):
+class Grammar(TransmuterNonterminalType):
     @staticmethod
-    def start(conditions: set[type[ConditionVar]]) -> bool:
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return True
 
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = Production.call(parser, paths0)
         paths1 = paths0
@@ -43,18 +43,18 @@ class Grammar(NonterminalType):
         return paths0
 
 
-class Production(NonterminalType):
+class Production(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = ProductionHeader.call(parser, paths0)
         paths0 = ProductionBody.call(parser, paths0)
         return paths0
 
 
-class ProductionHeader(NonterminalType):
+class ProductionHeader(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = Identifier.call(parser.lexer, paths0)
 
@@ -85,27 +85,27 @@ class ProductionHeader(NonterminalType):
         return paths0
 
 
-class ProductionBody(NonterminalType):
+class ProductionBody(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = SelectionExpression.call(parser, paths0)
         paths0 = Semicolon.call(parser.lexer, paths0)
         return paths0
 
 
-class Condition(NonterminalType):
+class Condition(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = CommercialAt.call(parser.lexer, paths0)
         paths0 = DisjunctionCondition.call(parser, paths0)
         return paths0
 
 
-class ProductionSpecifiers(NonterminalType):
+class ProductionSpecifiers(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = LeftParenthesis.call(parser.lexer, paths0)
         paths0 = ProductionSpecifierList.call(parser, paths0)
@@ -113,25 +113,25 @@ class ProductionSpecifiers(NonterminalType):
         return paths0
 
 
-class ProductionPrecedences(NonterminalType):
+class ProductionPrecedences(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = GreaterThanSign.call(parser.lexer, paths0)
         paths0 = ProductionPrecedenceList.call(parser, paths0)
         return paths0
 
 
-class SelectionExpression(NonterminalType):
+class SelectionExpression(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = SequenceExpression.call(parser, paths0)
         paths1 = paths0
 
         while True:  # iteration
             try:
-                while once:  # selection
+                while transmuter_once:  # selection
                     try:  # option 1
                         paths2 = paths1
                         paths2 = VerticalLine.call(parser.lexer, paths2)
@@ -159,9 +159,9 @@ class SelectionExpression(NonterminalType):
         return paths0
 
 
-class DisjunctionCondition(NonterminalType):
+class DisjunctionCondition(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = ConjunctionCondition.call(parser, paths0)
         paths1 = paths0
@@ -177,9 +177,9 @@ class DisjunctionCondition(NonterminalType):
         return paths0
 
 
-class ProductionSpecifierList(NonterminalType):
+class ProductionSpecifierList(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = ProductionSpecifier.call(parser, paths0)
         paths1 = paths0
@@ -195,9 +195,9 @@ class ProductionSpecifierList(NonterminalType):
         return paths0
 
 
-class ProductionPrecedenceList(NonterminalType):
+class ProductionPrecedenceList(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = ProductionPrecedence.call(parser, paths0)
         paths1 = paths0
@@ -213,12 +213,12 @@ class ProductionPrecedenceList(NonterminalType):
         return paths0
 
 
-class SequenceExpression(NonterminalType):
+class SequenceExpression(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
 
-        while once:  # selection
+        while transmuter_once:  # selection
             try:  # option 1
                 if lexical in parser.lexer.conditions:
                     paths1 = paths0
@@ -260,9 +260,9 @@ class SequenceExpression(NonterminalType):
         return paths0
 
 
-class ConjunctionCondition(NonterminalType):
+class ConjunctionCondition(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = NegationCondition.call(parser, paths0)
         paths1 = paths0
@@ -278,12 +278,12 @@ class ConjunctionCondition(NonterminalType):
         return paths0
 
 
-class ProductionSpecifier(NonterminalType):
+class ProductionSpecifier(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
 
-        while once:  # selection
+        while transmuter_once:  # selection
             try:  # option 1
                 paths1 = paths0
                 paths1 = Identifier.call(parser.lexer, paths1)
@@ -295,12 +295,12 @@ class ProductionSpecifier(NonterminalType):
             try:  # option 2
                 paths1 = paths0
 
-                while once:  # selection
+                while transmuter_once:  # selection
                     try:  # option 1
                         if lexical in parser.lexer.conditions:
                             paths2 = paths1
 
-                            while once:  # selection
+                            while transmuter_once:  # selection
                                 try:  # option 1
                                     paths3 = paths2
                                     paths3 = Ignore.call(parser.lexer, paths3)
@@ -352,26 +352,26 @@ class ProductionSpecifier(NonterminalType):
         return paths0
 
 
-class ProductionPrecedence(NonterminalType):
+class ProductionPrecedence(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
         paths0 = Identifier.call(parser.lexer, paths0)
         return paths0
 
 
-class IterationExpression(NonterminalType):
+class IterationExpression(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
 
-        while once:  # selection
+        while transmuter_once:  # selection
             try:  # option 1
                 if lexical in parser.lexer.conditions:
                     paths1 = paths0
                     paths1 = PrimaryExpression.call(parser, paths1)
 
-                    while once:  # optional selection
+                    while transmuter_once:  # optional selection
                         try:  # option 1
                             paths2 = paths1
                             paths2 = Asterisk.call(parser.lexer, paths2)
@@ -415,7 +415,7 @@ class IterationExpression(NonterminalType):
                 if syntactic in parser.lexer.conditions:
                     paths1 = paths0
 
-                    while once:  # selection
+                    while transmuter_once:  # selection
                         try:  # option 1
                             paths2 = paths1
                             paths2 = LeftCurlyBracket.call(parser.lexer, paths2)
@@ -446,17 +446,17 @@ class IterationExpression(NonterminalType):
         return paths0
 
 
-class PrimaryExpression(NonterminalType):
+class PrimaryExpression(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
 
-        while once:  # selection
+        while transmuter_once:  # selection
             try:  # option 1
                 if lexical in parser.lexer.conditions:
                     paths1 = paths0
 
-                    while once:  # selection
+                    while transmuter_once:  # selection
                         try:  # option 1
                             paths2 = paths1
                             paths2 = OrdChar.call(parser.lexer, paths2)
@@ -536,7 +536,7 @@ class PrimaryExpression(NonterminalType):
                 if syntactic in parser.lexer.conditions:
                     paths1 = paths0
 
-                    while once:  # selection
+                    while transmuter_once:  # selection
                         try:  # option 1
                             paths2 = paths1
                             paths2 = OptionalExpression.call(parser, paths2)
@@ -572,9 +572,9 @@ class PrimaryExpression(NonterminalType):
         return paths0
 
 
-class NegationCondition(NonterminalType):
+class NegationCondition(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
 
         while True:  # iteration
@@ -589,12 +589,12 @@ class NegationCondition(NonterminalType):
         return paths0
 
 
-class OptionalExpression(NonterminalType):
+class OptionalExpression(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
 
-        while once:  # selection
+        while transmuter_once:  # selection
             try:  # option 1
                 paths1 = paths0
                 paths1 = LeftSquareBracket.call(parser.lexer, paths1)
@@ -618,12 +618,12 @@ class OptionalExpression(NonterminalType):
         return paths0
 
 
-class PrimitiveCondition(NonterminalType):
+class PrimitiveCondition(TransmuterNonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
+    def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         paths0 = {current_terminal}
 
-        while once:  # selection
+        while transmuter_once:  # selection
             try:  # option 1
                 paths1 = paths0
                 paths1 = Identifier.call(parser.lexer, paths1)
@@ -646,5 +646,5 @@ class PrimitiveCondition(NonterminalType):
         return paths0
 
 
-class Parser(BaseParser):
+class Parser(TransmuterParser):
     NONTERMINAL_TYPES = {Grammar, Production, ProductionHeader, ProductionBody, Condition, ProductionSpecifiers, ProductionPrecedences, SelectionExpression, DisjunctionCondition, ProductionSpecifierList, ProductionPrecedenceList, SequenceExpression, ConjunctionCondition, ProductionSpecifier, ProductionPrecedence, IterationExpression, PrimaryExpression, NegationCondition, OptionalExpression, PrimitiveCondition}
