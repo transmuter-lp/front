@@ -35,7 +35,7 @@ class TerminalTag:
         return False
 
     @classmethod
-    def call(cls, lexer: "BaseLexer", current_terminals: set["Terminal"]) -> set["Terminal"]:
+    def call(cls, lexer: "BaseLexer", current_terminals: set["Terminal | None"]) -> set["Terminal"]:
         next_terminals = set()
 
         for current_terminal in current_terminals:
@@ -50,7 +50,7 @@ class TerminalTag:
         return next_terminals
 
     @classmethod
-    def call_single(cls, lexer: "BaseLexer", current_terminal: "Terminal") -> "Terminal | None":
+    def call_single(cls, lexer: "BaseLexer", current_terminal: "Terminal | None") -> "Terminal | None":
         while True:
             next_terminal = lexer.next_terminal(current_terminal)
 
@@ -68,7 +68,7 @@ class TerminalTag:
             return next_terminal
 
 
-@dataclass
+@dataclass(eq=False)
 class Terminal:
     start_position: Position
     end_position: Position

@@ -31,7 +31,7 @@ class NonterminalType:
         return False
 
     @classmethod
-    def call(cls, parser: "BaseParser", current_terminals: set[Terminal]) -> set[Terminal]:
+    def call(cls, parser: "BaseParser", current_terminals: set[Terminal | None]) -> set[Terminal]:
         next_terminals = set()
 
         for current_terminal in current_terminals:
@@ -43,7 +43,7 @@ class NonterminalType:
         return next_terminals
 
     @classmethod
-    def call_single(cls, parser: "BaseParser", current_terminal: Terminal) -> set[Terminal]:
+    def call_single(cls, parser: "BaseParser", current_terminal: Terminal | None) -> set[Terminal]:
         if cls not in parser.memo:
             parser.memo[cls] = {}
 
@@ -56,7 +56,7 @@ class NonterminalType:
         return parser.memo[cls][current_terminal]
 
     @classmethod
-    def descend(cls, parser: "BaseParser", current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: "BaseParser", current_terminal: Terminal | None) -> set[Terminal]:
         raise NotImplementedError()
 
 
@@ -66,7 +66,7 @@ class BaseParser:
 
     lexer: BaseLexer
     nonterminal_types_start: type[NonterminalType] = field(init=False, repr=False)
-    memo: dict[type[NonterminalType], dict[Terminal, set[Terminal]]] = field(default_factory=dict, init=False, repr=False)
+    memo: dict[type[NonterminalType], dict[Terminal | None, set[Terminal]]] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self):
         nonterminal_types_start = {nonterminal_type for nonterminal_type in self.NONTERMINAL_TYPES if nonterminal_type.start(self.lexer.conditions)}
@@ -81,12 +81,7 @@ class BaseParser:
 
     def parse(self) -> bool:
         try:
-            current_terminal = self.lexer.next_terminal(None)
-
-            if current_terminal is None:
-                return False
-
-            self.nonterminal_types_start.call(self, {current_terminal})
+            self.nonterminal_types_start.call(self, {None})
             return True
         except TransmuterNoTerminalError as e:
             print(e)

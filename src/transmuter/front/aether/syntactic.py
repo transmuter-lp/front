@@ -19,7 +19,7 @@ from ..common import ConditionVar, TransmuterSymbolMatchError
 from ..lexical import Terminal
 from ..syntactic import once, NonterminalType, BaseParser
 from .common import lexical, syntactic
-from .lexical import Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
+from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
 
 
 class Grammar(NonterminalType):
@@ -28,7 +28,7 @@ class Grammar(NonterminalType):
         return True
 
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = Production.call(parser, paths0)
         paths1 = paths0
@@ -45,7 +45,7 @@ class Grammar(NonterminalType):
 
 class Production(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = ProductionHeader.call(parser, paths0)
         paths0 = ProductionBody.call(parser, paths0)
@@ -54,7 +54,7 @@ class Production(NonterminalType):
 
 class ProductionHeader(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = Identifier.call(parser.lexer, paths0)
 
@@ -87,7 +87,7 @@ class ProductionHeader(NonterminalType):
 
 class ProductionBody(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = SelectionExpression.call(parser, paths0)
         paths0 = Semicolon.call(parser.lexer, paths0)
@@ -96,7 +96,7 @@ class ProductionBody(NonterminalType):
 
 class Condition(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = CommercialAt.call(parser.lexer, paths0)
         paths0 = DisjunctionCondition.call(parser, paths0)
@@ -105,7 +105,7 @@ class Condition(NonterminalType):
 
 class ProductionSpecifiers(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = LeftParenthesis.call(parser.lexer, paths0)
         paths0 = ProductionSpecifierList.call(parser, paths0)
@@ -115,7 +115,7 @@ class ProductionSpecifiers(NonterminalType):
 
 class ProductionPrecedences(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = GreaterThanSign.call(parser.lexer, paths0)
         paths0 = ProductionPrecedenceList.call(parser, paths0)
@@ -124,7 +124,7 @@ class ProductionPrecedences(NonterminalType):
 
 class SelectionExpression(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = SequenceExpression.call(parser, paths0)
         paths1 = paths0
@@ -161,7 +161,7 @@ class SelectionExpression(NonterminalType):
 
 class DisjunctionCondition(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = ConjunctionCondition.call(parser, paths0)
         paths1 = paths0
@@ -179,7 +179,7 @@ class DisjunctionCondition(NonterminalType):
 
 class ProductionSpecifierList(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = ProductionSpecifier.call(parser, paths0)
         paths1 = paths0
@@ -197,7 +197,7 @@ class ProductionSpecifierList(NonterminalType):
 
 class ProductionPrecedenceList(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = ProductionPrecedence.call(parser, paths0)
         paths1 = paths0
@@ -215,7 +215,7 @@ class ProductionPrecedenceList(NonterminalType):
 
 class SequenceExpression(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
 
         while once:  # selection
@@ -262,7 +262,7 @@ class SequenceExpression(NonterminalType):
 
 class ConjunctionCondition(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = NegationCondition.call(parser, paths0)
         paths1 = paths0
@@ -280,7 +280,7 @@ class ConjunctionCondition(NonterminalType):
 
 class ProductionSpecifier(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
 
         while once:  # selection
@@ -354,7 +354,7 @@ class ProductionSpecifier(NonterminalType):
 
 class ProductionPrecedence(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
         paths0 = Identifier.call(parser.lexer, paths0)
         return paths0
@@ -362,7 +362,7 @@ class ProductionPrecedence(NonterminalType):
 
 class IterationExpression(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
 
         while once:  # selection
@@ -371,7 +371,7 @@ class IterationExpression(NonterminalType):
                     paths1 = paths0
                     paths1 = PrimaryExpression.call(parser, paths1)
 
-                    while once:  # selection
+                    while once:  # optional selection
                         try:  # option 1
                             paths2 = paths1
                             paths2 = Asterisk.call(parser.lexer, paths2)
@@ -404,7 +404,7 @@ class IterationExpression(NonterminalType):
                         except TransmuterSymbolMatchError:  # option 4
                             pass
 
-                        # selection
+                        break  # optional selection
 
                     paths0 = paths1
                     break
@@ -448,7 +448,7 @@ class IterationExpression(NonterminalType):
 
 class PrimaryExpression(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
 
         while once:  # selection
@@ -574,7 +574,7 @@ class PrimaryExpression(NonterminalType):
 
 class NegationCondition(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
 
         while True:  # iteration
@@ -591,7 +591,7 @@ class NegationCondition(NonterminalType):
 
 class OptionalExpression(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
 
         while once:  # selection
@@ -620,7 +620,7 @@ class OptionalExpression(NonterminalType):
 
 class PrimitiveCondition(NonterminalType):
     @classmethod
-    def descend(cls, parser: BaseParser, current_terminal: Terminal) -> set[Terminal]:
+    def descend(cls, parser: BaseParser, current_terminal: Terminal | None) -> set[Terminal]:
         paths0 = {current_terminal}
 
         while once:  # selection
