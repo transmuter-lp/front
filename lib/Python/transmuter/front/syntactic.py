@@ -26,16 +26,18 @@ transmuter_once: bool = True
 
 
 class TransmuterNonterminalType:
+    ASCEND_PARENTS: set[type["TransmuterNonterminalType"]] = set()
+
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
 
     @classmethod
-    def call(cls, parser: "TransmuterParser", current_terminals: set[TransmuterTerminal | None]) -> set[TransmuterTerminal]:
+    def call(cls, parser: "TransmuterParser", current_terminals: set[TransmuterTerminal | None], ascend: bool = False) -> set[TransmuterTerminal]:
         next_terminals = set()
 
         for current_terminal in current_terminals:
-            next_terminals |= cls.call_single(parser, current_terminal)
+            next_terminals |= cls.call_single(parser, current_terminal, ascend)
 
         if len(next_terminals) == 0:
             raise TransmuterSymbolMatchError()
@@ -43,21 +45,38 @@ class TransmuterNonterminalType:
         return next_terminals
 
     @classmethod
-    def call_single(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
+    def call_single(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None, ascend: bool) -> set[TransmuterTerminal]:
         if cls not in parser.memo:
             parser.memo[cls] = {}
 
-        if current_terminal not in parser.memo[cls]:
-            try:
-                parser.memo[cls][current_terminal] = cls.descend(parser, current_terminal)
-            except TransmuterSymbolMatchError:
+        if ascend or current_terminal not in parser.memo[cls]:
+            if current_terminal not in parser.memo[cls]:
                 parser.memo[cls][current_terminal] = set()
+
+            try:
+                initial_memo_len = len(parser.memo[cls][current_terminal])
+                parser.memo[cls][current_terminal] |= cls.descend(parser, current_terminal)
+
+                if ascend and initial_memo_len != len(parser.memo[cls][current_terminal]):
+                    cls.ascend(parser, current_terminal)
+            except TransmuterSymbolMatchError:
+                pass
 
         return parser.memo[cls][current_terminal]
 
     @classmethod
     def descend(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
         raise NotImplementedError()
+
+    @classmethod
+    def ascend(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None) -> None:
+        current_terminals = {current_terminal}
+
+        for ascend_parent in cls.ASCEND_PARENTS:
+            try:
+                ascend_parent.call(parser, current_terminals, True)
+            except TransmuterSymbolMatchError:
+                pass
 
 
 @dataclass
@@ -85,7 +104,7 @@ class TransmuterParser:
 
     def parse(self) -> bool:
         try:
-            self.nonterminal_types_start.call(self, {None})
+            self.nonterminal_types_start.call(self, {None}, True)
             return True
         except TransmuterNoTerminalError as e:
             print(e)
