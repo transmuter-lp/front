@@ -98,7 +98,7 @@ class TransmuterParser:
             raise TransmuterNoStartError()
 
         if len(nonterminal_types_start) > 1:
-            raise TransmuterMultipleStartError()
+            raise TransmuterMultipleStartsError()
 
         self.nonterminal_types_start = nonterminal_types_start.pop()
 
@@ -123,6 +123,6 @@ class TransmuterNoStartError(TransmuterSyntacticError):
         super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Could not match any starting symbol from given conditions.")
 
 
-class TransmuterMultipleStartError(TransmuterSyntacticError):
+class TransmuterMultipleStartsError(TransmuterSyntacticError):
     def __init__(self) -> None:
         super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Matched multiple starting symbols from given conditions.")

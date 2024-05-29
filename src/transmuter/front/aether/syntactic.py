@@ -29,306 +29,306 @@ class Grammar(TransmuterNonterminalType):
 
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = Production.call(parser, paths0)
-        paths1 = paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = Production.call(parser, next_terminals0)
+        next_terminals1 = next_terminals0
 
         while True:  # iteration
             try:
-                paths1 = Production.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = Production.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:
                 break  # iteration
 
-        return paths0
+        return next_terminals0
 
 
 class Production(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = ProductionHeader.call(parser, paths0)
-        paths0 = ProductionBody.call(parser, paths0)
-        return paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = ProductionHeader.call(parser, next_terminals0)
+        next_terminals0 = ProductionBody.call(parser, next_terminals0)
+        return next_terminals0
 
 
 class ProductionHeader(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = Identifier.call(parser.lexer, paths0)
+        next_terminals0 = {current_terminal}
+        next_terminals0 = Identifier.call(parser.lexer, next_terminals0)
 
         if lexical in parser.lexer.conditions:
             try:  # optional
-                paths1 = paths0
-                paths1 = Condition.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = Condition.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:  # optional
                 pass
 
         try:  # optional
-            paths1 = paths0
-            paths1 = ProductionSpecifiers.call(parser, paths1)
-            paths0 = paths1
+            next_terminals1 = next_terminals0
+            next_terminals1 = ProductionSpecifiers.call(parser, next_terminals1)
+            next_terminals0 = next_terminals1
         except TransmuterSymbolMatchError:  # optional
             pass
 
         if lexical in parser.lexer.conditions:
             try:  # optional
-                paths1 = paths0
-                paths1 = ProductionPrecedences.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = ProductionPrecedences.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:  # optional
                 pass
 
-        paths0 = Colon.call(parser.lexer, paths0)
-        return paths0
+        next_terminals0 = Colon.call(parser.lexer, next_terminals0)
+        return next_terminals0
 
 
 class ProductionBody(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = SelectionExpression.call(parser, paths0)
-        paths0 = Semicolon.call(parser.lexer, paths0)
-        return paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = SelectionExpression.call(parser, next_terminals0)
+        next_terminals0 = Semicolon.call(parser.lexer, next_terminals0)
+        return next_terminals0
 
 
 class Condition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = CommercialAt.call(parser.lexer, paths0)
-        paths0 = DisjunctionCondition.call(parser, paths0)
-        return paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = CommercialAt.call(parser.lexer, next_terminals0)
+        next_terminals0 = DisjunctionCondition.call(parser, next_terminals0)
+        return next_terminals0
 
 
 class ProductionSpecifiers(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = LeftParenthesis.call(parser.lexer, paths0)
-        paths0 = ProductionSpecifierList.call(parser, paths0)
-        paths0 = RightParenthesis.call(parser.lexer, paths0)
-        return paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = LeftParenthesis.call(parser.lexer, next_terminals0)
+        next_terminals0 = ProductionSpecifierList.call(parser, next_terminals0)
+        next_terminals0 = RightParenthesis.call(parser.lexer, next_terminals0)
+        return next_terminals0
 
 
 class ProductionPrecedences(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = GreaterThanSign.call(parser.lexer, paths0)
-        paths0 = ProductionPrecedenceList.call(parser, paths0)
-        return paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = GreaterThanSign.call(parser.lexer, next_terminals0)
+        next_terminals0 = ProductionPrecedenceList.call(parser, next_terminals0)
+        return next_terminals0
 
 
 class SelectionExpression(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = SequenceExpression.call(parser, paths0)
-        paths1 = paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = SequenceExpression.call(parser, next_terminals0)
+        next_terminals1 = next_terminals0
 
         while True:  # iteration
             try:
                 while transmuter_once:  # selection
                     try:  # option 1
-                        paths2 = paths1
-                        paths2 = VerticalLine.call(parser.lexer, paths2)
-                        paths1 = paths2
+                        next_terminals2 = next_terminals1
+                        next_terminals2 = VerticalLine.call(parser.lexer, next_terminals2)
+                        next_terminals1 = next_terminals2
                         break
                     except TransmuterSymbolMatchError:  # option 1
                         pass
 
                     try:  # option 2
                         if syntactic in parser.lexer.conditions:
-                            paths2 = paths1
-                            paths2 = Solidus.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = Solidus.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                     except TransmuterSymbolMatchError:  # option 2
                         pass
 
                     raise TransmuterSymbolMatchError()  # selection
 
-                paths1 = SequenceExpression.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = SequenceExpression.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:
                 break  # iteration
 
-        return paths0
+        return next_terminals0
 
 
 class DisjunctionCondition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = ConjunctionCondition.call(parser, paths0)
-        paths1 = paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = ConjunctionCondition.call(parser, next_terminals0)
+        next_terminals1 = next_terminals0
 
         while True:  # iteration
             try:
-                paths1 = DoubleVerticalLine.call(parser.lexer, paths1)
-                paths1 = ConjunctionCondition.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = DoubleVerticalLine.call(parser.lexer, next_terminals1)
+                next_terminals1 = ConjunctionCondition.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:
                 break  # iteration
 
-        return paths0
+        return next_terminals0
 
 
 class ProductionSpecifierList(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = ProductionSpecifier.call(parser, paths0)
-        paths1 = paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = ProductionSpecifier.call(parser, next_terminals0)
+        next_terminals1 = next_terminals0
 
         while True:  # iteration
             try:
-                paths1 = Comma.call(parser.lexer, paths1)
-                paths1 = ProductionSpecifier.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = Comma.call(parser.lexer, next_terminals1)
+                next_terminals1 = ProductionSpecifier.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:
                 break  # iteration
 
-        return paths0
+        return next_terminals0
 
 
 class ProductionPrecedenceList(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = ProductionPrecedence.call(parser, paths0)
-        paths1 = paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = ProductionPrecedence.call(parser, next_terminals0)
+        next_terminals1 = next_terminals0
 
         while True:  # iteration
             try:
-                paths1 = Comma.call(parser.lexer, paths1)
-                paths1 = ProductionPrecedence.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = Comma.call(parser.lexer, next_terminals1)
+                next_terminals1 = ProductionPrecedence.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:
                 break  # iteration
 
-        return paths0
+        return next_terminals0
 
 
 class SequenceExpression(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
+        next_terminals0 = {current_terminal}
 
         while transmuter_once:  # selection
             try:  # option 1
                 if lexical in parser.lexer.conditions:
-                    paths1 = paths0
-                    paths1 = IterationExpression.call(parser, paths1)
-                    paths2 = paths1
+                    next_terminals1 = next_terminals0
+                    next_terminals1 = IterationExpression.call(parser, next_terminals1)
+                    next_terminals2 = next_terminals1
 
                     while True:  # iteration
                         try:
-                            paths2 = IterationExpression.call(parser, paths2)
-                            paths1 = paths2
+                            next_terminals2 = IterationExpression.call(parser, next_terminals2)
+                            next_terminals1 = next_terminals2
                         except TransmuterSymbolMatchError:
                             break  # iteration
 
-                    paths0 = paths1
+                    next_terminals0 = next_terminals1
                     break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
             try:  # option 2
                 if syntactic in parser.lexer.conditions:
-                    paths1 = paths0
-                    paths1 = PrimaryExpression.call(parser, paths1)
-                    paths2 = paths1
+                    next_terminals1 = next_terminals0
+                    next_terminals1 = PrimaryExpression.call(parser, next_terminals1)
+                    next_terminals2 = next_terminals1
 
                     while True:  # iteration
                         try:
-                            paths2 = PrimaryExpression.call(parser, paths2)
-                            paths1 = paths2
+                            next_terminals2 = PrimaryExpression.call(parser, next_terminals2)
+                            next_terminals1 = next_terminals2
                         except TransmuterSymbolMatchError:
                             break  # iteration
 
-                    paths0 = paths1
+                    next_terminals0 = next_terminals1
                     break
             except TransmuterSymbolMatchError:  # option 2
                 pass
 
             raise TransmuterSymbolMatchError()  # selection
 
-        return paths0
+        return next_terminals0
 
 
 class ConjunctionCondition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = NegationCondition.call(parser, paths0)
-        paths1 = paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = NegationCondition.call(parser, next_terminals0)
+        next_terminals1 = next_terminals0
 
         while True:  # iteration
             try:
-                paths1 = DoubleAmpersand.call(parser.lexer, paths1)
-                paths1 = NegationCondition.call(parser, paths1)
-                paths0 = paths1
+                next_terminals1 = DoubleAmpersand.call(parser.lexer, next_terminals1)
+                next_terminals1 = NegationCondition.call(parser, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:
                 break  # iteration
 
-        return paths0
+        return next_terminals0
 
 
 class ProductionSpecifier(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
+        next_terminals0 = {current_terminal}
 
         while transmuter_once:  # selection
             try:  # option 1
-                paths1 = paths0
-                paths1 = Identifier.call(parser.lexer, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = Identifier.call(parser.lexer, next_terminals1)
+                next_terminals0 = next_terminals1
                 break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
             try:  # option 2
-                paths1 = paths0
+                next_terminals1 = next_terminals0
 
                 while transmuter_once:  # selection
                     try:  # option 1
                         if lexical in parser.lexer.conditions:
-                            paths2 = paths1
+                            next_terminals2 = next_terminals1
 
                             while transmuter_once:  # selection
                                 try:  # option 1
-                                    paths3 = paths2
-                                    paths3 = Ignore.call(parser.lexer, paths3)
-                                    paths2 = paths3
+                                    next_terminals3 = next_terminals2
+                                    next_terminals3 = Ignore.call(parser.lexer, next_terminals3)
+                                    next_terminals2 = next_terminals3
                                     break
                                 except TransmuterSymbolMatchError:  # option 1
                                     pass
 
                                 try:  # option 2
-                                    paths3 = paths2
-                                    paths3 = Optional.call(parser.lexer, paths3)
-                                    paths2 = paths3
+                                    next_terminals3 = next_terminals2
+                                    next_terminals3 = Optional.call(parser.lexer, next_terminals3)
+                                    next_terminals2 = next_terminals3
                                     break
                                 except TransmuterSymbolMatchError:  # option 2
                                     pass
 
                                 raise TransmuterSymbolMatchError()  # selection
 
-                            paths1 = paths2
+                            next_terminals1 = next_terminals2
                             break
                     except TransmuterSymbolMatchError:  # option 1
                         pass
 
                     try:  # option 2
                         if syntactic in parser.lexer.conditions:
-                            paths2 = paths1
-                            paths2 = Start.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = Start.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                     except TransmuterSymbolMatchError:  # option 2
                         pass
@@ -336,219 +336,219 @@ class ProductionSpecifier(TransmuterNonterminalType):
                     raise TransmuterSymbolMatchError()  # selection
 
                 try:  # optional
-                    paths2 = paths1
-                    paths2 = Condition.call(parser, paths2)
-                    paths1 = paths2
+                    next_terminals2 = next_terminals1
+                    next_terminals2 = Condition.call(parser, next_terminals2)
+                    next_terminals1 = next_terminals2
                 except TransmuterSymbolMatchError:  # optional
                     pass
 
-                paths0 = paths1
+                next_terminals0 = next_terminals1
                 break
             except TransmuterSymbolMatchError:  # option 2
                 pass
 
             raise TransmuterSymbolMatchError()  # selection
 
-        return paths0
+        return next_terminals0
 
 
 class ProductionPrecedence(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
-        paths0 = Identifier.call(parser.lexer, paths0)
-        return paths0
+        next_terminals0 = {current_terminal}
+        next_terminals0 = Identifier.call(parser.lexer, next_terminals0)
+        return next_terminals0
 
 
 class IterationExpression(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
+        next_terminals0 = {current_terminal}
 
         while transmuter_once:  # selection
             try:  # option 1
                 if lexical in parser.lexer.conditions:
-                    paths1 = paths0
-                    paths1 = PrimaryExpression.call(parser, paths1)
+                    next_terminals1 = next_terminals0
+                    next_terminals1 = PrimaryExpression.call(parser, next_terminals1)
 
                     while transmuter_once:  # optional selection
                         try:  # option 1
-                            paths2 = paths1
-                            paths2 = Asterisk.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = Asterisk.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 1
                             pass
 
                         try:  # option 2
-                            paths2 = paths1
-                            paths2 = PlusSign.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = PlusSign.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 2
                             pass
 
                         try:  # option 3
-                            paths2 = paths1
-                            paths2 = QuestionMark.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = QuestionMark.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 3
                             pass
 
                         try:  # option 4
-                            paths2 = paths1
-                            paths2 = ExpressionRange.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = ExpressionRange.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 4
                             pass
 
                         break  # optional selection
 
-                    paths0 = paths1
+                    next_terminals0 = next_terminals1
                     break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
             try:  # option 2
                 if syntactic in parser.lexer.conditions:
-                    paths1 = paths0
+                    next_terminals1 = next_terminals0
 
                     while transmuter_once:  # selection
                         try:  # option 1
-                            paths2 = paths1
-                            paths2 = LeftCurlyBracket.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = LeftCurlyBracket.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 1
                             pass
 
                         try:  # option 2
-                            paths2 = paths1
-                            paths2 = LeftCurlyBracketSolidus.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = LeftCurlyBracketSolidus.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 2
                             pass
 
                         raise TransmuterSymbolMatchError()  # selection
 
-                    paths1 = SelectionExpression.call(parser, paths1)
-                    paths1 = RightCurlyBracket.call(parser.lexer, paths1)
-                    paths0 = paths1
+                    next_terminals1 = SelectionExpression.call(parser, next_terminals1)
+                    next_terminals1 = RightCurlyBracket.call(parser.lexer, next_terminals1)
+                    next_terminals0 = next_terminals1
                     break
             except TransmuterSymbolMatchError:  # option 2
                 pass
 
             raise TransmuterSymbolMatchError()  # selection
 
-        return paths0
+        return next_terminals0
 
 
 class PrimaryExpression(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
+        next_terminals0 = {current_terminal}
 
         while transmuter_once:  # selection
             try:  # option 1
                 if lexical in parser.lexer.conditions:
-                    paths1 = paths0
+                    next_terminals1 = next_terminals0
 
                     while transmuter_once:  # selection
                         try:  # option 1
-                            paths2 = paths1
-                            paths2 = OrdChar.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = OrdChar.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 1
                             pass
 
                         try:  # option 2
-                            paths2 = paths1
-                            paths2 = QuotedChar.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = QuotedChar.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 2
                             pass
 
                         try:  # option 3
-                            paths2 = paths1
-                            paths2 = FullStop.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = FullStop.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 3
                             pass
 
                         try:  # option 4
-                            paths2 = paths1
-                            paths2 = BracketExpression.call(parser.lexer, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = BracketExpression.call(parser.lexer, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 4
                             pass
 
                         raise TransmuterSymbolMatchError()  # selection
 
-                    paths0 = paths1
+                    next_terminals0 = next_terminals1
                     break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
             try:  # option 2
                 if syntactic in parser.lexer.conditions:
-                    paths1 = paths0
-                    paths1 = Identifier.call(parser.lexer, paths1)
+                    next_terminals1 = next_terminals0
+                    next_terminals1 = Identifier.call(parser.lexer, next_terminals1)
 
                     try:  # optional
-                        paths2 = paths1
-                        paths2 = Condition.call(parser, paths2)
-                        paths1 = paths2
+                        next_terminals2 = next_terminals1
+                        next_terminals2 = Condition.call(parser, next_terminals2)
+                        next_terminals1 = next_terminals2
                     except TransmuterSymbolMatchError:  # optional
                         pass
 
-                    paths0 = paths1
+                    next_terminals0 = next_terminals1
                     break
             except TransmuterSymbolMatchError:  # option 2
                 pass
 
             try:  # option 3
-                paths1 = paths0
-                paths1 = LeftParenthesis.call(parser.lexer, paths1)
-                paths1 = SelectionExpression.call(parser, paths1)
-                paths1 = RightParenthesis.call(parser.lexer, paths1)
+                next_terminals1 = next_terminals0
+                next_terminals1 = LeftParenthesis.call(parser.lexer, next_terminals1)
+                next_terminals1 = SelectionExpression.call(parser, next_terminals1)
+                next_terminals1 = RightParenthesis.call(parser.lexer, next_terminals1)
 
                 if syntactic in parser.lexer.conditions:
                     try:  # optional
-                        paths2 = paths1
-                        paths2 = Condition.call(parser, paths2)
-                        paths1 = paths2
+                        next_terminals2 = next_terminals1
+                        next_terminals2 = Condition.call(parser, next_terminals2)
+                        next_terminals1 = next_terminals2
                     except TransmuterSymbolMatchError:  # optional
                         pass
 
-                paths0 = paths1
+                next_terminals0 = next_terminals1
                 break
             except TransmuterSymbolMatchError:  # option 3
                 pass
 
             try:  # option 4
                 if syntactic in parser.lexer.conditions:
-                    paths1 = paths0
+                    next_terminals1 = next_terminals0
 
                     while transmuter_once:  # selection
                         try:  # option 1
-                            paths2 = paths1
-                            paths2 = OptionalExpression.call(parser, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = OptionalExpression.call(parser, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 1
                             pass
 
                         try:  # option 2
-                            paths2 = paths1
-                            paths2 = IterationExpression.call(parser, paths2)
-                            paths1 = paths2
+                            next_terminals2 = next_terminals1
+                            next_terminals2 = IterationExpression.call(parser, next_terminals2)
+                            next_terminals1 = next_terminals2
                             break
                         except TransmuterSymbolMatchError:  # option 2
                             pass
@@ -556,94 +556,94 @@ class PrimaryExpression(TransmuterNonterminalType):
                         raise TransmuterSymbolMatchError()  # selection
 
                     try:  # optional
-                        paths2 = paths1
-                        paths2 = Condition.call(parser, paths2)
-                        paths1 = paths2
+                        next_terminals2 = next_terminals1
+                        next_terminals2 = Condition.call(parser, next_terminals2)
+                        next_terminals1 = next_terminals2
                     except TransmuterSymbolMatchError:  # optional
                         pass
 
-                    paths0 = paths1
+                    next_terminals0 = next_terminals1
                     break
             except TransmuterSymbolMatchError:  # option 4
                 pass
 
             raise TransmuterSymbolMatchError()  # selection
 
-        return paths0
+        return next_terminals0
 
 
 class NegationCondition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
+        next_terminals0 = {current_terminal}
 
         while True:  # iteration
             try:
-                paths1 = paths0
-                paths1 = ExclamationMark.call(parser.lexer, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = ExclamationMark.call(parser.lexer, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:
                 break  # iteration
 
-        paths0 = PrimitiveCondition.call(parser, paths0)
-        return paths0
+        next_terminals0 = PrimitiveCondition.call(parser, next_terminals0)
+        return next_terminals0
 
 
 class OptionalExpression(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
+        next_terminals0 = {current_terminal}
 
         while transmuter_once:  # selection
             try:  # option 1
-                paths1 = paths0
-                paths1 = LeftSquareBracket.call(parser.lexer, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = LeftSquareBracket.call(parser.lexer, next_terminals1)
+                next_terminals0 = next_terminals1
                 break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
             try:  # option 2
-                paths1 = paths0
-                paths1 = LeftSquareBracketSolidus.call(parser.lexer, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = LeftSquareBracketSolidus.call(parser.lexer, next_terminals1)
+                next_terminals0 = next_terminals1
                 break
             except TransmuterSymbolMatchError:  # option 2
                 pass
 
             raise TransmuterSymbolMatchError()  # selection
 
-        paths0 = SelectionExpression.call(parser, paths0)
-        paths0 = RightSquareBracket.call(parser.lexer, paths0)
-        return paths0
+        next_terminals0 = SelectionExpression.call(parser, next_terminals0)
+        next_terminals0 = RightSquareBracket.call(parser.lexer, next_terminals0)
+        return next_terminals0
 
 
 class PrimitiveCondition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser: TransmuterParser, current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
-        paths0 = {current_terminal}
+        next_terminals0 = {current_terminal}
 
         while transmuter_once:  # selection
             try:  # option 1
-                paths1 = paths0
-                paths1 = Identifier.call(parser.lexer, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = Identifier.call(parser.lexer, next_terminals1)
+                next_terminals0 = next_terminals1
                 break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
             try:  # option 2
-                paths1 = paths0
-                paths1 = LeftParenthesis.call(parser.lexer, paths1)
-                paths1 = DisjunctionCondition.call(parser, paths1)
-                paths1 = RightParenthesis.call(parser.lexer, paths1)
-                paths0 = paths1
+                next_terminals1 = next_terminals0
+                next_terminals1 = LeftParenthesis.call(parser.lexer, next_terminals1)
+                next_terminals1 = DisjunctionCondition.call(parser, next_terminals1)
+                next_terminals1 = RightParenthesis.call(parser.lexer, next_terminals1)
+                next_terminals0 = next_terminals1
             except TransmuterSymbolMatchError:  # option 2
                 pass
 
             raise TransmuterSymbolMatchError()  # selection
 
-        return paths0
+        return next_terminals0
 
 
 class Parser(TransmuterParser):
