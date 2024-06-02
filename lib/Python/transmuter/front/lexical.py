@@ -18,7 +18,7 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import TransmuterCondition, TransmuterPosition, TransmuterException, TransmuterSymbolMatchError
+from .common import TransmuterCondition, TransmuterPosition, TransmuterException
 
 
 class TransmuterTerminalTag:
@@ -33,39 +33,6 @@ class TransmuterTerminalTag:
     @staticmethod
     def optional(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
-
-    @classmethod
-    def call(cls, lexer: "TransmuterLexer", current_terminals: set["TransmuterTerminal | None"]) -> set["TransmuterTerminal"]:
-        next_terminals = set()
-
-        for current_terminal in current_terminals:
-            next_terminal = cls.call_single(lexer, current_terminal)
-
-            if next_terminal is not None:
-                next_terminals.add(next_terminal)
-
-        if len(next_terminals) == 0:
-            raise TransmuterSymbolMatchError()
-
-        return next_terminals
-
-    @classmethod
-    def call_single(cls, lexer: "TransmuterLexer", current_terminal: "TransmuterTerminal | None") -> "TransmuterTerminal | None":
-        while True:
-            next_terminal = lexer.next_terminal(current_terminal)
-
-            if next_terminal is None:
-                return None
-
-            if cls not in next_terminal.tags:
-                for terminal_tag in next_terminal.tags:
-                    if not terminal_tag.optional(lexer.conditions):
-                        return None
-
-                current_terminal = next_terminal
-                continue
-
-            return next_terminal
 
 
 @dataclass(eq=False)
