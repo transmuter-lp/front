@@ -33,18 +33,35 @@ class TransmuterNonterminalType:
         return False
 
     @classmethod
-    def descend(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None) -> set[TransmuterTerminal]:
+    def descend(cls, parser: "TransmuterParser", current_state: "TransmuterParsingState") -> set["TransmuterParsingState"]:
         raise NotImplementedError()
 
     @classmethod
-    def ascend(cls, parser: "TransmuterParser", current_terminal: TransmuterTerminal | None) -> None:
-        current_terminals = {current_terminal}
+    def ascend(cls, parser: "TransmuterParser", current_state: "TransmuterParsingState") -> None:
+        current_states = {current_state}
 
         for ascend_parent in cls.ASCEND_PARENTS:
             try:
-                parser.call(ascend_parent, current_terminals, True)
+                parser.call(ascend_parent, current_states, True)
             except TransmuterSymbolMatchError:
                 pass
+
+
+@dataclass(frozen=True)
+class TransmuterParsingState:
+    string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
+    start_terminal: TransmuterTerminal | None
+    split_terminal: TransmuterTerminal | None
+    end_terminal: TransmuterTerminal | None
+
+
+@dataclass(frozen=True)
+class TransmuterExtendedPackedNode:
+    nonterminal_type: type[TransmuterNonterminalType] | None
+    string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
+    start_terminal: TransmuterTerminal | None
+    split_terminal: TransmuterTerminal | None
+    end_terminal: TransmuterTerminal | None
 
 
 @dataclass
@@ -58,6 +75,7 @@ class TransmuterParser:
         init=False,
         repr=False
     )
+    bsr: set[TransmuterExtendedPackedNode] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
         nonterminal_types_start = {nonterminal_type for nonterminal_type in self.NONTERMINAL_TYPES if nonterminal_type.start(self.lexer.conditions)}
@@ -71,26 +89,31 @@ class TransmuterParser:
         self.nonterminal_types_start = nonterminal_types_start.pop()
 
     def call(
-        self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_terminals: set[TransmuterTerminal | None], ascend: bool = False
-    ) -> set[TransmuterTerminal]:
-        next_terminals = set()
+        self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
+    ) -> set[TransmuterParsingState]:
+        next_states = set()
 
         if issubclass(cls, TransmuterTerminalTag):
-            for current_terminal in current_terminals:
-                next_terminal = self.call_single_terminal_tag(cls, current_terminal)
+            for current_state in current_states:
+                next_state = self.call_single_terminal_tag(cls, current_state)
 
-                if next_terminal is not None:
-                    next_terminals.add(next_terminal)
+                if next_state is not None:
+                    next_states.add(next_state)
         else:  # TransmuterNonterminalType
-            for current_terminal in current_terminals:
-                next_terminals |= self.call_single_nonterminal_type(cls, current_terminal, ascend)
+            for current_state in current_states:
+                next_states |= self.call_single_nonterminal_type(cls, current_state, ascend)
 
-        if len(next_terminals) == 0:
+        if len(next_states) == 0:
             raise TransmuterSymbolMatchError()
 
-        return next_terminals
+        return next_states
 
-    def call_single_terminal_tag(self, cls: type[TransmuterTerminalTag], current_terminal: TransmuterTerminal | None) -> TransmuterTerminal | None:
+    def call_single_terminal_tag(self, cls: type[TransmuterTerminalTag], current_state: TransmuterParsingState) -> TransmuterParsingState | None:
+        self.bsr.add(TransmuterExtendedPackedNode(
+            None, current_state.string, current_state.start_terminal, current_state.split_terminal, current_state.end_terminal
+        ))
+        current_terminal = current_state.end_terminal
+
         while True:
             next_terminal = self.lexer.next_terminal(current_terminal)
 
@@ -105,32 +128,48 @@ class TransmuterParser:
                 current_terminal = next_terminal
                 continue
 
-            return next_terminal
+            return TransmuterParsingState(current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal)
 
     def call_single_nonterminal_type(
-        self, cls: type[TransmuterNonterminalType], current_terminal: TransmuterTerminal | None, ascend: bool
-    ) -> set[TransmuterTerminal]:
+        self, cls: type[TransmuterNonterminalType], current_state: TransmuterParsingState, ascend: bool
+    ) -> set[TransmuterParsingState]:
+        self.bsr.add(TransmuterExtendedPackedNode(
+            None, current_state.string, current_state.start_terminal, current_state.split_terminal, current_state.end_terminal
+        ))
+
         if cls not in self.memo:
             self.memo[cls] = {}
 
-        if ascend or current_terminal not in self.memo[cls]:
-            if current_terminal not in self.memo[cls]:
-                self.memo[cls][current_terminal] = set()
+        if ascend or current_state.end_terminal not in self.memo[cls]:
+            if current_state.end_terminal not in self.memo[cls]:
+                self.memo[cls][current_state.end_terminal] = set()
 
             try:
-                initial_memo_len = len(self.memo[cls][current_terminal])
-                self.memo[cls][current_terminal] |= cls.descend(self, current_terminal)
+                initial_memo_len = len(self.memo[cls][current_state.end_terminal])
+                next_states = cls.descend(
+                    self, TransmuterParsingState((), current_state.end_terminal, current_state.end_terminal, current_state.end_terminal)
+                )
+                self.bsr |= {
+                    TransmuterExtendedPackedNode(
+                        cls, next_state.string, next_state.start_terminal, next_state.split_terminal, next_state.end_terminal
+                    ) for next_state in next_states
+                }
+                self.memo[cls][current_state.end_terminal] |= {next_state.end_terminal for next_state in next_states}
 
-                if ascend and initial_memo_len != len(self.memo[cls][current_terminal]):
-                    cls.ascend(self, current_terminal)
+                if ascend and initial_memo_len != len(self.memo[cls][current_state.end_terminal]):
+                    cls.ascend(self, current_state)
             except TransmuterSymbolMatchError:
                 pass
 
-        return self.memo[cls][current_terminal]
+        return {
+            TransmuterParsingState(
+                current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal
+            ) for next_terminal in self.memo[cls][current_state.end_terminal]
+        }
 
     def parse(self) -> bool:
         try:
-            self.call(self.nonterminal_types_start, {None}, True)
+            self.call(self.nonterminal_types_start, {TransmuterParsingState((), None, None, None)}, True)
             return True
         except TransmuterNoTerminalError as e:
             print(e)
