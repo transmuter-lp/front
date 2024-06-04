@@ -18,43 +18,43 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import Condition, Position, TransmuterException
+from .common import TransmuterCondition, TransmuterPosition, TransmuterException
 
 
-class TerminalTag:
+class TransmuterTerminalTag:
     @staticmethod
-    def states_start(conditions: set[type[Condition]]) -> set[int]:
+    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
         raise NotImplementedError()
 
     @staticmethod
-    def ignore(conditions: set[type[Condition]]) -> bool:
+    def ignore(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
 
     @staticmethod
-    def optional(conditions: set[type[Condition]]) -> bool:
+    def optional(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
 
 
-@dataclass
-class Terminal:
-    start_position: Position
-    end_position: Position
-    tags: set[type[TerminalTag]]
+@dataclass(eq=False)
+class TransmuterTerminal:
+    start_position: TransmuterPosition
+    end_position: TransmuterPosition
+    tags: set[type[TransmuterTerminalTag]]
     value: str
-    next: "Terminal | None" = field(default=None, init=False, repr=False)
+    next: "TransmuterTerminal | None" = field(default=None, init=False, repr=False)
 
 
 @dataclass
-class BaseLexer:
+class TransmuterLexer:
     STATE_ACCEPT: ClassVar[int] = 0
-    TERMINAL_TAGS: ClassVar[set[type[TerminalTag]]]
+    TERMINAL_TAGS: ClassVar[set[type[TransmuterTerminalTag]]]
 
     input: str
     filename: str
-    conditions: set[type[Condition]]
-    terminal_tags_ignore: set[type[TerminalTag]] = field(init=False, repr=False)
+    conditions: set[type[TransmuterCondition]]
+    terminal_tags_ignore: set[type[TransmuterTerminalTag]] = field(init=False, repr=False)
     states_start: set[int] = field(init=False, repr=False)
-    start: Terminal | None = field(default=None, init=False, repr=False)
+    start: TransmuterTerminal | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
         self.terminal_tags_ignore = {terminal_tag for terminal_tag in self.TERMINAL_TAGS if terminal_tag.ignore(self.conditions)}
@@ -63,10 +63,10 @@ class BaseLexer:
         for terminal_tag in self.TERMINAL_TAGS:
             self.states_start |= terminal_tag.states_start(self.conditions)
 
-    def next_terminal(self, current_terminal: Terminal | None) -> Terminal:
+    def next_terminal(self, current_terminal: TransmuterTerminal | None) -> TransmuterTerminal | None:
         if current_terminal is None:
             if self.start is None:
-                self.start = self.get_terminal(Position(0, 1, 1))
+                self.start = self.get_terminal(TransmuterPosition(0, 1, 1))
 
             return self.start
 
@@ -75,7 +75,7 @@ class BaseLexer:
 
         return current_terminal.next
 
-    def get_terminal(self, start_position: Position) -> Terminal:
+    def get_terminal(self, start_position: TransmuterPosition) -> TransmuterTerminal | None:
         while True:
             accepted_terminal_tags = set()
             accepted_position = start_position
@@ -92,10 +92,10 @@ class BaseLexer:
                     if accepted_terminal_tags - self.terminal_tags_ignore:
                         break
 
-                    raise TransmuterEOIError(self.filename, current_position)
+                    return None
 
                 current_terminal_tags, current_states = self.nfa(self.input[current_position.index_], current_states)
-                current_position = Position(
+                current_position = TransmuterPosition(
                     current_position.index_ + 1,
                     current_position.line + (0 if self.input[current_position.index_] != "\n" else 1),
                     current_position.column + 1 if self.input[current_position.index_] != "\n" else 1
@@ -105,7 +105,7 @@ class BaseLexer:
                 raise TransmuterNoTerminalError(self.filename, current_position)
 
             if accepted_terminal_tags - self.terminal_tags_ignore:
-                return Terminal(
+                return TransmuterTerminal(
                     start_position,
                     accepted_position,
                     accepted_terminal_tags - self.terminal_tags_ignore,
@@ -114,20 +114,15 @@ class BaseLexer:
 
             start_position = accepted_position
 
-    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TerminalTag]], set[int]]:
+    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
         raise NotImplementedError()
 
 
 class TransmuterLexicalError(TransmuterException):
-    def __init__(self, filename: str, position: Position, description: str) -> None:
+    def __init__(self, filename: str, position: TransmuterPosition, description: str) -> None:
         super().__init__(filename, position, "Lexical Error", description)
 
 
-class TransmuterEOIError(TransmuterLexicalError):
-    def __init__(self, filename: str, position: Position) -> None:
-        super().__init__(filename, position, "Unexpected end of input.")
-
-
 class TransmuterNoTerminalError(TransmuterLexicalError):
-    def __init__(self, filename: str, position: Position) -> None:
+    def __init__(self, filename: str, position: TransmuterPosition) -> None:
         super().__init__(filename, position, "Could not match any terminal.")

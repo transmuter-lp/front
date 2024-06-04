@@ -18,17 +18,17 @@
 from dataclasses import dataclass
 
 
-class Condition:
+class TransmuterCondition:
     pass
 
 
 @dataclass
-class Position:
+class TransmuterPosition:
     index_: int
     line: int
     column: int
 
 
 class TransmuterException(Exception):
-    def __init__(self, filename: str, position: Position, type_: str, description: str) -> None:
+    def __init__(self, filename: str, position: TransmuterPosition, type_: str, description: str) -> None:
         super().__init__(f"{filename}:{position.line}:{position.column}: {type_}: {description}")
