@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
-from typing import ClassVar
+from typing import ClassVar, NamedTuple
 
 from .common import TransmuterCondition, TransmuterPosition, TransmuterException
 from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer, TransmuterNoTerminalError
@@ -47,16 +47,14 @@ class TransmuterNonterminalType:
                 pass
 
 
-@dataclass(frozen=True)
-class TransmuterParsingState:
+class TransmuterParsingState(NamedTuple):
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
     start_terminal: TransmuterTerminal | None
     split_terminal: TransmuterTerminal | None
     end_terminal: TransmuterTerminal | None
 
 
-@dataclass(frozen=True)
-class TransmuterExtendedPackedNode:
+class TransmuterExtendedPackedNode(NamedTuple):
     nonterminal_type: type[TransmuterNonterminalType] | None
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
     start_terminal: TransmuterTerminal | None
@@ -149,12 +147,12 @@ class TransmuterParser:
                 next_states = cls.descend(
                     self, TransmuterParsingState((), current_state.end_terminal, current_state.end_terminal, current_state.end_terminal)
                 )
-                self.bsr |= {
-                    TransmuterExtendedPackedNode(
+
+                for next_state in next_states:
+                    self.bsr.add(TransmuterExtendedPackedNode(
                         cls, next_state.string, next_state.start_terminal, next_state.split_terminal, next_state.end_terminal
-                    ) for next_state in next_states
-                }
-                self.memo[cls][current_state.end_terminal] |= {next_state.end_terminal for next_state in next_states}
+                    ))
+                    self.memo[cls][current_state.end_terminal].add(next_state.end_terminal)
 
                 if ascend and initial_memo_len != len(self.memo[cls][current_state.end_terminal]):
                     cls.ascend(self, current_state)
