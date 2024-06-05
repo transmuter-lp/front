@@ -21,9 +21,7 @@ from .common import lexical, syntactic
 
 
 class Whitespace(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {1, 2, 3}
+    STATES_START = {1, 2, 3}
 
     @staticmethod
     def ignore(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -31,240 +29,199 @@ class Whitespace(TransmuterTerminalTag):
 
 
 class Identifier(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {4}
+    STATES_START = {4}
 
 
 class Colon(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {6}
+    STATES_START = {6}
 
 
 class Semicolon(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {7}
+    STATES_START = {7}
 
 
 class CommercialAt(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {8}
+    STATES_START = {8}
 
 
 class LeftParenthesis(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {9}
+    STATES_START = {9}
 
 
 class RightParenthesis(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {10}
+    STATES_START = {10}
 
 
 class GreaterThanSign(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {11}
+    STATES_START = {11}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class VerticalLine(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {12}
+    STATES_START = {12}
 
 
 class Solidus(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {13}
+    STATES_START = {13}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class DoubleVerticalLine(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {14}
+    STATES_START = {14}
 
 
 class Comma(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {16}
+    STATES_START = {16}
 
 
 class DoubleAmpersand(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {17}
+    STATES_START = {17}
 
 
 class Ignore(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {19}
+    STATES_START = {19}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class Optional(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {25}
+    STATES_START = {25}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class Start(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {33}
+    STATES_START = {33}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class Asterisk(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {38}
+    STATES_START = {38}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class PlusSign(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {39}
+    STATES_START = {39}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class QuestionMark(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {40}
+    STATES_START = {40}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class ExpressionRange(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {41}
+    STATES_START = {41}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class LeftCurlyBracket(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {50}
+    STATES_START = {50}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class LeftCurlyBracketSolidus(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {51}
+    STATES_START = {51}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class RightCurlyBracket(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {53}
+    STATES_START = {53}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class OrdChar(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {54}
+    STATES_START = {54}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class QuotedChar(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {55}
+    STATES_START = {55}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class FullStop(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {60}
+    STATES_START = {60}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class BracketExpression(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if lexical in conditions:
-            return {61}
+    STATES_START = {61}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
 
 
 class ExclamationMark(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        return {93}
+    STATES_START = {93}
 
 
 class LeftSquareBracket(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {94}
+    STATES_START = {94}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class LeftSquareBracketSolidus(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {95}
+    STATES_START = {95}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class RightSquareBracket(TransmuterTerminalTag):
-    @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        if syntactic in conditions:
-            return {97}
+    STATES_START = {97}
 
-        return set()
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return syntactic in conditions
 
 
 class Lexer(TransmuterLexer):

@@ -22,9 +22,11 @@ from .common import TransmuterCondition, TransmuterPosition, TransmuterException
 
 
 class TransmuterTerminalTag:
+    STATES_START: set[int]
+
     @staticmethod
-    def states_start(conditions: set[type[TransmuterCondition]]) -> set[int]:
-        raise NotImplementedError()
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return True
 
     @staticmethod
     def ignore(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -61,7 +63,8 @@ class TransmuterLexer:
         self.states_start = set()
 
         for terminal_tag in self.TERMINAL_TAGS:
-            self.states_start |= terminal_tag.states_start(self.conditions)
+            if terminal_tag.start(self.conditions):
+                self.states_start |= terminal_tag.STATES_START
 
     def next_terminal(self, current_terminal: TransmuterTerminal | None) -> TransmuterTerminal | None:
         if current_terminal is None:

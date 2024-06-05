@@ -67,6 +67,7 @@ class TransmuterParser:
     NONTERMINAL_TYPES: ClassVar[set[type[TransmuterNonterminalType]]]
 
     lexer: TransmuterLexer
+    terminal_tags_optional: set[type[TransmuterTerminalTag]] = field(init=False, repr=False)
     nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
     memo: dict[type[TransmuterNonterminalType], dict[TransmuterTerminal | None, set[TransmuterTerminal]]] = field(
         default_factory=dict,
@@ -76,6 +77,7 @@ class TransmuterParser:
     bsr: set[TransmuterExtendedPackedNode] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
+        self.terminal_tags_optional = {terminal_tag for terminal_tag in self.lexer.TERMINAL_TAGS if terminal_tag.optional(self.lexer.conditions)}
         nonterminal_types_start = {nonterminal_type for nonterminal_type in self.NONTERMINAL_TYPES if nonterminal_type.start(self.lexer.conditions)}
 
         if len(nonterminal_types_start) == 0:
@@ -119,9 +121,8 @@ class TransmuterParser:
                 return None
 
             if cls not in next_terminal.tags:
-                for terminal_tag in next_terminal.tags:
-                    if not terminal_tag.optional(self.lexer.conditions):
-                        return None
+                if next_terminal.tags - self.terminal_tags_optional:
+                    return None
 
                 current_terminal = next_terminal
                 continue
