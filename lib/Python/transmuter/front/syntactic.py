@@ -67,7 +67,6 @@ class TransmuterParser:
     NONTERMINAL_TYPES: ClassVar[set[type[TransmuterNonterminalType]]]
 
     lexer: TransmuterLexer
-    terminal_tags_optional: set[type[TransmuterTerminalTag]] = field(init=False, repr=False)
     nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
     memo: dict[type[TransmuterNonterminalType], dict[TransmuterTerminal | None, set[TransmuterTerminal]]] = field(
         default_factory=dict,
@@ -77,7 +76,6 @@ class TransmuterParser:
     bsr: set[TransmuterExtendedPackedNode] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
-        self.terminal_tags_optional = {terminal_tag for terminal_tag in self.lexer.TERMINAL_TAGS if terminal_tag.optional(self.lexer.conditions)}
         nonterminal_types_start = {nonterminal_type for nonterminal_type in self.NONTERMINAL_TYPES if nonterminal_type.start(self.lexer.conditions)}
 
         if len(nonterminal_types_start) == 0:
@@ -112,22 +110,12 @@ class TransmuterParser:
         self.bsr.add(TransmuterExtendedPackedNode(
             None, current_state.string, current_state.start_terminal, current_state.split_terminal, current_state.end_terminal
         ))
-        current_terminal = current_state.end_terminal
+        next_terminal = self.lexer.next_terminal(current_state.end_terminal)
 
-        while True:
-            next_terminal = self.lexer.next_terminal(current_terminal)
+        if next_terminal is None or cls not in next_terminal.tags:
+            return None
 
-            if next_terminal is None:
-                return None
-
-            if cls not in next_terminal.tags:
-                if next_terminal.tags - self.terminal_tags_optional:
-                    return None
-
-                current_terminal = next_terminal
-                continue
-
-            return TransmuterParsingState(current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal)
+        return TransmuterParsingState(current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal)
 
     def call_single_nonterminal_type(
         self, cls: type[TransmuterNonterminalType], current_state: TransmuterParsingState, ascend: bool

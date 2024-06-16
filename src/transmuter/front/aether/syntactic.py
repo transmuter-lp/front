@@ -18,7 +18,7 @@
 from ..common import TransmuterCondition
 from ..syntactic import transmuter_once, TransmuterNonterminalType, TransmuterParsingState, TransmuterParser, TransmuterSymbolMatchError
 from .common import lexical, syntactic
-from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
+from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
 
 
 class Grammar(TransmuterNonterminalType):
@@ -72,14 +72,6 @@ class ProductionHeader(TransmuterNonterminalType):
         except TransmuterSymbolMatchError:  # optional
             pass
 
-        if lexical in parser.lexer.conditions:
-            try:  # optional
-                next_states1 = next_states0
-                next_states1 = parser.call(ProductionPrecedences, next_states1)
-                next_states0 = next_states1
-            except TransmuterSymbolMatchError:  # optional
-                pass
-
         next_states0 = parser.call(Colon, next_states0)
         return next_states0
 
@@ -109,15 +101,6 @@ class ProductionSpecifiers(TransmuterNonterminalType):
         next_states0 = parser.call(LeftParenthesis, next_states0)
         next_states0 = parser.call(ProductionSpecifierList, next_states0)
         next_states0 = parser.call(RightParenthesis, next_states0)
-        return next_states0
-
-
-class ProductionPrecedences(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
-        next_states0 = {current_state}
-        next_states0 = parser.call(GreaterThanSign, next_states0)
-        next_states0 = parser.call(ProductionPrecedenceList, next_states0)
         return next_states0
 
 
@@ -187,24 +170,6 @@ class ProductionSpecifierList(TransmuterNonterminalType):
             try:
                 next_states1 = parser.call(Comma, next_states1)
                 next_states1 = parser.call(ProductionSpecifier, next_states1)
-                next_states0 = next_states1
-            except TransmuterSymbolMatchError:
-                break  # iteration
-
-        return next_states0
-
-
-class ProductionPrecedenceList(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
-        next_states0 = {current_state}
-        next_states0 = parser.call(ProductionPrecedence, next_states0)
-        next_states1 = next_states0
-
-        while True:  # iteration
-            try:
-                next_states1 = parser.call(Comma, next_states1)
-                next_states1 = parser.call(ProductionPrecedence, next_states1)
                 next_states0 = next_states1
             except TransmuterSymbolMatchError:
                 break  # iteration
@@ -284,10 +249,31 @@ class ProductionSpecifier(TransmuterNonterminalType):
 
         while transmuter_once:  # selection
             try:  # option 1
-                next_states1 = next_states0
-                next_states1 = parser.call(Identifier, next_states1)
-                next_states0 = next_states1
-                break
+                if lexical in parser.lexer.conditions:
+                    next_states1 = next_states0
+
+                    while transmuter_once:  # selection
+                        try:  # option 1
+                            next_states2 = next_states1
+                            next_states2 = parser.call(PlusSign, next_states2)
+                            next_states1 = next_states2
+                            break
+                        except TransmuterSymbolMatchError:  # option 1
+                            pass
+
+                        try:  # option 2
+                            next_states2 = next_states1
+                            next_states2 = parser.call(HyphenMinus, next_states2)
+                            next_states1 = next_states2
+                            break
+                        except TransmuterSymbolMatchError:  # option 2
+                            pass
+
+                        raise TransmuterSymbolMatchError()  # selection
+
+                    next_states1 = parser.call(Identifier, next_states1)
+                    next_states0 = next_states1
+                    break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
@@ -298,26 +284,7 @@ class ProductionSpecifier(TransmuterNonterminalType):
                     try:  # option 1
                         if lexical in parser.lexer.conditions:
                             next_states2 = next_states1
-
-                            while transmuter_once:  # selection
-                                try:  # option 1
-                                    next_states3 = next_states2
-                                    next_states3 = parser.call(Ignore, next_states3)
-                                    next_states2 = next_states3
-                                    break
-                                except TransmuterSymbolMatchError:  # option 1
-                                    pass
-
-                                try:  # option 2
-                                    next_states3 = next_states2
-                                    next_states3 = parser.call(Optional, next_states3)
-                                    next_states2 = next_states3
-                                    break
-                                except TransmuterSymbolMatchError:  # option 2
-                                    pass
-
-                                raise TransmuterSymbolMatchError()  # selection
-
+                            next_states2 = parser.call(Ignore, next_states2)
                             next_states1 = next_states2
                             break
                     except TransmuterSymbolMatchError:  # option 1
@@ -348,14 +315,6 @@ class ProductionSpecifier(TransmuterNonterminalType):
 
             raise TransmuterSymbolMatchError()  # selection
 
-        return next_states0
-
-
-class ProductionPrecedence(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
-        next_states0 = {current_state}
-        next_states0 = parser.call(Identifier, next_states0)
         return next_states0
 
 
@@ -646,4 +605,4 @@ class PrimitiveCondition(TransmuterNonterminalType):
 
 
 class Parser(TransmuterParser):
-    NONTERMINAL_TYPES = {Grammar, Production, ProductionHeader, ProductionBody, Condition, ProductionSpecifiers, ProductionPrecedences, SelectionExpression, DisjunctionCondition, ProductionSpecifierList, ProductionPrecedenceList, SequenceExpression, ConjunctionCondition, ProductionSpecifier, ProductionPrecedence, IterationExpression, PrimaryExpression, NegationCondition, OptionalExpression, PrimitiveCondition}
+    NONTERMINAL_TYPES = {Grammar, Production, ProductionHeader, ProductionBody, Condition, ProductionSpecifiers, SelectionExpression, DisjunctionCondition, ProductionSpecifierList, SequenceExpression, ConjunctionCondition, ProductionSpecifier, IterationExpression, PrimaryExpression, NegationCondition, OptionalExpression, PrimitiveCondition}

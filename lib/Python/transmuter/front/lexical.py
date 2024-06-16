@@ -32,10 +32,6 @@ class TransmuterTerminalTag:
     def ignore(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
 
-    @staticmethod
-    def optional(conditions: set[type[TransmuterCondition]]) -> bool:
-        return False
-
 
 @dataclass(eq=False)
 class TransmuterTerminal:

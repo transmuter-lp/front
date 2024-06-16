@@ -5,7 +5,7 @@ Production:
     ProductionHeader ProductionBody ;
 
 ProductionHeader:
-    Identifier [/Condition]@lexical [/ProductionSpecifiers] [/ProductionPrecedences]@lexical Colon ;
+    Identifier [/Condition]@lexical [/ProductionSpecifiers] Colon ;
 
 ProductionBody:
     SelectionExpression Semicolon ;
@@ -16,9 +16,6 @@ Condition:
 ProductionSpecifiers:
     LeftParenthesis ProductionSpecifierList RightParenthesis ;
 
-ProductionPrecedences:
-    GreaterThanSign ProductionPrecedenceList ;
-
 SelectionExpression:
     SequenceExpression {/(VerticalLine / Solidus@syntactic) SequenceExpression} ;
 
@@ -28,39 +25,33 @@ DisjunctionCondition:
 ProductionSpecifierList:
     ProductionSpecifier {/Comma ProductionSpecifier} ;
 
-ProductionPrecedenceList:
-    ProductionPrecedence {/Comma ProductionPrecedence} ;
-
-SequenceExpression(SelectionExpression):
+SequenceExpression:
     (IterationExpression {/IterationExpression})@lexical /
     (PrimaryExpression {/PrimaryExpression})@syntactic ;
 
-ConjunctionCondition(DisjunctionCondition):
+ConjunctionCondition:
     NegationCondition {/DoubleAmpersand NegationCondition} ;
 
 ProductionSpecifier:
-    Identifier /
-    ((Ignore / Optional)@lexical / Start@syntactic) [/Condition] ;
+    ((PlusSign / HyphenMinus) Identifier)@lexical /
+    (Ignore@lexical / Start@syntactic) [/Condition] ;
 
-ProductionPrecedence:
-    Identifier ;
-
-IterationExpression(SequenceExpression):
+IterationExpression:
     (PrimaryExpression [/Asterisk / PlusSign / QuestionMark / ExpressionRange])@lexical /
     ((LeftCurlyBracket / LeftCurlyBracketSolidus) SelectionExpression RightCurlyBracket)@syntactic ;
 
-PrimaryExpression(SequenceExpression):
+PrimaryExpression:
     (OrdChar / QuotedChar / FullStop / BracketExpression)@lexical /
     (Identifier [/Condition])@syntactic /
     LeftParenthesis SelectionExpression RightParenthesis [/Condition]@syntactic /
     ((OptionalExpression / IterationExpression) [/Condition])@syntactic ;
 
-NegationCondition(ConjunctionCondition):
+NegationCondition:
     {/ExclamationMark} PrimitiveCondition ;
 
-OptionalExpression(PrimaryExpression):
+OptionalExpression:
     (LeftSquareBracket / LeftSquareBracketSolidus) SelectionExpression RightSquareBracket ;
 
-PrimitiveCondition(NegationCondition):
+PrimitiveCondition:
     Identifier /
     LeftParenthesis DisjunctionCondition RightParenthesis ;
