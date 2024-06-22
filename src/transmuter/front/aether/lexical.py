@@ -33,7 +33,10 @@ class Identifier(TransmuterTerminalTag):
 
     @staticmethod
     def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+        if lexical in conditions:
+            return {OrdChar}
+
+        return set()
 
 
 class Colon(TransmuterTerminalTag):
@@ -41,7 +44,10 @@ class Colon(TransmuterTerminalTag):
 
     @staticmethod
     def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+        if lexical in conditions:
+            return {OrdChar}
+
+        return set()
 
 
 class Semicolon(TransmuterTerminalTag):
@@ -53,7 +59,10 @@ class CommercialAt(TransmuterTerminalTag):
 
     @staticmethod
     def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+        if lexical in conditions:
+            return {OrdChar}
+
+        return set()
 
 
 class LeftParenthesis(TransmuterTerminalTag):
@@ -85,7 +94,10 @@ class Comma(TransmuterTerminalTag):
 
     @staticmethod
     def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+        if lexical in conditions:
+            return {OrdChar}
+
+        return set()
 
 
 class DoubleAmpersand(TransmuterTerminalTag):
@@ -93,7 +105,10 @@ class DoubleAmpersand(TransmuterTerminalTag):
 
     @staticmethod
     def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+        if lexical in conditions:
+            return {OrdChar}
+
+        return set()
 
 
 class PlusSign(TransmuterTerminalTag):
@@ -229,7 +244,10 @@ class ExclamationMark(TransmuterTerminalTag):
 
     @staticmethod
     def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+        if lexical in conditions:
+            return {OrdChar}
+
+        return set()
 
 
 class LeftSquareBracket(TransmuterTerminalTag):
@@ -279,18 +297,18 @@ class Lexer(TransmuterLexer):
             next_states |= {self.STATE_ACCEPT}
 
         # Identifier
-        # 3:23
+        # 3:31
         if 4 in current_states and ("A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
             current_terminal_tags.add(Identifier)
             next_states |= {self.STATE_ACCEPT, 5}
 
-        # 3:33
+        # 3:41
         if 5 in current_states and ("0" <= char <= "9" or "A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
             current_terminal_tags.add(Identifier)
             next_states |= {self.STATE_ACCEPT, 5}
 
         # Colon
-        # 5:18
+        # 5:26
         if 6 in current_states and (char == ":"):
             current_terminal_tags.add(Colon)
             next_states |= {self.STATE_ACCEPT}
@@ -302,7 +320,7 @@ class Lexer(TransmuterLexer):
             next_states |= {self.STATE_ACCEPT}
 
         # CommercialAt
-        # 9:25
+        # 9:33
         if 8 in current_states and (char == "@"):
             current_terminal_tags.add(CommercialAt)
             next_states |= {self.STATE_ACCEPT}
@@ -342,17 +360,17 @@ class Lexer(TransmuterLexer):
             next_states |= {self.STATE_ACCEPT}
 
         # Comma
-        # 21:18
+        # 21:26
         if 15 in current_states and (char == ","):
             current_terminal_tags.add(Comma)
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleAmpersand
-        # 23:28
+        # 23:36
         if 16 in current_states and (char == "&"):
             next_states |= {17}
 
-        # 23:29
+        # 23:37
         if 17 in current_states and (char == "&"):
             current_terminal_tags.add(DoubleAmpersand)
             next_states |= {self.STATE_ACCEPT}
@@ -655,7 +673,7 @@ class Lexer(TransmuterLexer):
             next_states |= {self.STATE_ACCEPT}
 
         # ExclamationMark
-        # 53:28
+        # 53:36
         if 85 in current_states and (char == "!"):
             current_terminal_tags.add(ExclamationMark)
             next_states |= {self.STATE_ACCEPT}

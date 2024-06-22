@@ -1,12 +1,12 @@
 Whitespace(ignore): [\t ]+ | \r? \n ;
 
-Identifier(+OrdChar): [A-Z_a-z] [0-9A-Z_a-z]* ;
+Identifier(+OrdChar@lexical): [A-Z_a-z] [0-9A-Z_a-z]* ;
 
-Colon(+OrdChar): : ;
+Colon(+OrdChar@lexical): : ;
 
 Semicolon: \; ;
 
-CommercialAt(+OrdChar): @ ;
+CommercialAt(+OrdChar@lexical): @ ;
 
 LeftParenthesis: \( ;
 
@@ -18,9 +18,9 @@ Solidus@syntactic: / ;
 
 DoubleVerticalLine: \| \| ;
 
-Comma(+OrdChar): , ;
+Comma(+OrdChar@lexical): , ;
 
-DoubleAmpersand(+OrdChar): && ;
+DoubleAmpersand(+OrdChar@lexical): && ;
 
 PlusSign@lexical: \+ ;
 
@@ -50,7 +50,7 @@ FullStop@lexical: \. ;
 
 BracketExpression@lexical: \[ (\^? ([^\000-\037\\^\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})) | \^ \^) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})))? (([^]\000-\037\\\177-] | \\ ([\\abfnrtv] | [01] [0-7]{2})) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})))?)* -? ] ;
 
-ExclamationMark(+OrdChar): ! ;
+ExclamationMark(+OrdChar@lexical): ! ;
 
 LeftSquareBracket@syntactic: \[ ;
 
