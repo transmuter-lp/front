@@ -33,8 +33,7 @@ ConjunctionCondition:
     NegationCondition {/DoubleAmpersand NegationCondition} ;
 
 ProductionSpecifier:
-    ((PlusSign / HyphenMinus) Identifier)@lexical /
-    (Ignore@lexical / Start@syntactic) [/Condition] ;
+    (((PlusSign / HyphenMinus) Identifier / Ignore)@lexical / Start@syntactic) [/Condition] ;
 
 IterationExpression:
     (PrimaryExpression [/Asterisk / PlusSign / QuestionMark / ExpressionRange])@lexical /

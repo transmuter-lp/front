@@ -31,9 +31,17 @@ class Whitespace(TransmuterTerminalTag):
 class Identifier(TransmuterTerminalTag):
     STATES_START = {4}
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
+
 
 class Colon(TransmuterTerminalTag):
     STATES_START = {6}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
 
 
 class Semicolon(TransmuterTerminalTag):
@@ -42,6 +50,10 @@ class Semicolon(TransmuterTerminalTag):
 
 class CommercialAt(TransmuterTerminalTag):
     STATES_START = {8}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
 
 
 class LeftParenthesis(TransmuterTerminalTag):
@@ -71,9 +83,17 @@ class DoubleVerticalLine(TransmuterTerminalTag):
 class Comma(TransmuterTerminalTag):
     STATES_START = {15}
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
+
 
 class DoubleAmpersand(TransmuterTerminalTag):
     STATES_START = {16}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
 
 
 class PlusSign(TransmuterTerminalTag):
@@ -91,6 +111,10 @@ class HyphenMinus(TransmuterTerminalTag):
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
+
 
 class Ignore(TransmuterTerminalTag):
     STATES_START = {20}
@@ -99,6 +123,14 @@ class Ignore(TransmuterTerminalTag):
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
+
+    @staticmethod
+    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {Identifier}
+
 
 class Start(TransmuterTerminalTag):
     STATES_START = {26}
@@ -106,6 +138,10 @@ class Start(TransmuterTerminalTag):
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
+
+    @staticmethod
+    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {Identifier}
 
 
 class Asterisk(TransmuterTerminalTag):
@@ -191,6 +227,10 @@ class BracketExpression(TransmuterTerminalTag):
 class ExclamationMark(TransmuterTerminalTag):
     STATES_START = {85}
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return {OrdChar}
+
 
 class LeftSquareBracket(TransmuterTerminalTag):
     STATES_START = {86}
@@ -226,7 +266,7 @@ class Lexer(TransmuterLexer):
         # Whitespace
         # 1:21
         if 1 in current_states and (char in {"\t", " "}):
-            current_terminal_tags |= {Whitespace}
+            current_terminal_tags.add(Whitespace)
             next_states |= {self.STATE_ACCEPT, 1}
 
         # 1:30
@@ -235,60 +275,60 @@ class Lexer(TransmuterLexer):
 
         # 1:34
         if 3 in current_states and (char == "\n"):
-            current_terminal_tags |= {Whitespace}
+            current_terminal_tags.add(Whitespace)
             next_states |= {self.STATE_ACCEPT}
 
         # Identifier
         # 3:23
         if 4 in current_states and ("A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
-            current_terminal_tags |= {Identifier, OrdChar}
+            current_terminal_tags.add(Identifier)
             next_states |= {self.STATE_ACCEPT, 5}
 
         # 3:33
         if 5 in current_states and ("0" <= char <= "9" or "A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
-            current_terminal_tags |= {Identifier, OrdChar}
+            current_terminal_tags.add(Identifier)
             next_states |= {self.STATE_ACCEPT, 5}
 
         # Colon
         # 5:18
         if 6 in current_states and (char == ":"):
-            current_terminal_tags |= {Colon, OrdChar}
+            current_terminal_tags.add(Colon)
             next_states |= {self.STATE_ACCEPT}
 
         # Semicolon
         # 7:12
         if 7 in current_states and (char == ";"):
-            current_terminal_tags |= {Semicolon}
+            current_terminal_tags.add(Semicolon)
             next_states |= {self.STATE_ACCEPT}
 
         # CommercialAt
         # 9:25
         if 8 in current_states and (char == "@"):
-            current_terminal_tags |= {CommercialAt, OrdChar}
+            current_terminal_tags.add(CommercialAt)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftParenthesis
         # 11:18
         if 9 in current_states and (char == "("):
-            current_terminal_tags |= {LeftParenthesis}
+            current_terminal_tags.add(LeftParenthesis)
             next_states |= {self.STATE_ACCEPT}
 
         # RightParenthesis
         # 13:19
         if 10 in current_states and (char == ")"):
-            current_terminal_tags |= {RightParenthesis}
+            current_terminal_tags.add(RightParenthesis)
             next_states |= {self.STATE_ACCEPT}
 
         # VerticalLine
         # 15:15
         if 11 in current_states and (char == "|"):
-            current_terminal_tags |= {VerticalLine}
+            current_terminal_tags.add(VerticalLine)
             next_states |= {self.STATE_ACCEPT}
 
         # Solidus
         # 17:20
         if 12 in current_states and (char == "/"):
-            current_terminal_tags |= {Solidus}
+            current_terminal_tags.add(Solidus)
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleVerticalLine
@@ -298,13 +338,13 @@ class Lexer(TransmuterLexer):
 
         # 19:24
         if 14 in current_states and (char == "|"):
-            current_terminal_tags |= {DoubleVerticalLine}
+            current_terminal_tags.add(DoubleVerticalLine)
             next_states |= {self.STATE_ACCEPT}
 
         # Comma
         # 21:18
         if 15 in current_states and (char == ","):
-            current_terminal_tags |= {Comma, OrdChar}
+            current_terminal_tags.add(Comma)
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleAmpersand
@@ -314,19 +354,19 @@ class Lexer(TransmuterLexer):
 
         # 23:29
         if 17 in current_states and (char == "&"):
-            current_terminal_tags |= {DoubleAmpersand, OrdChar}
+            current_terminal_tags.add(DoubleAmpersand)
             next_states |= {self.STATE_ACCEPT}
 
         # PlusSign
         # 25:19
         if 18 in current_states and (char == "+"):
-            current_terminal_tags |= {PlusSign}
+            current_terminal_tags.add(PlusSign)
             next_states |= {self.STATE_ACCEPT}
 
         # HyphenMinus
         # 27:32
         if 19 in current_states and (char == "-"):
-            current_terminal_tags |= {HyphenMinus, OrdChar}
+            current_terminal_tags.add(HyphenMinus)
             next_states |= {self.STATE_ACCEPT}
 
         # Ignore
@@ -352,8 +392,7 @@ class Lexer(TransmuterLexer):
 
         # 29:45
         if 25 in current_states and (char == "e"):
-            current_terminal_tags |= {Ignore, OrdChar}
-            current_terminal_tags -= {Identifier}
+            current_terminal_tags.add(Ignore)
             next_states |= {self.STATE_ACCEPT}
 
         # Start
@@ -375,20 +414,19 @@ class Lexer(TransmuterLexer):
 
         # 31:35
         if 30 in current_states and (char == "t"):
-            current_terminal_tags |= {Start}
-            current_terminal_tags -= {Identifier}
+            current_terminal_tags.add(Start)
             next_states |= {self.STATE_ACCEPT}
 
         # Asterisk
         # 33:19
         if 31 in current_states and (char == "*"):
-            current_terminal_tags |= {Asterisk}
+            current_terminal_tags.add(Asterisk)
             next_states |= {self.STATE_ACCEPT}
 
         # QuestionMark
         # 35:23
         if 32 in current_states and (char == "?"):
-            current_terminal_tags |= {QuestionMark}
+            current_terminal_tags.add(QuestionMark)
             next_states |= {self.STATE_ACCEPT}
 
         # ExpressionRange
@@ -426,13 +464,13 @@ class Lexer(TransmuterLexer):
 
         # 37:73
         if 41 in current_states and (char == "}"):
-            current_terminal_tags |= {ExpressionRange}
+            current_terminal_tags.add(ExpressionRange)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftCurlyBracket
         # 39:29
         if 42 in current_states and (char == "{"):
-            current_terminal_tags |= {LeftCurlyBracket}
+            current_terminal_tags.add(LeftCurlyBracket)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftCurlyBracketSolidus
@@ -442,19 +480,19 @@ class Lexer(TransmuterLexer):
 
         # 41:39
         if 44 in current_states and (char == "/"):
-            current_terminal_tags |= {LeftCurlyBracketSolidus}
+            current_terminal_tags.add(LeftCurlyBracketSolidus)
             next_states |= {self.STATE_ACCEPT}
 
         # RightCurlyBracket
         # 43:30
         if 45 in current_states and (char == "}"):
-            current_terminal_tags |= {RightCurlyBracket}
+            current_terminal_tags.add(RightCurlyBracket)
             next_states |= {self.STATE_ACCEPT}
 
         # OrdChar
         # 45:18
-        if 46 in current_states and not current_terminal_tags & {Identifier, Colon, CommercialAt, Comma, DoubleAmpersand, HyphenMinus, Ignore} and (not ("\000" <= char <= "\037" or char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "{", "|", "\177"})):
-            current_terminal_tags |= {OrdChar}
+        if 46 in current_states and (not ("\000" <= char <= "\037" or char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "{", "|", "\177"})):
+            current_terminal_tags.add(OrdChar)
             next_states |= {self.STATE_ACCEPT}
 
         # QuotedChar
@@ -464,7 +502,7 @@ class Lexer(TransmuterLexer):
 
         # 47:25
         if 48 in current_states and (char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "a", "b", "f", "n", "r", "t", "v", "{", "|"}):
-            current_terminal_tags |= {QuotedChar}
+            current_terminal_tags.add(QuotedChar)
             next_states |= {self.STATE_ACCEPT}
 
         # 47:52
@@ -477,13 +515,13 @@ class Lexer(TransmuterLexer):
 
         # 47:57:2
         if 51 in current_states and ("0" <= char <= "7"):
-            current_terminal_tags |= {QuotedChar}
+            current_terminal_tags.add(QuotedChar)
             next_states |= {self.STATE_ACCEPT}
 
         # FullStop
         # 49:19
         if 52 in current_states and (char == "."):
-            current_terminal_tags |= {FullStop}
+            current_terminal_tags.add(FullStop)
             next_states |= {self.STATE_ACCEPT}
 
         # BracketExpression
@@ -613,19 +651,19 @@ class Lexer(TransmuterLexer):
 
         # 51:290
         if 84 in current_states and (char == "]"):
-            current_terminal_tags |= {BracketExpression}
+            current_terminal_tags.add(BracketExpression)
             next_states |= {self.STATE_ACCEPT}
 
         # ExclamationMark
         # 53:28
         if 85 in current_states and (char == "!"):
-            current_terminal_tags |= {ExclamationMark, OrdChar}
+            current_terminal_tags.add(ExclamationMark)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftSquareBracket
         # 55:30
         if 86 in current_states and (char == "["):
-            current_terminal_tags |= {LeftSquareBracket}
+            current_terminal_tags.add(LeftSquareBracket)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftSquareBracketSolidus
@@ -635,13 +673,13 @@ class Lexer(TransmuterLexer):
 
         # 57:40
         if 88 in current_states and (char == "/"):
-            current_terminal_tags |= {LeftSquareBracketSolidus}
+            current_terminal_tags.add(LeftSquareBracketSolidus)
             next_states |= {self.STATE_ACCEPT}
 
         # RightSquareBracket
         # 59:31
         if 89 in current_states and (char == "]"):
-            current_terminal_tags |= {RightSquareBracket}
+            current_terminal_tags.add(RightSquareBracket)
             next_states |= {self.STATE_ACCEPT}
 
         return (current_terminal_tags, next_states)

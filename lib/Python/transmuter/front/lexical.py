@@ -32,6 +32,14 @@ class TransmuterTerminalTag:
     def ignore(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return set()
+
+    @staticmethod
+    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
+        return set()
+
 
 @dataclass(eq=False)
 class TransmuterTerminal:
@@ -100,8 +108,39 @@ class TransmuterLexer:
                     current_position.column + 1 if self.input[current_position.index_] != "\n" else 1
                 )
 
+            while True:
+                last_accepted_terminal_tags = accepted_terminal_tags.copy()
+                negative_terminal_tags = accepted_terminal_tags
+                second_negative_terminal_tags = set()
+
+                while True:
+                    first_negative_terminal_tags = set()
+
+                    for terminal_tag in accepted_terminal_tags - second_negative_terminal_tags:
+                        first_negative_terminal_tags |= terminal_tag.negatives(self.conditions) & accepted_terminal_tags
+
+                    if len(first_negative_terminal_tags) == len(negative_terminal_tags):
+                        break
+
+                    negative_terminal_tags = first_negative_terminal_tags
+                    second_negative_terminal_tags = set()
+
+                    for terminal_tag in accepted_terminal_tags - first_negative_terminal_tags:
+                        second_negative_terminal_tags |= terminal_tag.negatives(self.conditions) & accepted_terminal_tags
+
+                accepted_terminal_tags -= negative_terminal_tags
+                positive_terminal_tags = set()
+
+                for terminal_tag in accepted_terminal_tags:
+                    positive_terminal_tags |= terminal_tag.positives(self.conditions)
+
+                accepted_terminal_tags |= positive_terminal_tags
+
+                if last_accepted_terminal_tags == accepted_terminal_tags:
+                    break
+
             if not accepted_terminal_tags:
-                raise TransmuterNoTerminalError(self.filename, current_position)
+                raise TransmuterNoTerminalError(self.filename, start_position)
 
             if accepted_terminal_tags - self.terminal_tags_ignore:
                 return TransmuterTerminal(

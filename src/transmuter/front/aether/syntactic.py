@@ -255,7 +255,27 @@ class ProductionSpecifier(TransmuterNonterminalType):
                     while transmuter_once:  # selection
                         try:  # option 1
                             next_states2 = next_states1
-                            next_states2 = parser.call(PlusSign, next_states2)
+
+                            while transmuter_once:  # selection
+                                try:  # option 1
+                                    next_states3 = next_states2
+                                    next_states3 = parser.call(PlusSign, next_states3)
+                                    next_states2 = next_states3
+                                    break
+                                except TransmuterSymbolMatchError:  # option 1
+                                    pass
+
+                                try:  # option 2
+                                    next_states3 = next_states2
+                                    next_states3 = parser.call(HyphenMinus, next_states3)
+                                    next_states2 = next_states3
+                                    break
+                                except TransmuterSymbolMatchError:  # option 2
+                                    pass
+
+                                raise TransmuterSymbolMatchError()  # selection
+
+                            next_states2 = parser.call(Identifier, next_states2)
                             next_states1 = next_states2
                             break
                         except TransmuterSymbolMatchError:  # option 1
@@ -263,7 +283,7 @@ class ProductionSpecifier(TransmuterNonterminalType):
 
                         try:  # option 2
                             next_states2 = next_states1
-                            next_states2 = parser.call(HyphenMinus, next_states2)
+                            next_states2 = parser.call(Ignore, next_states2)
                             next_states1 = next_states2
                             break
                         except TransmuterSymbolMatchError:  # option 2
@@ -271,49 +291,28 @@ class ProductionSpecifier(TransmuterNonterminalType):
 
                         raise TransmuterSymbolMatchError()  # selection
 
-                    next_states1 = parser.call(Identifier, next_states1)
                     next_states0 = next_states1
                     break
             except TransmuterSymbolMatchError:  # option 1
                 pass
 
             try:  # option 2
-                next_states1 = next_states0
-
-                while transmuter_once:  # selection
-                    try:  # option 1
-                        if lexical in parser.lexer.conditions:
-                            next_states2 = next_states1
-                            next_states2 = parser.call(Ignore, next_states2)
-                            next_states1 = next_states2
-                            break
-                    except TransmuterSymbolMatchError:  # option 1
-                        pass
-
-                    try:  # option 2
-                        if syntactic in parser.lexer.conditions:
-                            next_states2 = next_states1
-                            next_states2 = parser.call(Start, next_states2)
-                            next_states1 = next_states2
-                            break
-                    except TransmuterSymbolMatchError:  # option 2
-                        pass
-
-                    raise TransmuterSymbolMatchError()  # selection
-
-                try:  # optional
-                    next_states2 = next_states1
-                    next_states2 = parser.call(Condition, next_states2)
-                    next_states1 = next_states2
-                except TransmuterSymbolMatchError:  # optional
-                    pass
-
-                next_states0 = next_states1
-                break
+                if syntactic in parser.lexer.conditions:
+                    next_states1 = next_states0
+                    next_states1 = parser.call(Start, next_states1)
+                    next_states0 = next_states1
+                    break
             except TransmuterSymbolMatchError:  # option 2
                 pass
 
             raise TransmuterSymbolMatchError()  # selection
+
+        try:  # optional
+            next_states1 = next_states0
+            next_states1 = parser.call(Condition, next_states1)
+            next_states0 = next_states1
+        except TransmuterSymbolMatchError:  # optional
+            pass
 
         return next_states0
 
