@@ -32,22 +32,26 @@ class Identifier(TransmuterTerminalTag):
     STATES_START = {4}
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        if lexical in conditions:
-            return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
 
-        return set()
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class Colon(TransmuterTerminalTag):
     STATES_START = {6}
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        if lexical in conditions:
-            return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
 
-        return set()
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class Semicolon(TransmuterTerminalTag):
@@ -58,11 +62,13 @@ class CommercialAt(TransmuterTerminalTag):
     STATES_START = {8}
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        if lexical in conditions:
-            return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
 
-        return set()
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class LeftParenthesis(TransmuterTerminalTag):
@@ -93,22 +99,26 @@ class Comma(TransmuterTerminalTag):
     STATES_START = {15}
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        if lexical in conditions:
-            return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
 
-        return set()
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class DoubleAmpersand(TransmuterTerminalTag):
     STATES_START = {16}
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        if lexical in conditions:
-            return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
 
-        return set()
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class PlusSign(TransmuterTerminalTag):
@@ -127,8 +137,9 @@ class HyphenMinus(TransmuterTerminalTag):
         return lexical in conditions
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = {OrdChar}
+        return positives
 
 
 class Ignore(TransmuterTerminalTag):
@@ -139,12 +150,14 @@ class Ignore(TransmuterTerminalTag):
         return lexical in conditions
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = {OrdChar}
+        return positives
 
     @staticmethod
-    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {Identifier}
+    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        negatives = {Identifier}
+        return negatives
 
 
 class Start(TransmuterTerminalTag):
@@ -155,8 +168,9 @@ class Start(TransmuterTerminalTag):
         return syntactic in conditions
 
     @staticmethod
-    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        return {Identifier}
+    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        negatives = {Identifier}
+        return negatives
 
 
 class Asterisk(TransmuterTerminalTag):
@@ -243,11 +257,13 @@ class ExclamationMark(TransmuterTerminalTag):
     STATES_START = {85}
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterTerminalTag"]]:
-        if lexical in conditions:
-            return {OrdChar}
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
 
-        return set()
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class LeftSquareBracket(TransmuterTerminalTag):

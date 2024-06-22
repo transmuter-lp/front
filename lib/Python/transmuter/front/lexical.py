@@ -59,6 +59,11 @@ class TransmuterLexer:
     filename: str
     conditions: set[type[TransmuterCondition]]
     terminal_tags_ignore: set[type[TransmuterTerminalTag]] = field(init=False, repr=False)
+    accepted_terminal_tags: dict[frozenset[type[TransmuterTerminalTag]], set[type[TransmuterTerminalTag]]] = field(
+        default_factory=dict,
+        init=False,
+        repr=False
+    )
     states_start: set[int] = field(init=False, repr=False)
     start: TransmuterTerminal | None = field(default=None, init=False, repr=False)
 
@@ -108,36 +113,43 @@ class TransmuterLexer:
                     current_position.column + 1 if self.input[current_position.index_] != "\n" else 1
                 )
 
-            while True:
-                last_accepted_terminal_tags = accepted_terminal_tags.copy()
-                negative_terminal_tags = accepted_terminal_tags
-                second_negative_terminal_tags = set()
+            initial_accepted_terminal_tags = frozenset(accepted_terminal_tags)
 
+            if initial_accepted_terminal_tags not in self.accepted_terminal_tags:
                 while True:
-                    first_negative_terminal_tags = set()
-
-                    for terminal_tag in accepted_terminal_tags - second_negative_terminal_tags:
-                        first_negative_terminal_tags |= terminal_tag.negatives(self.conditions) & accepted_terminal_tags
-
-                    if len(first_negative_terminal_tags) == len(negative_terminal_tags):
-                        break
-
-                    negative_terminal_tags = first_negative_terminal_tags
+                    last_accepted_terminal_tags = accepted_terminal_tags.copy()
+                    negative_terminal_tags = accepted_terminal_tags
                     second_negative_terminal_tags = set()
 
-                    for terminal_tag in accepted_terminal_tags - first_negative_terminal_tags:
-                        second_negative_terminal_tags |= terminal_tag.negatives(self.conditions) & accepted_terminal_tags
+                    while True:
+                        first_negative_terminal_tags = set()
 
-                accepted_terminal_tags -= negative_terminal_tags
-                positive_terminal_tags = set()
+                        for terminal_tag in accepted_terminal_tags - second_negative_terminal_tags:
+                            first_negative_terminal_tags |= terminal_tag.negatives(self.conditions) & accepted_terminal_tags
 
-                for terminal_tag in accepted_terminal_tags:
-                    positive_terminal_tags |= terminal_tag.positives(self.conditions)
+                        if len(first_negative_terminal_tags) == len(negative_terminal_tags):
+                            break
 
-                accepted_terminal_tags |= positive_terminal_tags
+                        negative_terminal_tags = first_negative_terminal_tags
+                        second_negative_terminal_tags = set()
 
-                if last_accepted_terminal_tags == accepted_terminal_tags:
-                    break
+                        for terminal_tag in accepted_terminal_tags - first_negative_terminal_tags:
+                            second_negative_terminal_tags |= terminal_tag.negatives(self.conditions) & accepted_terminal_tags
+
+                    accepted_terminal_tags -= negative_terminal_tags
+                    positive_terminal_tags = set()
+
+                    for terminal_tag in accepted_terminal_tags:
+                        positive_terminal_tags |= terminal_tag.positives(self.conditions)
+
+                    accepted_terminal_tags |= positive_terminal_tags
+
+                    if last_accepted_terminal_tags == accepted_terminal_tags:
+                        break
+
+                self.accepted_terminal_tags[initial_accepted_terminal_tags] = accepted_terminal_tags
+            else:
+                accepted_terminal_tags = self.accepted_terminal_tags[initial_accepted_terminal_tags]
 
             if not accepted_terminal_tags:
                 raise TransmuterNoTerminalError(self.filename, start_position)
