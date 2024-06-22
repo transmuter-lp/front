@@ -31,9 +31,27 @@ class Whitespace(TransmuterTerminalTag):
 class Identifier(TransmuterTerminalTag):
     STATES_START = {4}
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
+
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
+
 
 class Colon(TransmuterTerminalTag):
     STATES_START = {6}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
+
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class Semicolon(TransmuterTerminalTag):
@@ -42,6 +60,15 @@ class Semicolon(TransmuterTerminalTag):
 
 class CommercialAt(TransmuterTerminalTag):
     STATES_START = {8}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
+
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class LeftParenthesis(TransmuterTerminalTag):
@@ -52,20 +79,12 @@ class RightParenthesis(TransmuterTerminalTag):
     STATES_START = {10}
 
 
-class GreaterThanSign(TransmuterTerminalTag):
-    STATES_START = {11}
-
-    @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
-        return lexical in conditions
-
-
 class VerticalLine(TransmuterTerminalTag):
-    STATES_START = {12}
+    STATES_START = {11}
 
 
 class Solidus(TransmuterTerminalTag):
-    STATES_START = {13}
+    STATES_START = {12}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -73,51 +92,89 @@ class Solidus(TransmuterTerminalTag):
 
 
 class DoubleVerticalLine(TransmuterTerminalTag):
-    STATES_START = {14}
+    STATES_START = {13}
 
 
 class Comma(TransmuterTerminalTag):
-    STATES_START = {16}
+    STATES_START = {15}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
+
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class DoubleAmpersand(TransmuterTerminalTag):
-    STATES_START = {17}
+    STATES_START = {16}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
+
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
-class Ignore(TransmuterTerminalTag):
+class PlusSign(TransmuterTerminalTag):
+    STATES_START = {18}
+
+    @staticmethod
+    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+        return lexical in conditions
+
+
+class HyphenMinus(TransmuterTerminalTag):
     STATES_START = {19}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = {OrdChar}
+        return positives
 
-class Optional(TransmuterTerminalTag):
-    STATES_START = {25}
+
+class Ignore(TransmuterTerminalTag):
+    STATES_START = {20}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = {OrdChar}
+        return positives
+
+    @staticmethod
+    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        negatives = {Identifier}
+        return negatives
+
 
 class Start(TransmuterTerminalTag):
-    STATES_START = {33}
+    STATES_START = {26}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
+    @staticmethod
+    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        negatives = {Identifier}
+        return negatives
+
 
 class Asterisk(TransmuterTerminalTag):
-    STATES_START = {38}
-
-    @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
-        return lexical in conditions
-
-
-class PlusSign(TransmuterTerminalTag):
-    STATES_START = {39}
+    STATES_START = {31}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -125,7 +182,7 @@ class PlusSign(TransmuterTerminalTag):
 
 
 class QuestionMark(TransmuterTerminalTag):
-    STATES_START = {40}
+    STATES_START = {32}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -133,7 +190,7 @@ class QuestionMark(TransmuterTerminalTag):
 
 
 class ExpressionRange(TransmuterTerminalTag):
-    STATES_START = {41}
+    STATES_START = {33}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -141,7 +198,7 @@ class ExpressionRange(TransmuterTerminalTag):
 
 
 class LeftCurlyBracket(TransmuterTerminalTag):
-    STATES_START = {50}
+    STATES_START = {42}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -149,7 +206,7 @@ class LeftCurlyBracket(TransmuterTerminalTag):
 
 
 class LeftCurlyBracketSolidus(TransmuterTerminalTag):
-    STATES_START = {51}
+    STATES_START = {43}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -157,7 +214,7 @@ class LeftCurlyBracketSolidus(TransmuterTerminalTag):
 
 
 class RightCurlyBracket(TransmuterTerminalTag):
-    STATES_START = {53}
+    STATES_START = {45}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -165,7 +222,7 @@ class RightCurlyBracket(TransmuterTerminalTag):
 
 
 class OrdChar(TransmuterTerminalTag):
-    STATES_START = {54}
+    STATES_START = {46}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -173,7 +230,7 @@ class OrdChar(TransmuterTerminalTag):
 
 
 class QuotedChar(TransmuterTerminalTag):
-    STATES_START = {55}
+    STATES_START = {47}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -181,7 +238,7 @@ class QuotedChar(TransmuterTerminalTag):
 
 
 class FullStop(TransmuterTerminalTag):
-    STATES_START = {60}
+    STATES_START = {52}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -189,7 +246,7 @@ class FullStop(TransmuterTerminalTag):
 
 
 class BracketExpression(TransmuterTerminalTag):
-    STATES_START = {61}
+    STATES_START = {53}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -197,11 +254,20 @@ class BracketExpression(TransmuterTerminalTag):
 
 
 class ExclamationMark(TransmuterTerminalTag):
-    STATES_START = {93}
+    STATES_START = {85}
+
+    @staticmethod
+    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+        positives = set()
+
+        if lexical in conditions:
+            positives.add(OrdChar)
+
+        return positives
 
 
 class LeftSquareBracket(TransmuterTerminalTag):
-    STATES_START = {94}
+    STATES_START = {86}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -209,7 +275,7 @@ class LeftSquareBracket(TransmuterTerminalTag):
 
 
 class LeftSquareBracketSolidus(TransmuterTerminalTag):
-    STATES_START = {95}
+    STATES_START = {87}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -217,7 +283,7 @@ class LeftSquareBracketSolidus(TransmuterTerminalTag):
 
 
 class RightSquareBracket(TransmuterTerminalTag):
-    STATES_START = {97}
+    STATES_START = {89}
 
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
@@ -225,7 +291,7 @@ class RightSquareBracket(TransmuterTerminalTag):
 
 
 class Lexer(TransmuterLexer):
-    TERMINAL_TAGS = {Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, GreaterThanSign, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional, Start, Asterisk, PlusSign, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket}
+    TERMINAL_TAGS = {Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket}
 
     def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
         current_terminal_tags = set()
@@ -234,7 +300,7 @@ class Lexer(TransmuterLexer):
         # Whitespace
         # 1:21
         if 1 in current_states and (char in {"\t", " "}):
-            current_terminal_tags |= {Whitespace}
+            current_terminal_tags.add(Whitespace)
             next_states |= {self.STATE_ACCEPT, 1}
 
         # 1:30
@@ -243,448 +309,411 @@ class Lexer(TransmuterLexer):
 
         # 1:34
         if 3 in current_states and (char == "\n"):
-            current_terminal_tags |= {Whitespace}
+            current_terminal_tags.add(Whitespace)
             next_states |= {self.STATE_ACCEPT}
 
         # Identifier
-        # 3:22
+        # 3:31
         if 4 in current_states and ("A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
-            current_terminal_tags |= {Identifier, OrdChar}
+            current_terminal_tags.add(Identifier)
             next_states |= {self.STATE_ACCEPT, 5}
 
-        # 3:32
+        # 3:41
         if 5 in current_states and ("0" <= char <= "9" or "A" <= char <= "Z" or char == "_" or "a" <= char <= "z"):
-            current_terminal_tags |= {Identifier, OrdChar}
+            current_terminal_tags.add(Identifier)
             next_states |= {self.STATE_ACCEPT, 5}
 
         # Colon
-        # 5:17
+        # 5:26
         if 6 in current_states and (char == ":"):
-            current_terminal_tags |= {Colon, OrdChar}
+            current_terminal_tags.add(Colon)
             next_states |= {self.STATE_ACCEPT}
 
         # Semicolon
         # 7:12
         if 7 in current_states and (char == ";"):
-            current_terminal_tags |= {Semicolon}
+            current_terminal_tags.add(Semicolon)
             next_states |= {self.STATE_ACCEPT}
 
         # CommercialAt
-        # 9:24
+        # 9:33
         if 8 in current_states and (char == "@"):
-            current_terminal_tags |= {CommercialAt, OrdChar}
+            current_terminal_tags.add(CommercialAt)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftParenthesis
         # 11:18
         if 9 in current_states and (char == "("):
-            current_terminal_tags |= {LeftParenthesis}
+            current_terminal_tags.add(LeftParenthesis)
             next_states |= {self.STATE_ACCEPT}
 
         # RightParenthesis
         # 13:19
         if 10 in current_states and (char == ")"):
-            current_terminal_tags |= {RightParenthesis}
-            next_states |= {self.STATE_ACCEPT}
-
-        # GreaterThanSign
-        # 15:35
-        if 11 in current_states and (char == ">"):
-            current_terminal_tags |= {GreaterThanSign, OrdChar}
+            current_terminal_tags.add(RightParenthesis)
             next_states |= {self.STATE_ACCEPT}
 
         # VerticalLine
-        # 17:15
-        if 12 in current_states and (char == "|"):
-            current_terminal_tags |= {VerticalLine}
+        # 15:15
+        if 11 in current_states and (char == "|"):
+            current_terminal_tags.add(VerticalLine)
             next_states |= {self.STATE_ACCEPT}
 
         # Solidus
-        # 19:20
-        if 13 in current_states and (char == "/"):
-            current_terminal_tags |= {Solidus}
+        # 17:20
+        if 12 in current_states and (char == "/"):
+            current_terminal_tags.add(Solidus)
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleVerticalLine
-        # 21:30
-        if 14 in current_states and (char == "|"):
-            next_states |= {15}
+        # 19:21
+        if 13 in current_states and (char == "|"):
+            next_states |= {14}
 
-        # 21:31
-        if 15 in current_states and (char == "|"):
-            current_terminal_tags |= {DoubleVerticalLine, OrdChar}
+        # 19:24
+        if 14 in current_states and (char == "|"):
+            current_terminal_tags.add(DoubleVerticalLine)
             next_states |= {self.STATE_ACCEPT}
 
         # Comma
-        # 23:17
-        if 16 in current_states and (char == ","):
-            current_terminal_tags |= {Comma, OrdChar}
+        # 21:26
+        if 15 in current_states and (char == ","):
+            current_terminal_tags.add(Comma)
             next_states |= {self.STATE_ACCEPT}
 
         # DoubleAmpersand
-        # 25:27
-        if 17 in current_states and (char == "&"):
-            next_states |= {18}
+        # 23:36
+        if 16 in current_states and (char == "&"):
+            next_states |= {17}
 
-        # 25:28
-        if 18 in current_states and (char == "&"):
-            current_terminal_tags |= {DoubleAmpersand, OrdChar}
+        # 23:37
+        if 17 in current_states and (char == "&"):
+            current_terminal_tags.add(DoubleAmpersand)
+            next_states |= {self.STATE_ACCEPT}
+
+        # PlusSign
+        # 25:19
+        if 18 in current_states and (char == "+"):
+            current_terminal_tags.add(PlusSign)
+            next_states |= {self.STATE_ACCEPT}
+
+        # HyphenMinus
+        # 27:32
+        if 19 in current_states and (char == "-"):
+            current_terminal_tags.add(HyphenMinus)
             next_states |= {self.STATE_ACCEPT}
 
         # Ignore
-        # 27:39
-        if 19 in current_states and (char == "i"):
-            next_states |= {20}
-
-        # 27:40
-        if 20 in current_states and (char == "g"):
+        # 29:40
+        if 20 in current_states and (char == "i"):
             next_states |= {21}
 
-        # 27:41
-        if 21 in current_states and (char == "n"):
+        # 29:41
+        if 21 in current_states and (char == "g"):
             next_states |= {22}
 
-        # 27:42
-        if 22 in current_states and (char == "o"):
+        # 29:42
+        if 22 in current_states and (char == "n"):
             next_states |= {23}
 
-        # 27:43
-        if 23 in current_states and (char == "r"):
+        # 29:43
+        if 23 in current_states and (char == "o"):
             next_states |= {24}
 
-        # 27:44
-        if 24 in current_states and (char == "e"):
-            current_terminal_tags |= {Ignore, OrdChar}
-            current_terminal_tags -= {Identifier}
-            next_states |= {self.STATE_ACCEPT}
-
-        # Optional
-        # 29:41
-        if 25 in current_states and (char == "o"):
-            next_states |= {26}
-
-        # 29:42
-        if 26 in current_states and (char == "p"):
-            next_states |= {27}
-
-        # 29:43
-        if 27 in current_states and (char == "t"):
-            next_states |= {28}
-
         # 29:44
-        if 28 in current_states and (char == "i"):
-            next_states |= {29}
+        if 24 in current_states and (char == "r"):
+            next_states |= {25}
 
         # 29:45
-        if 29 in current_states and (char == "o"):
-            next_states |= {30}
-
-        # 29:46
-        if 30 in current_states and (char == "n"):
-            next_states |= {31}
-
-        # 29:47
-        if 31 in current_states and (char == "a"):
-            next_states |= {32}
-
-        # 29:48
-        if 32 in current_states and (char == "l"):
-            current_terminal_tags |= {Optional, OrdChar}
-            current_terminal_tags -= {Identifier}
+        if 25 in current_states and (char == "e"):
+            current_terminal_tags.add(Ignore)
             next_states |= {self.STATE_ACCEPT}
 
         # Start
         # 31:31
-        if 33 in current_states and (char == "s"):
-            next_states |= {34}
+        if 26 in current_states and (char == "s"):
+            next_states |= {27}
 
         # 31:32
-        if 34 in current_states and (char == "t"):
-            next_states |= {35}
+        if 27 in current_states and (char == "t"):
+            next_states |= {28}
 
         # 31:33
-        if 35 in current_states and (char == "a"):
-            next_states |= {36}
+        if 28 in current_states and (char == "a"):
+            next_states |= {29}
 
         # 31:34
-        if 36 in current_states and (char == "r"):
-            next_states |= {37}
+        if 29 in current_states and (char == "r"):
+            next_states |= {30}
 
         # 31:35
-        if 37 in current_states and (char == "t"):
-            current_terminal_tags |= {Start}
-            current_terminal_tags -= {Identifier}
+        if 30 in current_states and (char == "t"):
+            current_terminal_tags.add(Start)
             next_states |= {self.STATE_ACCEPT}
 
         # Asterisk
         # 33:19
-        if 38 in current_states and (char == "*"):
-            current_terminal_tags |= {Asterisk}
-            next_states |= {self.STATE_ACCEPT}
-
-        # PlusSign
-        # 35:19
-        if 39 in current_states and (char == "+"):
-            current_terminal_tags |= {PlusSign}
+        if 31 in current_states and (char == "*"):
+            current_terminal_tags.add(Asterisk)
             next_states |= {self.STATE_ACCEPT}
 
         # QuestionMark
-        # 37:23
-        if 40 in current_states and (char == "?"):
-            current_terminal_tags |= {QuestionMark}
+        # 35:23
+        if 32 in current_states and (char == "?"):
+            current_terminal_tags.add(QuestionMark)
             next_states |= {self.STATE_ACCEPT}
 
         # ExpressionRange
-        # 39:26
-        if 41 in current_states and (char == "{"):
-            next_states |= {42, 43}
+        # 37:26
+        if 33 in current_states and (char == "{"):
+            next_states |= {34, 35}
 
-        # 39:30
-        if 42 in current_states and (char == "0"):
-            next_states |= {45, 49}
+        # 37:30
+        if 34 in current_states and (char == "0"):
+            next_states |= {37, 41}
 
-        # 39:34
-        if 43 in current_states and ("1" <= char <= "9"):
-            next_states |= {44, 45, 49}
+        # 37:34
+        if 35 in current_states and ("1" <= char <= "9"):
+            next_states |= {36, 37, 41}
 
-        # 39:40
-        if 44 in current_states and ("0" <= char <= "9"):
-            next_states |= {44, 45, 49}
+        # 37:40
+        if 36 in current_states and ("0" <= char <= "9"):
+            next_states |= {36, 37, 41}
 
-        # 39:49
-        if 45 in current_states and (char == ","):
-            next_states |= {46, 47, 49}
+        # 37:49
+        if 37 in current_states and (char == ","):
+            next_states |= {38, 39, 41}
 
-        # 39:52
-        if 46 in current_states and (char == "0"):
-            next_states |= {49}
+        # 37:52
+        if 38 in current_states and (char == "0"):
+            next_states |= {41}
 
-        # 39:56
-        if 47 in current_states and ("1" <= char <= "9"):
-            next_states |= {48, 49}
+        # 37:56
+        if 39 in current_states and ("1" <= char <= "9"):
+            next_states |= {40, 41}
 
-        # 39:62
-        if 48 in current_states and ("0" <= char <= "9"):
-            next_states |= {48, 49}
+        # 37:62
+        if 40 in current_states and ("0" <= char <= "9"):
+            next_states |= {40, 41}
 
-        # 39:73
-        if 49 in current_states and (char == "}"):
-            current_terminal_tags |= {ExpressionRange}
+        # 37:73
+        if 41 in current_states and (char == "}"):
+            current_terminal_tags.add(ExpressionRange)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftCurlyBracket
-        # 41:29
-        if 50 in current_states and (char == "{"):
-            current_terminal_tags |= {LeftCurlyBracket}
+        # 39:29
+        if 42 in current_states and (char == "{"):
+            current_terminal_tags.add(LeftCurlyBracket)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftCurlyBracketSolidus
-        # 43:36
-        if 51 in current_states and (char == "{"):
-            next_states |= {52}
+        # 41:36
+        if 43 in current_states and (char == "{"):
+            next_states |= {44}
 
-        # 43:39
-        if 52 in current_states and (char == "/"):
-            current_terminal_tags |= {LeftCurlyBracketSolidus}
+        # 41:39
+        if 44 in current_states and (char == "/"):
+            current_terminal_tags.add(LeftCurlyBracketSolidus)
             next_states |= {self.STATE_ACCEPT}
 
         # RightCurlyBracket
-        # 45:30
-        if 53 in current_states and (char == "}"):
-            current_terminal_tags |= {RightCurlyBracket}
+        # 43:30
+        if 45 in current_states and (char == "}"):
+            current_terminal_tags.add(RightCurlyBracket)
             next_states |= {self.STATE_ACCEPT}
 
         # OrdChar
-        # 47:18
-        if 54 in current_states and not current_terminal_tags & {Identifier, Colon, CommercialAt, GreaterThanSign, DoubleVerticalLine, Comma, DoubleAmpersand, Ignore, Optional} and (not ("\000" <= char <= "\037" or char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "{", "|", "\177"})):
-            current_terminal_tags |= {OrdChar}
+        # 45:18
+        if 46 in current_states and (not ("\000" <= char <= "\037" or char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "{", "|", "\177"})):
+            current_terminal_tags.add(OrdChar)
             next_states |= {self.STATE_ACCEPT}
 
         # QuotedChar
-        # 49:21
-        if 55 in current_states and (char == "\\"):
-            next_states |= {56, 57}
+        # 47:21
+        if 47 in current_states and (char == "\\"):
+            next_states |= {48, 49}
 
-        # 49:25
-        if 56 in current_states and (char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "a", "b", "f", "n", "r", "t", "v", "{", "|"}):
-            current_terminal_tags |= {QuotedChar}
+        # 47:25
+        if 48 in current_states and (char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "a", "b", "f", "n", "r", "t", "v", "{", "|"}):
+            current_terminal_tags.add(QuotedChar)
             next_states |= {self.STATE_ACCEPT}
 
-        # 49:52
-        if 57 in current_states and (char in {"0", "1"}):
-            next_states |= {58}
+        # 47:52
+        if 49 in current_states and (char in {"0", "1"}):
+            next_states |= {50}
 
-        # 49:57:1
-        if 58 in current_states and ("0" <= char <= "7"):
-            next_states |= {59}
+        # 47:57:1
+        if 50 in current_states and ("0" <= char <= "7"):
+            next_states |= {51}
 
-        # 49:57:2
-        if 59 in current_states and ("0" <= char <= "7"):
-            current_terminal_tags |= {QuotedChar}
+        # 47:57:2
+        if 51 in current_states and ("0" <= char <= "7"):
+            current_terminal_tags.add(QuotedChar)
             next_states |= {self.STATE_ACCEPT}
 
         # FullStop
-        # 51:19
-        if 60 in current_states and (char == "."):
-            current_terminal_tags |= {FullStop}
+        # 49:19
+        if 52 in current_states and (char == "."):
+            current_terminal_tags.add(FullStop)
             next_states |= {self.STATE_ACCEPT}
 
         # BracketExpression
-        # 53:28
-        if 61 in current_states and (char == "["):
-            next_states |= {62, 63, 64, 69}
+        # 51:28
+        if 53 in current_states and (char == "["):
+            next_states |= {54, 55, 56, 61}
 
-        # 53:32
+        # 51:32
+        if 54 in current_states and (char == "^"):
+            next_states |= {55, 56}
+
+        # 51:37
+        if 55 in current_states and (not ("\000" <= char <= "\037" or char in {"\\", "^", "\177"})):
+            next_states |= {63, 70, 71, 83, 84}
+
+        # 51:59
+        if 56 in current_states and (char == "\\"):
+            next_states |= {57, 58}
+
+        # 51:63
+        if 57 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+            next_states |= {63, 70, 71, 83, 84}
+
+        # 51:77
+        if 58 in current_states and (char in {"0", "1"}):
+            next_states |= {59}
+
+        # 51:82:1
+        if 59 in current_states and ("0" <= char <= "7"):
+            next_states |= {60}
+
+        # 51:82:2
+        if 60 in current_states and ("0" <= char <= "7"):
+            next_states |= {63, 70, 71, 83, 84}
+
+        # 51:95
+        if 61 in current_states and (char == "^"):
+            next_states |= {62}
+
+        # 51:98
         if 62 in current_states and (char == "^"):
-            next_states |= {63, 64}
+            next_states |= {63, 70, 71, 83, 84}
 
-        # 53:37
-        if 63 in current_states and (not ("\000" <= char <= "\037" or char in {"\\", "^", "\177"})):
-            next_states |= {71, 78, 79, 91, 92}
+        # 51:103
+        if 63 in current_states and (char == "-"):
+            next_states |= {64, 65}
 
-        # 53:59
-        if 64 in current_states and (char == "\\"):
-            next_states |= {65, 66}
+        # 51:106
+        if 64 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177"})):
+            next_states |= {70, 71, 83, 84}
 
-        # 53:63
-        if 65 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
-            next_states |= {71, 78, 79, 91, 92}
+        # 51:128
+        if 65 in current_states and (char == "\\"):
+            next_states |= {66, 67}
 
-        # 53:77
-        if 66 in current_states and (char in {"0", "1"}):
-            next_states |= {67}
+        # 51:132
+        if 66 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+            next_states |= {70, 71, 83, 84}
 
-        # 53:82:1
-        if 67 in current_states and ("0" <= char <= "7"):
+        # 51:146
+        if 67 in current_states and (char in {"0", "1"}):
             next_states |= {68}
 
-        # 53:82:2
+        # 51:151:1
         if 68 in current_states and ("0" <= char <= "7"):
-            next_states |= {71, 78, 79, 91, 92}
+            next_states |= {69}
 
-        # 53:95
-        if 69 in current_states and (char == "^"):
-            next_states |= {70}
+        # 51:151:2
+        if 69 in current_states and ("0" <= char <= "7"):
+            next_states |= {70, 71, 83, 84}
 
-        # 53:98
-        if 70 in current_states and (char == "^"):
-            next_states |= {71, 78, 79, 91, 92}
+        # 51:166
+        if 70 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177", "-"})):
+            next_states |= {70, 71, 76, 83, 84}
 
-        # 53:103
-        if 71 in current_states and (char == "-"):
+        # 51:189
+        if 71 in current_states and (char == "\\"):
             next_states |= {72, 73}
 
-        # 53:106
-        if 72 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177"})):
-            next_states |= {78, 79, 91, 92}
+        # 51:193
+        if 72 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+            next_states |= {70, 71, 76, 83, 84}
 
-        # 53:128
-        if 73 in current_states and (char == "\\"):
-            next_states |= {74, 75}
+        # 51:207
+        if 73 in current_states and (char in {"0", "1"}):
+            next_states |= {74}
 
-        # 53:132
-        if 74 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
-            next_states |= {78, 79, 91, 92}
+        # 51:212:1
+        if 74 in current_states and ("0" <= char <= "7"):
+            next_states |= {75}
 
-        # 53:146
-        if 75 in current_states and (char in {"0", "1"}):
-            next_states |= {76}
+        # 51:212:2
+        if 75 in current_states and ("0" <= char <= "7"):
+            next_states |= {70, 71, 76, 83, 84}
 
-        # 53:151:1
-        if 76 in current_states and ("0" <= char <= "7"):
-            next_states |= {77}
+        # 51:224
+        if 76 in current_states and (char == "-"):
+            next_states |= {77, 78}
 
-        # 53:151:2
-        if 77 in current_states and ("0" <= char <= "7"):
-            next_states |= {78, 79, 91, 92}
+        # 51:227
+        if 77 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177"})):
+            next_states |= {70, 71, 83, 84}
 
-        # 53:166
-        if 78 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177", "-"})):
-            next_states |= {78, 79, 84, 91, 92}
+        # 51:249
+        if 78 in current_states and (char == "\\"):
+            next_states |= {79, 80}
 
-        # 53:189
-        if 79 in current_states and (char == "\\"):
-            next_states |= {80, 81}
+        # 51:253
+        if 79 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+            next_states |= {70, 71, 83, 84}
 
-        # 53:193
-        if 80 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
-            next_states |= {78, 79, 84, 91, 92}
+        # 51:267
+        if 80 in current_states and (char in {"0", "1"}):
+            next_states |= {81}
 
-        # 53:207
-        if 81 in current_states and (char in {"0", "1"}):
+        # 51:272:1
+        if 81 in current_states and ("0" <= char <= "7"):
             next_states |= {82}
 
-        # 53:212:1
+        # 51:272:2
         if 82 in current_states and ("0" <= char <= "7"):
-            next_states |= {83}
+            next_states |= {70, 71, 83, 84}
 
-        # 53:212:2
-        if 83 in current_states and ("0" <= char <= "7"):
-            next_states |= {78, 79, 84, 91, 92}
+        # 51:287
+        if 83 in current_states and (char == "-"):
+            next_states |= {84}
 
-        # 53:224
-        if 84 in current_states and (char == "-"):
-            next_states |= {85, 86}
-
-        # 53:227
-        if 85 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177"})):
-            next_states |= {78, 79, 91, 92}
-
-        # 53:249
-        if 86 in current_states and (char == "\\"):
-            next_states |= {87, 88}
-
-        # 53:253
-        if 87 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
-            next_states |= {78, 79, 91, 92}
-
-        # 53:267
-        if 88 in current_states and (char in {"0", "1"}):
-            next_states |= {89}
-
-        # 53:272:1
-        if 89 in current_states and ("0" <= char <= "7"):
-            next_states |= {90}
-
-        # 53:272:2
-        if 90 in current_states and ("0" <= char <= "7"):
-            next_states |= {78, 79, 91, 92}
-
-        # 53:287
-        if 91 in current_states and (char == "-"):
-            next_states |= {92}
-
-        # 53:290
-        if 92 in current_states and (char == "]"):
-            current_terminal_tags |= {BracketExpression}
+        # 51:290
+        if 84 in current_states and (char == "]"):
+            current_terminal_tags.add(BracketExpression)
             next_states |= {self.STATE_ACCEPT}
 
         # ExclamationMark
-        # 55:27
-        if 93 in current_states and (char == "!"):
-            current_terminal_tags |= {ExclamationMark, OrdChar}
+        # 53:36
+        if 85 in current_states and (char == "!"):
+            current_terminal_tags.add(ExclamationMark)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftSquareBracket
-        # 57:30
-        if 94 in current_states and (char == "["):
-            current_terminal_tags |= {LeftSquareBracket}
+        # 55:30
+        if 86 in current_states and (char == "["):
+            current_terminal_tags.add(LeftSquareBracket)
             next_states |= {self.STATE_ACCEPT}
 
         # LeftSquareBracketSolidus
-        # 59:37
-        if 95 in current_states and (char == "["):
-            next_states |= {96}
+        # 57:37
+        if 87 in current_states and (char == "["):
+            next_states |= {88}
 
-        # 59:40
-        if 96 in current_states and (char == "/"):
-            current_terminal_tags |= {LeftSquareBracketSolidus}
+        # 57:40
+        if 88 in current_states and (char == "/"):
+            current_terminal_tags.add(LeftSquareBracketSolidus)
             next_states |= {self.STATE_ACCEPT}
 
         # RightSquareBracket
-        # 61:31
-        if 97 in current_states and (char == "]"):
-            current_terminal_tags |= {RightSquareBracket}
+        # 59:31
+        if 89 in current_states and (char == "]"):
+            current_terminal_tags.add(RightSquareBracket)
             next_states |= {self.STATE_ACCEPT}
 
         return (current_terminal_tags, next_states)
