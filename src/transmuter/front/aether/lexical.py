@@ -298,10 +298,10 @@ class Lexer(TransmuterLexer):
         next_states = set()
 
         # Whitespace
-        # 1:21
+        # 1:22
         if 1 in current_states and (char in {"\t", " "}):
             current_terminal_tags.add(Whitespace)
-            next_states |= {self.STATE_ACCEPT, 1}
+            next_states |= {self.STATE_ACCEPT, 1, 2, 3}
 
         # 1:30
         if 2 in current_states and (char == "\r"):
@@ -310,7 +310,7 @@ class Lexer(TransmuterLexer):
         # 1:34
         if 3 in current_states and (char == "\n"):
             current_terminal_tags.add(Whitespace)
-            next_states |= {self.STATE_ACCEPT}
+            next_states |= {self.STATE_ACCEPT, 1, 2, 3}
 
         # Identifier
         # 3:31

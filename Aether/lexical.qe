@@ -1,4 +1,4 @@
-Whitespace(ignore): [\t ]+ | \r? \n ;
+Whitespace(ignore): ([\t ] | \r? \n)+ ;
 
 Identifier(+OrdChar@lexical): [A-Z_a-z] [0-9A-Z_a-z]* ;
 
