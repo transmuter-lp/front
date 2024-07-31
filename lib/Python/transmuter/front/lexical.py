@@ -125,9 +125,9 @@ class TransmuterLexer:
                     next_accepted_terminal_tags = set()
 
                     for terminal_tag in current_accepted_terminal_tags:
-                        next_accepted_terminal_tags |= (
-                            {tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)} - accepted_terminal_tags
-                        )
+                        next_accepted_terminal_tags |= {tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)}
+
+                    next_accepted_terminal_tags -= accepted_terminal_tags
 
                     if len(next_accepted_terminal_tags) == 0:
                         break
@@ -146,9 +146,9 @@ class TransmuterLexer:
                     next_negative_terminal_tags = set()
 
                     for terminal_tag in current_negative_terminal_tags:
-                        next_negative_terminal_tags |= (
-                            {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)} - negative_terminal_tags
-                        )
+                        next_negative_terminal_tags |= {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
+
+                    next_negative_terminal_tags -= negative_terminal_tags
 
                     if len(next_negative_terminal_tags) == 0:
                         break
