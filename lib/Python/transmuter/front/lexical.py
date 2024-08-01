@@ -119,44 +119,7 @@ class TransmuterLexer:
             initial_accepted_terminal_tags = frozenset(accepted_terminal_tags)
 
             if initial_accepted_terminal_tags not in self.accepted_terminal_tags:
-                current_accepted_terminal_tags = accepted_terminal_tags
-
-                while True:
-                    next_accepted_terminal_tags = set()
-
-                    for terminal_tag in current_accepted_terminal_tags:
-                        next_accepted_terminal_tags |= {tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)}
-
-                    next_accepted_terminal_tags -= accepted_terminal_tags
-
-                    if len(next_accepted_terminal_tags) == 0:
-                        break
-
-                    accepted_terminal_tags |= next_accepted_terminal_tags
-                    current_accepted_terminal_tags = next_accepted_terminal_tags
-
-                negative_terminal_tags = set()
-
-                for terminal_tag in accepted_terminal_tags:
-                    negative_terminal_tags |= {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
-
-                current_negative_terminal_tags = negative_terminal_tags
-
-                while True:
-                    next_negative_terminal_tags = set()
-
-                    for terminal_tag in current_negative_terminal_tags:
-                        next_negative_terminal_tags |= {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
-
-                    next_negative_terminal_tags -= negative_terminal_tags
-
-                    if len(next_negative_terminal_tags) == 0:
-                        break
-
-                    negative_terminal_tags |= next_negative_terminal_tags
-                    current_negative_terminal_tags = next_negative_terminal_tags
-
-                accepted_terminal_tags -= negative_terminal_tags
+                self.process_positives_negatives(accepted_terminal_tags)
                 self.accepted_terminal_tags[initial_accepted_terminal_tags] = accepted_terminal_tags
             else:
                 accepted_terminal_tags = self.accepted_terminal_tags[initial_accepted_terminal_tags]
