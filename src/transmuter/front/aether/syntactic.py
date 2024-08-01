@@ -72,9 +72,10 @@ class ProductionHeader(TransmuterNonterminalType):
         try:  # begin optional
             next_states1 = next_states0
             next_states1 = parser.call(ProductionSpecifiers, next_states1)
-            next_states0 = next_states1
         except TransmuterSymbolMatchError:
-            pass  # end optional
+            pass
+        else:
+            next_states0 = next_states1  # end optional
 
         next_states0 = parser.call(Colon, next_states0)
         return next_states0
@@ -332,9 +333,10 @@ class ProductionSpecifier(TransmuterNonterminalType):
         try:  # begin optional
             next_states1 = next_states0
             next_states1 = parser.call(Condition, next_states1)
-            next_states0 = next_states1
         except TransmuterSymbolMatchError:
-            pass  # end optional
+            pass
+        else:
+            next_states0 = next_states1  # end optional
 
         return next_states0
 
@@ -486,9 +488,10 @@ class PrimaryExpression(TransmuterNonterminalType):
                     try:  # begin optional
                         next_states2 = next_states1
                         next_states2 = parser.call(Condition, next_states2)
-                        next_states1 = next_states2
                     except TransmuterSymbolMatchError:
-                        pass  # end optional
+                        pass
+                    else:
+                        next_states1 = next_states2  # end optional
                 except TransmuterSymbolMatchError:
                     pass
                 else:
@@ -542,9 +545,10 @@ class PrimaryExpression(TransmuterNonterminalType):
                     try:  # begin optional
                         next_states2 = next_states1
                         next_states2 = parser.call(Condition, next_states2)
-                        next_states1 = next_states2
                     except TransmuterSymbolMatchError:
-                        pass  # end optional
+                        pass
+                    else:
+                        next_states1 = next_states2  # end optional
                 except TransmuterSymbolMatchError:
                     pass
                 else:
