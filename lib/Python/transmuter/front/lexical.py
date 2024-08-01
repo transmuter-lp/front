@@ -134,6 +134,46 @@ class TransmuterLexer:
 
             start_position = accepted_position
 
+    def process_positives_negatives(self, accepted_terminal_tags: set[type[TransmuterTerminalTag]]) -> None:
+        current_accepted_terminal_tags = accepted_terminal_tags
+
+        while True:
+            next_accepted_terminal_tags = set()
+
+            for terminal_tag in current_accepted_terminal_tags:
+                next_accepted_terminal_tags |= {tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)}
+
+            next_accepted_terminal_tags -= accepted_terminal_tags
+
+            if len(next_accepted_terminal_tags) == 0:
+                break
+
+            accepted_terminal_tags |= next_accepted_terminal_tags
+            current_accepted_terminal_tags = next_accepted_terminal_tags
+
+        negative_terminal_tags = set()
+
+        for terminal_tag in accepted_terminal_tags:
+            negative_terminal_tags |= {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
+
+        current_negative_terminal_tags = negative_terminal_tags
+
+        while True:
+            next_negative_terminal_tags = set()
+
+            for terminal_tag in current_negative_terminal_tags:
+                next_negative_terminal_tags |= {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
+
+            next_negative_terminal_tags -= negative_terminal_tags
+
+            if len(next_negative_terminal_tags) == 0:
+                break
+
+            negative_terminal_tags |= next_negative_terminal_tags
+            current_negative_terminal_tags = next_negative_terminal_tags
+
+        accepted_terminal_tags -= negative_terminal_tags
+
     def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
         raise NotImplementedError()
 
