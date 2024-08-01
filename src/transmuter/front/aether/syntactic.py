@@ -123,10 +123,11 @@ class SelectionExpression(TransmuterNonterminalType):
                     try:  # begin option 1
                         next_states2 = next_states1
                         next_states2 = parser.call(VerticalLine, next_states2)
-                        next_states1 = next_states2
-                        break
                     except TransmuterSymbolMatchError:
-                        pass  # end option 1
+                        pass
+                    else:
+                        next_states1 = next_states2
+                        break  # end option 1
 
                     if syntactic in parser.lexer.conditions:  # begin conditional option 2
                         next_states2 = next_states1
@@ -281,34 +282,38 @@ class ProductionSpecifier(TransmuterNonterminalType):
                                 try:  # begin option 1
                                     next_states3 = next_states2
                                     next_states3 = parser.call(PlusSign, next_states3)
-                                    next_states2 = next_states3
-                                    break
                                 except TransmuterSymbolMatchError:
-                                    pass  # end option 1
+                                    pass
+                                else:
+                                    next_states2 = next_states3
+                                    break  # end option 1
 
                                 try:  # begin option 2
                                     next_states3 = next_states2
                                     next_states3 = parser.call(HyphenMinus, next_states3)
-                                    next_states2 = next_states3
-                                    break
                                 except TransmuterSymbolMatchError:
-                                    pass  # end option 2
+                                    pass
+                                else:
+                                    next_states2 = next_states3
+                                    break  # end option 2
 
                                 raise TransmuterSymbolMatchError()  # end selection
 
                             next_states2 = parser.call(Identifier, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 1
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 1
 
                         try:  # begin option 2
                             next_states2 = next_states1
                             next_states2 = parser.call(Ignore, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 2
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 2
 
                         raise TransmuterSymbolMatchError()  # end selection
                 except TransmuterSymbolMatchError:
@@ -357,34 +362,38 @@ class IterationExpression(TransmuterNonterminalType):
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(Asterisk, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 1
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 1
 
                         try:  # begin option 2
                             next_states2 = next_states1
                             next_states2 = parser.call(PlusSign, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 2
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 2
 
                         try:  # begin option 3
                             next_states2 = next_states1
                             next_states2 = parser.call(QuestionMark, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 3
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 3
 
                         try:  # begin option 4
                             next_states2 = next_states1
                             next_states2 = parser.call(ExpressionRange, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 4
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 4
 
                         break  # end optional selection
                 except TransmuterSymbolMatchError:
@@ -401,18 +410,20 @@ class IterationExpression(TransmuterNonterminalType):
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(LeftCurlyBracket, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 1
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 1
 
                         try:  # begin option 2
                             next_states2 = next_states1
                             next_states2 = parser.call(LeftCurlyBracketSolidus, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 2
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 2
 
                         raise TransmuterSymbolMatchError()  # end selection
 
@@ -443,34 +454,38 @@ class PrimaryExpression(TransmuterNonterminalType):
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(OrdChar, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 1
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 1
 
                         try:  # begin option 2
                             next_states2 = next_states1
                             next_states2 = parser.call(QuotedChar, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 2
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 2
 
                         try:  # begin option 3
                             next_states2 = next_states1
                             next_states2 = parser.call(FullStop, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 3
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 3
 
                         try:  # begin option 4
                             next_states2 = next_states1
                             next_states2 = parser.call(BracketExpression, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 4
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 4
 
                         raise TransmuterSymbolMatchError()  # end selection
                 except TransmuterSymbolMatchError:
@@ -513,11 +528,11 @@ class PrimaryExpression(TransmuterNonterminalType):
                         pass
                     else:
                         next_states1 = next_states2  # end conditional optional
-
-                next_states0 = next_states1
-                break
             except TransmuterSymbolMatchError:
-                pass  # end option 3
+                pass
+            else:
+                next_states0 = next_states1
+                break  # end option 3
 
             if syntactic in parser.lexer.conditions:  # begin conditional option 4
                 next_states1 = next_states0
@@ -527,18 +542,20 @@ class PrimaryExpression(TransmuterNonterminalType):
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(OptionalExpression, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 1
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 1
 
                         try:  # begin option 2
                             next_states2 = next_states1
                             next_states2 = parser.call(IterationExpression, next_states2)
-                            next_states1 = next_states2
-                            break
                         except TransmuterSymbolMatchError:
-                            pass  # end option 2
+                            pass
+                        else:
+                            next_states1 = next_states2
+                            break  # end option 2
 
                         raise TransmuterSymbolMatchError()  # end selection
 
@@ -588,18 +605,20 @@ class OptionalExpression(TransmuterNonterminalType):
             try:  # begin option 1
                 next_states1 = next_states0
                 next_states1 = parser.call(LeftSquareBracket, next_states1)
-                next_states0 = next_states1
-                break
             except TransmuterSymbolMatchError:
-                pass  # end option 1
+                pass
+            else:
+                next_states0 = next_states1
+                break  # end option 1
 
             try:  # begin option 2
                 next_states1 = next_states0
                 next_states1 = parser.call(LeftSquareBracketSolidus, next_states1)
-                next_states0 = next_states1
-                break
             except TransmuterSymbolMatchError:
-                pass  # end option 2
+                pass
+            else:
+                next_states0 = next_states1
+                break  # end option 2
 
             raise TransmuterSymbolMatchError()  # end selection
 
@@ -617,19 +636,22 @@ class PrimitiveCondition(TransmuterNonterminalType):
             try:  # begin option 1
                 next_states1 = next_states0
                 next_states1 = parser.call(Identifier, next_states1)
-                next_states0 = next_states1
-                break
             except TransmuterSymbolMatchError:
-                pass  # end option 1
+                pass
+            else:
+                next_states0 = next_states1
+                break  # end option 1
 
             try:  # begin option 2
                 next_states1 = next_states0
                 next_states1 = parser.call(LeftParenthesis, next_states1)
                 next_states1 = parser.call(DisjunctionCondition, next_states1)
                 next_states1 = parser.call(RightParenthesis, next_states1)
-                next_states0 = next_states1
             except TransmuterSymbolMatchError:
-                pass  # end option 2
+                pass
+            else:
+                next_states0 = next_states1
+                break  # end option 2
 
             raise TransmuterSymbolMatchError()  # end selection
 
