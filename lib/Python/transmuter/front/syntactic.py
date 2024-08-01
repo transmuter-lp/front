@@ -131,12 +131,15 @@ class TransmuterParser:
             if current_state.end_terminal not in self.memo[cls]:
                 self.memo[cls][current_state.end_terminal] = set()
 
+            initial_memo_len = len(self.memo[cls][current_state.end_terminal])
+
             try:
-                initial_memo_len = len(self.memo[cls][current_state.end_terminal])
                 next_states = cls.descend(
                     self, TransmuterParsingState((), current_state.end_terminal, current_state.end_terminal, current_state.end_terminal)
                 )
-
+            except TransmuterSymbolMatchError:
+                pass
+            else:
                 for next_state in next_states:
                     self.bsr.add(TransmuterExtendedPackedNode(
                         cls, next_state.string, next_state.start_terminal, next_state.split_terminal, next_state.end_terminal
@@ -145,8 +148,6 @@ class TransmuterParser:
 
                 if ascend and initial_memo_len != len(self.memo[cls][current_state.end_terminal]):
                     cls.ascend(self, current_state)
-            except TransmuterSymbolMatchError:
-                pass
 
         return {
             TransmuterParsingState(
@@ -157,12 +158,13 @@ class TransmuterParser:
     def parse(self) -> bool:
         try:
             self.call(self.nonterminal_types_start, {TransmuterParsingState((), None, None, None)}, True)
-            return True
         except TransmuterNoTerminalError as e:
             print(e)
             return False
         except TransmuterSymbolMatchError:
             return False
+        else:
+            return True
 
 
 class TransmuterSyntacticError(TransmuterException):
