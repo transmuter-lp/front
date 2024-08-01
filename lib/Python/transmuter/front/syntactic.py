@@ -163,8 +163,8 @@ class TransmuterParser:
             return False
         except TransmuterSymbolMatchError:
             return False
-        else:
-            return True
+
+        return True
 
 
 class TransmuterSyntacticError(TransmuterException):
