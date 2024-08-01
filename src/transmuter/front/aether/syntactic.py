@@ -60,12 +60,14 @@ class ProductionHeader(TransmuterNonterminalType):
         next_states0 = parser.call(Identifier, next_states0)
 
         if lexical in parser.lexer.conditions:  # begin conditional optional
+            next_states1 = next_states0
+
             try:
-                next_states1 = next_states0
                 next_states1 = parser.call(Condition, next_states1)
-                next_states0 = next_states1
             except TransmuterSymbolMatchError:
-                pass  # end conditional optional
+                pass
+            else:
+                next_states0 = next_states1  # end conditional optional
 
         try:  # begin optional
             next_states1 = next_states0
@@ -491,12 +493,14 @@ class PrimaryExpression(TransmuterNonterminalType):
                 next_states1 = parser.call(RightParenthesis, next_states1)
 
                 if syntactic in parser.lexer.conditions:  # begin conditional optional
+                    next_states2 = next_states1
+
                     try:
-                        next_states2 = next_states1
                         next_states2 = parser.call(Condition, next_states2)
-                        next_states1 = next_states2
                     except TransmuterSymbolMatchError:
-                        pass  # end conditional optional
+                        pass
+                    else:
+                        next_states1 = next_states2  # end conditional optional
 
                 next_states0 = next_states1
                 break
