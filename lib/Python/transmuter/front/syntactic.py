@@ -26,11 +26,13 @@ transmuter_once: bool = True
 
 
 class TransmuterNonterminalType:
-    ASCEND_PARENTS: set[type["TransmuterNonterminalType"]] = set()
-
     @staticmethod
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return False
+
+    @staticmethod
+    def ascend_parents(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterNonterminalType"]]:
+        return set()
 
     @classmethod
     def descend(cls, parser: "TransmuterParser", current_state: "TransmuterParsingState") -> set["TransmuterParsingState"]:
@@ -40,7 +42,7 @@ class TransmuterNonterminalType:
     def ascend(cls, parser: "TransmuterParser", current_state: "TransmuterParsingState") -> None:
         current_states = {current_state}
 
-        for ascend_parent in cls.ASCEND_PARENTS:
+        for ascend_parent in cls.ascend_parents(parser.lexer.conditions):
             try:
                 parser.call(ascend_parent, current_states, True)
             except TransmuterSymbolMatchError:
