@@ -59,6 +59,8 @@ class TransmuterLexer:
     filename: str
     conditions: set[type[TransmuterCondition]]
     terminal_tags_ignore: set[type[TransmuterTerminalTag]] = field(init=False, repr=False)
+    terminal_tags_positives: dict[type[TransmuterTerminalTag], set[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
+    terminal_tags_negatives: dict[type[TransmuterTerminalTag], set[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
     accepted_terminal_tags: dict[frozenset[type[TransmuterTerminalTag]], set[type[TransmuterTerminalTag]]] = field(
         default_factory=dict,
         init=False,
@@ -69,14 +71,18 @@ class TransmuterLexer:
 
     def __post_init__(self):
         self.terminal_tags_ignore = set()
+        self.terminal_tags_positives = {}
+        self.terminal_tags_negatives = {}
         self.states_start = set()
 
         for terminal_tag in self.TERMINAL_TAGS:
-            if terminal_tag.ignore(self.conditions):
-                self.terminal_tags_ignore.add(terminal_tag)
-
             if terminal_tag.start(self.conditions):
                 self.states_start |= terminal_tag.STATES_START
+                self.terminal_tags_positives[terminal_tag] = {tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)}
+                self.terminal_tags_negatives[terminal_tag] = {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
+
+                if terminal_tag.ignore(self.conditions):
+                    self.terminal_tags_ignore.add(terminal_tag)
 
     def next_terminal(self, current_terminal: TransmuterTerminal | None) -> TransmuterTerminal | None:
         if current_terminal is None:
@@ -144,7 +150,7 @@ class TransmuterLexer:
             next_accepted_terminal_tags = set()
 
             for terminal_tag in current_accepted_terminal_tags:
-                next_accepted_terminal_tags |= {tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)}
+                next_accepted_terminal_tags |= self.terminal_tags_positives[terminal_tag]
 
             next_accepted_terminal_tags -= accepted_terminal_tags
 
@@ -157,7 +163,7 @@ class TransmuterLexer:
         negative_terminal_tags = set()
 
         for terminal_tag in accepted_terminal_tags:
-            negative_terminal_tags |= {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
+            negative_terminal_tags |= self.terminal_tags_negatives[terminal_tag]
 
         current_negative_terminal_tags = negative_terminal_tags
 
@@ -165,7 +171,7 @@ class TransmuterLexer:
             next_negative_terminal_tags = set()
 
             for terminal_tag in current_negative_terminal_tags:
-                next_negative_terminal_tags |= {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
+                next_negative_terminal_tags |= self.terminal_tags_negatives[terminal_tag]
 
             next_negative_terminal_tags -= negative_terminal_tags
 
