@@ -68,10 +68,13 @@ class TransmuterLexer:
     start: TransmuterTerminal | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self):
-        self.terminal_tags_ignore = {terminal_tag for terminal_tag in self.TERMINAL_TAGS if terminal_tag.ignore(self.conditions)}
+        self.terminal_tags_ignore = set()
         self.states_start = set()
 
         for terminal_tag in self.TERMINAL_TAGS:
+            if terminal_tag.ignore(self.conditions):
+                self.terminal_tags_ignore.add(terminal_tag)
+
             if terminal_tag.start(self.conditions):
                 self.states_start |= terminal_tag.STATES_START
 

@@ -42,7 +42,7 @@ class TransmuterNonterminalType:
     def ascend(cls, parser: "TransmuterParser", current_state: "TransmuterParsingState") -> None:
         current_states = {current_state}
 
-        for ascend_parent in cls.ascend_parents(parser.lexer.conditions):
+        for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
             try:
                 parser.call(ascend_parent, current_states, True)
             except TransmuterSymbolMatchError:
@@ -70,6 +70,7 @@ class TransmuterParser:
 
     lexer: TransmuterLexer
     nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
+    nonterminal_types_ascend_parents: dict[type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]] = field(init=False, repr=False)
     memo: dict[type[TransmuterNonterminalType], dict[TransmuterTerminal | None, set[TransmuterTerminal]]] = field(
         default_factory=dict,
         init=False,
@@ -78,15 +79,22 @@ class TransmuterParser:
     bsr: set[TransmuterExtendedPackedNode] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
-        nonterminal_types_start = {nonterminal_type for nonterminal_type in self.NONTERMINAL_TYPES if nonterminal_type.start(self.lexer.conditions)}
+        nonterminal_types_start = None
+        self.nonterminal_types_ascend_parents = {}
 
-        if len(nonterminal_types_start) == 0:
+        for nonterminal_type in self.NONTERMINAL_TYPES:
+            if nonterminal_type.start(self.lexer.conditions) and nonterminal_types_start != nonterminal_type:
+                if nonterminal_types_start is not None:
+                    raise TransmuterMultipleStartsError()
+
+                nonterminal_types_start = nonterminal_type
+
+            self.nonterminal_types_ascend_parents[nonterminal_type] = nonterminal_type.ascend_parents(self.lexer.conditions)
+
+        if nonterminal_types_start is None:
             raise TransmuterNoStartError()
 
-        if len(nonterminal_types_start) > 1:
-            raise TransmuterMultipleStartsError()
-
-        self.nonterminal_types_start = nonterminal_types_start.pop()
+        self.nonterminal_types_start = nonterminal_types_start
 
     def call(
         self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
