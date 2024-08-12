@@ -34,8 +34,8 @@ class TransmuterNonterminalType:
     def ascend_parents(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterNonterminalType"]]:
         return set()
 
-    @classmethod
-    def descend(cls, parser: "TransmuterParser", current_state: "TransmuterParsingState") -> set["TransmuterParsingState"]:
+    @staticmethod
+    def descend(parser: "TransmuterParser", current_state: "TransmuterParsingState") -> set["TransmuterParsingState"]:
         raise NotImplementedError()
 
     @classmethod

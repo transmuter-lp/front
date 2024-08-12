@@ -26,8 +26,8 @@ class Grammar(TransmuterNonterminalType):
     def start(conditions: set[type[TransmuterCondition]]) -> bool:
         return True
 
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(Production, next_states0)
 
@@ -45,8 +45,8 @@ class Grammar(TransmuterNonterminalType):
 
 
 class Production(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(ProductionHeader, next_states0)
         next_states0 = parser.call(ProductionBody, next_states0)
@@ -54,8 +54,8 @@ class Production(TransmuterNonterminalType):
 
 
 class ProductionHeader(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(Identifier, next_states0)
 
@@ -82,8 +82,8 @@ class ProductionHeader(TransmuterNonterminalType):
 
 
 class ProductionBody(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(SelectionExpression, next_states0)
         next_states0 = parser.call(Semicolon, next_states0)
@@ -91,8 +91,8 @@ class ProductionBody(TransmuterNonterminalType):
 
 
 class Condition(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(CommercialAt, next_states0)
         next_states0 = parser.call(DisjunctionCondition, next_states0)
@@ -100,8 +100,8 @@ class Condition(TransmuterNonterminalType):
 
 
 class ProductionSpecifiers(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(LeftParenthesis, next_states0)
         next_states0 = parser.call(ProductionSpecifierList, next_states0)
@@ -110,8 +110,8 @@ class ProductionSpecifiers(TransmuterNonterminalType):
 
 
 class SelectionExpression(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(SequenceExpression, next_states0)
 
@@ -152,8 +152,8 @@ class SelectionExpression(TransmuterNonterminalType):
 
 
 class DisjunctionCondition(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(ConjunctionCondition, next_states0)
 
@@ -172,8 +172,8 @@ class DisjunctionCondition(TransmuterNonterminalType):
 
 
 class ProductionSpecifierList(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(ProductionSpecifier, next_states0)
 
@@ -192,8 +192,8 @@ class ProductionSpecifierList(TransmuterNonterminalType):
 
 
 class SequenceExpression(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
@@ -245,8 +245,8 @@ class SequenceExpression(TransmuterNonterminalType):
 
 
 class ConjunctionCondition(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
         next_states0 = parser.call(NegationCondition, next_states0)
 
@@ -265,8 +265,8 @@ class ConjunctionCondition(TransmuterNonterminalType):
 
 
 class ProductionSpecifier(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
@@ -347,8 +347,8 @@ class ProductionSpecifier(TransmuterNonterminalType):
 
 
 class IterationExpression(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
@@ -441,8 +441,8 @@ class IterationExpression(TransmuterNonterminalType):
 
 
 class PrimaryExpression(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
@@ -578,8 +578,8 @@ class PrimaryExpression(TransmuterNonterminalType):
 
 
 class NegationCondition(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
         while True:  # begin iteration
@@ -597,8 +597,8 @@ class NegationCondition(TransmuterNonterminalType):
 
 
 class OptionalExpression(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
@@ -628,8 +628,8 @@ class OptionalExpression(TransmuterNonterminalType):
 
 
 class PrimitiveCondition(TransmuterNonterminalType):
-    @classmethod
-    def descend(cls, parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
+    @staticmethod
+    def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
