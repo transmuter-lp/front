@@ -275,7 +275,7 @@ class Lexer(TransmuterLexer):
 
         # Whitespace
         # 1:22
-        if 1 in current_states and (char in {"\t", " "}):
+        if 1 in current_states and (char in "\t "):
             current_terminal_tags.add(Whitespace)
             next_states |= {self.STATE_ACCEPT, 1, 2, 3}
 
@@ -501,7 +501,7 @@ class Lexer(TransmuterLexer):
 
         # OrdChar
         # 45:18
-        if 46 in current_states and (not ("\000" <= char <= "\037" or char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "{", "|", "\177"})):
+        if 46 in current_states and (not ("\000" <= char <= "\037" or char in " $()*+.;?[\\^{|\177")):
             current_terminal_tags.add(OrdChar)
             next_states |= {self.STATE_ACCEPT}
 
@@ -511,12 +511,12 @@ class Lexer(TransmuterLexer):
             next_states |= {48, 49}
 
         # 47:25
-        if 48 in current_states and (char in {" ", "$", "(", ")", "*", "+", ".", ";", "?", "[", "\\", "^", "a", "b", "f", "n", "r", "t", "v", "{", "|"}):
+        if 48 in current_states and (char in " $()*+.;?[\\^abfnrtv{|"):
             current_terminal_tags.add(QuotedChar)
             next_states |= {self.STATE_ACCEPT}
 
         # 47:52
-        if 49 in current_states and (char in {"0", "1"}):
+        if 49 in current_states and (char in "01"):
             next_states |= {50}
 
         # 47:57:1
@@ -544,7 +544,7 @@ class Lexer(TransmuterLexer):
             next_states |= {55, 56}
 
         # 51:37
-        if 55 in current_states and (not ("\000" <= char <= "\037" or char in {"\\", "^", "\177"})):
+        if 55 in current_states and (not ("\000" <= char <= "\037" or char in "\\^\177")):
             next_states |= {63, 70, 71, 83, 84}
 
         # 51:59
@@ -552,11 +552,11 @@ class Lexer(TransmuterLexer):
             next_states |= {57, 58}
 
         # 51:63
-        if 57 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+        if 57 in current_states and (char in "\\abfnrtv"):
             next_states |= {63, 70, 71, 83, 84}
 
         # 51:77
-        if 58 in current_states and (char in {"0", "1"}):
+        if 58 in current_states and (char in "01"):
             next_states |= {59}
 
         # 51:82:1
@@ -580,7 +580,7 @@ class Lexer(TransmuterLexer):
             next_states |= {64, 65}
 
         # 51:106
-        if 64 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177"})):
+        if 64 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in "\\\177")):
             next_states |= {70, 71, 83, 84}
 
         # 51:128
@@ -588,11 +588,11 @@ class Lexer(TransmuterLexer):
             next_states |= {66, 67}
 
         # 51:132
-        if 66 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+        if 66 in current_states and (char in "\\abfnrtv"):
             next_states |= {70, 71, 83, 84}
 
         # 51:146
-        if 67 in current_states and (char in {"0", "1"}):
+        if 67 in current_states and (char in "01"):
             next_states |= {68}
 
         # 51:151:1
@@ -604,7 +604,7 @@ class Lexer(TransmuterLexer):
             next_states |= {70, 71, 83, 84}
 
         # 51:166
-        if 70 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177", "-"})):
+        if 70 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in "\\\177-")):
             next_states |= {70, 71, 76, 83, 84}
 
         # 51:189
@@ -612,11 +612,11 @@ class Lexer(TransmuterLexer):
             next_states |= {72, 73}
 
         # 51:193
-        if 72 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+        if 72 in current_states and (char in "\\abfnrtv"):
             next_states |= {70, 71, 76, 83, 84}
 
         # 51:207
-        if 73 in current_states and (char in {"0", "1"}):
+        if 73 in current_states and (char in "01"):
             next_states |= {74}
 
         # 51:212:1
@@ -632,7 +632,7 @@ class Lexer(TransmuterLexer):
             next_states |= {77, 78}
 
         # 51:227
-        if 77 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in {"\\", "\177"})):
+        if 77 in current_states and (not (char == "]" or "\000" <= char <= "\037" or char in "\\\177")):
             next_states |= {70, 71, 83, 84}
 
         # 51:249
@@ -640,11 +640,11 @@ class Lexer(TransmuterLexer):
             next_states |= {79, 80}
 
         # 51:253
-        if 79 in current_states and (char in {"\\", "a", "b", "f", "n", "r", "t", "v"}):
+        if 79 in current_states and (char in "\\abfnrtv"):
             next_states |= {70, 71, 83, 84}
 
         # 51:267
-        if 80 in current_states and (char in {"0", "1"}):
+        if 80 in current_states and (char in "01"):
             next_states |= {81}
 
         # 51:272:1
