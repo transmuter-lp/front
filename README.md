@@ -28,3 +28,7 @@ The generated parser is a recursive descent parser based on [Frost, Hafiz & Call
 - Type safety framework (TO DO)
 - Memory safety framework (TO DO)
 - Thread safety framework (TO DO)
+
+## LoC Statistics
+
+https://cloc.info/github.com/transmuter-lp/front
