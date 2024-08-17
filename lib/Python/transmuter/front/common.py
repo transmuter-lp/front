@@ -17,6 +17,8 @@
 
 from typing import NamedTuple
 
+fset = frozenset
+
 
 class TransmuterCondition:
     pass

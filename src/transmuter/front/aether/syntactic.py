@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import TransmuterCondition
+from ..common import fset, TransmuterCondition
 from ..syntactic import transmuter_once, TransmuterNonterminalType, TransmuterParsingState, TransmuterParser, TransmuterSymbolMatchError
 from .common import lexical, syntactic
 from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
@@ -23,7 +23,7 @@ from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, Lef
 
 class Grammar(TransmuterNonterminalType):
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return True
 
     @staticmethod
@@ -659,4 +659,4 @@ class PrimitiveCondition(TransmuterNonterminalType):
 
 
 class Parser(TransmuterParser):
-    NONTERMINAL_TYPES = {Grammar, Production, ProductionHeader, ProductionBody, Condition, ProductionSpecifiers, SelectionExpression, DisjunctionCondition, ProductionSpecifierList, SequenceExpression, ConjunctionCondition, ProductionSpecifier, IterationExpression, PrimaryExpression, NegationCondition, OptionalExpression, PrimitiveCondition}
+    NONTERMINAL_TYPES = fset({Grammar, Production, ProductionHeader, ProductionBody, Condition, ProductionSpecifiers, SelectionExpression, DisjunctionCondition, ProductionSpecifierList, SequenceExpression, ConjunctionCondition, ProductionSpecifier, IterationExpression, PrimaryExpression, NegationCondition, OptionalExpression, PrimitiveCondition})

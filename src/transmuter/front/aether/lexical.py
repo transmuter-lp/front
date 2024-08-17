@@ -15,259 +15,259 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import TransmuterCondition
+from ..common import fset, TransmuterCondition
 from ..lexical import TransmuterTerminalTag, TransmuterLexer
 from .common import lexical, syntactic
 
 
 class Whitespace(TransmuterTerminalTag):
-    STATES_START = {1, 2, 3}
+    STATES_START = fset({1, 2, 3})
 
     @staticmethod
-    def ignore(conditions: set[type[TransmuterCondition]]) -> bool:
+    def ignore(conditions: fset[type[TransmuterCondition]]) -> bool:
         return True
 
 
 class Identifier(TransmuterTerminalTag):
-    STATES_START = {4}
+    STATES_START = fset({4})
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
 
 class Colon(TransmuterTerminalTag):
-    STATES_START = {6}
+    STATES_START = fset({6})
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
 
 class Semicolon(TransmuterTerminalTag):
-    STATES_START = {7}
+    STATES_START = fset({7})
 
 
 class CommercialAt(TransmuterTerminalTag):
-    STATES_START = {8}
+    STATES_START = fset({8})
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
 
 class LeftParenthesis(TransmuterTerminalTag):
-    STATES_START = {9}
+    STATES_START = fset({9})
 
 
 class RightParenthesis(TransmuterTerminalTag):
-    STATES_START = {10}
+    STATES_START = fset({10})
 
 
 class VerticalLine(TransmuterTerminalTag):
-    STATES_START = {11}
+    STATES_START = fset({11})
 
 
 class Solidus(TransmuterTerminalTag):
-    STATES_START = {12}
+    STATES_START = fset({12})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
 
 class DoubleVerticalLine(TransmuterTerminalTag):
-    STATES_START = {13}
+    STATES_START = fset({13})
 
 
 class Comma(TransmuterTerminalTag):
-    STATES_START = {15}
+    STATES_START = fset({15})
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
 
 class DoubleAmpersand(TransmuterTerminalTag):
-    STATES_START = {16}
+    STATES_START = fset({16})
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
 
 class PlusSign(TransmuterTerminalTag):
-    STATES_START = {18}
+    STATES_START = fset({18})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class HyphenMinus(TransmuterTerminalTag):
-    STATES_START = {19}
+    STATES_START = fset({19})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
 
 class Ignore(TransmuterTerminalTag):
-    STATES_START = {20}
+    STATES_START = fset({20})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
     @staticmethod
-    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def negatives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         negatives = {Identifier}
         return negatives
 
 
 class Start(TransmuterTerminalTag):
-    STATES_START = {26}
+    STATES_START = fset({26})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
     @staticmethod
-    def negatives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def negatives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         negatives = {Identifier}
         return negatives
 
 
 class Asterisk(TransmuterTerminalTag):
-    STATES_START = {31}
+    STATES_START = fset({31})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class QuestionMark(TransmuterTerminalTag):
-    STATES_START = {32}
+    STATES_START = fset({32})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class ExpressionRange(TransmuterTerminalTag):
-    STATES_START = {33}
+    STATES_START = fset({33})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class LeftCurlyBracket(TransmuterTerminalTag):
-    STATES_START = {42}
+    STATES_START = fset({42})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
 
 class LeftCurlyBracketSolidus(TransmuterTerminalTag):
-    STATES_START = {43}
+    STATES_START = fset({43})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
 
 class RightCurlyBracket(TransmuterTerminalTag):
-    STATES_START = {45}
+    STATES_START = fset({45})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
 
 class OrdChar(TransmuterTerminalTag):
-    STATES_START = {46}
+    STATES_START = fset({46})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class QuotedChar(TransmuterTerminalTag):
-    STATES_START = {47}
+    STATES_START = fset({47})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class FullStop(TransmuterTerminalTag):
-    STATES_START = {52}
+    STATES_START = fset({52})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class BracketExpression(TransmuterTerminalTag):
-    STATES_START = {53}
+    STATES_START = fset({53})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return lexical in conditions
 
 
 class ExclamationMark(TransmuterTerminalTag):
-    STATES_START = {85}
+    STATES_START = fset({85})
 
     @staticmethod
-    def positives(conditions: set[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
+    def positives(conditions: fset[type[TransmuterCondition]]) -> set[type[TransmuterTerminalTag]]:
         positives = {OrdChar}
         return positives
 
 
 class LeftSquareBracket(TransmuterTerminalTag):
-    STATES_START = {86}
+    STATES_START = fset({86})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
 
 class LeftSquareBracketSolidus(TransmuterTerminalTag):
-    STATES_START = {87}
+    STATES_START = fset({87})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
 
 class RightSquareBracket(TransmuterTerminalTag):
-    STATES_START = {89}
+    STATES_START = fset({89})
 
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return syntactic in conditions
 
 
 class Lexer(TransmuterLexer):
-    TERMINAL_TAGS = {Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket}
+    TERMINAL_TAGS = fset({Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket})
 
     def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
         current_terminal_tags = set()
