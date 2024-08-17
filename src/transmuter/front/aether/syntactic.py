@@ -15,15 +15,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import fset, TransmuterCondition
+from ..common import fset, TransmuterConditions
 from ..syntactic import transmuter_once, TransmuterNonterminalType, TransmuterParsingState, TransmuterParser, TransmuterSymbolMatchError
-from .common import lexical, syntactic
+from .common import Conditions
 from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
 
 
 class Grammar(TransmuterNonterminalType):
     @staticmethod
-    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
+    def start(conditions: TransmuterConditions) -> bool:
         return True
 
     @staticmethod
@@ -59,7 +59,7 @@ class ProductionHeader(TransmuterNonterminalType):
         next_states0 = {current_state}
         next_states0 = parser.call(Identifier, next_states0)
 
-        if lexical in parser.lexer.conditions:  # begin conditional optional
+        if Conditions.lexical in parser.lexer.conditions:  # begin conditional optional
             next_states1 = next_states0
 
             try:
@@ -129,7 +129,7 @@ class SelectionExpression(TransmuterNonterminalType):
                         next_states1 = next_states2
                         break  # end option 1
 
-                    if syntactic in parser.lexer.conditions:  # begin conditional option 2
+                    if Conditions.syntactic in parser.lexer.conditions:  # begin conditional option 2
                         next_states2 = next_states1
 
                         try:
@@ -197,7 +197,7 @@ class SequenceExpression(TransmuterNonterminalType):
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
-            if lexical in parser.lexer.conditions:  # begin conditional option 1
+            if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
                 try:
@@ -218,7 +218,7 @@ class SequenceExpression(TransmuterNonterminalType):
                     next_states0 = next_states1
                     break  # end conditional option 1
 
-            if syntactic in parser.lexer.conditions:  # begin conditional option 2
+            if Conditions.syntactic in parser.lexer.conditions:  # begin conditional option 2
                 next_states1 = next_states0
 
                 try:
@@ -270,7 +270,7 @@ class ProductionSpecifier(TransmuterNonterminalType):
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
-            if lexical in parser.lexer.conditions:  # begin conditional option 1
+            if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
                 try:
@@ -322,7 +322,7 @@ class ProductionSpecifier(TransmuterNonterminalType):
                     next_states0 = next_states1
                     break  # end conditional option 1
 
-            if syntactic in parser.lexer.conditions:  # begin conditional option 2
+            if Conditions.syntactic in parser.lexer.conditions:  # begin conditional option 2
                 next_states1 = next_states0
 
                 try:
@@ -352,7 +352,7 @@ class IterationExpression(TransmuterNonterminalType):
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
-            if lexical in parser.lexer.conditions:  # begin conditional option 1
+            if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
                 try:
@@ -402,7 +402,7 @@ class IterationExpression(TransmuterNonterminalType):
                     next_states0 = next_states1
                     break  # end conditional option 1
 
-            if syntactic in parser.lexer.conditions:  # begin conditional option 2
+            if Conditions.syntactic in parser.lexer.conditions:  # begin conditional option 2
                 next_states1 = next_states0
 
                 try:
@@ -446,7 +446,7 @@ class PrimaryExpression(TransmuterNonterminalType):
         next_states0 = {current_state}
 
         while transmuter_once:  # begin selection
-            if lexical in parser.lexer.conditions:  # begin conditional option 1
+            if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
                 try:
@@ -494,7 +494,7 @@ class PrimaryExpression(TransmuterNonterminalType):
                     next_states0 = next_states1
                     break  # end conditional option 1
 
-            if syntactic in parser.lexer.conditions:  # begin conditional option 2
+            if Conditions.syntactic in parser.lexer.conditions:  # begin conditional option 2
                 next_states1 = next_states0
 
                 try:
@@ -519,7 +519,7 @@ class PrimaryExpression(TransmuterNonterminalType):
                 next_states1 = parser.call(SelectionExpression, next_states1)
                 next_states1 = parser.call(RightParenthesis, next_states1)
 
-                if syntactic in parser.lexer.conditions:  # begin conditional optional
+                if Conditions.syntactic in parser.lexer.conditions:  # begin conditional optional
                     next_states2 = next_states1
 
                     try:
@@ -534,7 +534,7 @@ class PrimaryExpression(TransmuterNonterminalType):
                 next_states0 = next_states1
                 break  # end option 3
 
-            if syntactic in parser.lexer.conditions:  # begin conditional option 4
+            if Conditions.syntactic in parser.lexer.conditions:  # begin conditional option 4
                 next_states1 = next_states0
 
                 try:

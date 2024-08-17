@@ -18,7 +18,7 @@
 from dataclasses import dataclass, field
 from typing import ClassVar, NamedTuple
 
-from .common import fset, TransmuterCondition, TransmuterPosition, TransmuterException
+from .common import fset, TransmuterConditions, TransmuterPosition, TransmuterException
 from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer, TransmuterNoTerminalError
 
 transmuter_once: bool = True
@@ -26,11 +26,11 @@ transmuter_once: bool = True
 
 class TransmuterNonterminalType:
     @staticmethod
-    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
+    def start(conditions: TransmuterConditions) -> bool:
         return False
 
     @staticmethod
-    def ascend_parents(conditions: fset[type[TransmuterCondition]]) -> fset[type["TransmuterNonterminalType"]]:
+    def ascend_parents(conditions: TransmuterConditions) -> fset[type["TransmuterNonterminalType"]]:
         return fset()
 
     @staticmethod

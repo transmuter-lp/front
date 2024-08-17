@@ -15,12 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from ..common import TransmuterCondition
+from ..common import TransmuterConditions, TransmuterCondition
 
 
-class lexical(TransmuterCondition):
-    pass
-
-
-class syntactic(TransmuterCondition):
-    pass
+class Conditions(TransmuterConditions):
+    lexical = TransmuterCondition()
+    syntactic = TransmuterCondition()
