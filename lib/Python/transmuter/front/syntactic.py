@@ -18,21 +18,20 @@
 from dataclasses import dataclass, field
 from typing import ClassVar, NamedTuple
 
-from .common import TransmuterCondition, TransmuterPosition, TransmuterException
+from .common import fset, TransmuterCondition, TransmuterPosition, TransmuterException
 from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer, TransmuterNoTerminalError
-
 
 transmuter_once: bool = True
 
 
 class TransmuterNonterminalType:
     @staticmethod
-    def start(conditions: set[type[TransmuterCondition]]) -> bool:
+    def start(conditions: fset[type[TransmuterCondition]]) -> bool:
         return False
 
     @staticmethod
-    def ascend_parents(conditions: set[type[TransmuterCondition]]) -> set[type["TransmuterNonterminalType"]]:
-        return set()
+    def ascend_parents(conditions: fset[type[TransmuterCondition]]) -> fset[type["TransmuterNonterminalType"]]:
+        return fset()
 
     @staticmethod
     def descend(parser: "TransmuterParser", current_state: "TransmuterParsingState") -> set["TransmuterParsingState"]:
@@ -66,11 +65,11 @@ class TransmuterExtendedPackedNode(NamedTuple):
 
 @dataclass
 class TransmuterParser:
-    NONTERMINAL_TYPES: ClassVar[set[type[TransmuterNonterminalType]]]
+    NONTERMINAL_TYPES: ClassVar[fset[type[TransmuterNonterminalType]]]
 
     lexer: TransmuterLexer
     nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
-    nonterminal_types_ascend_parents: dict[type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]] = field(init=False, repr=False)
+    nonterminal_types_ascend_parents: dict[type[TransmuterNonterminalType], fset[type[TransmuterNonterminalType]]] = field(init=False, repr=False)
     memo: dict[type[TransmuterNonterminalType], dict[TransmuterTerminal | None, set[TransmuterTerminal]]] = field(
         default_factory=dict,
         init=False,
