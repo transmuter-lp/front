@@ -70,12 +70,12 @@ class TransmuterParser:
     lexer: TransmuterLexer
     nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
     nonterminal_types_ascend_parents: dict[type[TransmuterNonterminalType], fset[type[TransmuterNonterminalType]]] = field(init=False, repr=False)
-    memo: dict[type[TransmuterNonterminalType], dict[TransmuterTerminal | None, set[TransmuterTerminal]]] = field(
+    bsr: set[TransmuterExtendedPackedNode] = field(default_factory=set, init=False, repr=False)
+    memo: dict[tuple[type[TransmuterNonterminalType], TransmuterTerminal | None], set[TransmuterTerminal]] = field(
         default_factory=dict,
         init=False,
         repr=False
     )
-    bsr: set[TransmuterExtendedPackedNode] = field(default_factory=set, init=False, repr=False)
 
     def __post_init__(self):
         nonterminal_types_start = None
@@ -133,14 +133,11 @@ class TransmuterParser:
             None, current_state.string, current_state.start_terminal, current_state.split_terminal, current_state.end_terminal
         ))
 
-        if cls not in self.memo:
-            self.memo[cls] = {}
+        if ascend or (cls, current_state.end_terminal) not in self.memo:
+            if (cls, current_state.end_terminal) not in self.memo:
+                self.memo[cls, current_state.end_terminal] = set()
 
-        if ascend or current_state.end_terminal not in self.memo[cls]:
-            if current_state.end_terminal not in self.memo[cls]:
-                self.memo[cls][current_state.end_terminal] = set()
-
-            initial_memo_len = len(self.memo[cls][current_state.end_terminal])
+            initial_memo_len = len(self.memo[cls, current_state.end_terminal])
 
             try:
                 next_states = cls.descend(
@@ -153,15 +150,15 @@ class TransmuterParser:
                     self.bsr.add(TransmuterExtendedPackedNode(
                         cls, next_state.string, next_state.start_terminal, next_state.split_terminal, next_state.end_terminal
                     ))
-                    self.memo[cls][current_state.end_terminal].add(next_state.end_terminal)
+                    self.memo[cls, current_state.end_terminal].add(next_state.end_terminal)
 
-                if ascend and initial_memo_len != len(self.memo[cls][current_state.end_terminal]):
+                if ascend and initial_memo_len != len(self.memo[cls, current_state.end_terminal]):
                     cls.ascend(self, current_state)
 
         return {
             TransmuterParsingState(
                 current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal
-            ) for next_terminal in self.memo[cls][current_state.end_terminal]
+            ) for next_terminal in self.memo[cls, current_state.end_terminal]
         }
 
     def parse(self) -> bool:
