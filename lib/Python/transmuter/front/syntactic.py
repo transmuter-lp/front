@@ -95,6 +95,17 @@ class TransmuterParser:
 
         self.nonterminal_types_start = nonterminal_types_start
 
+    def parse(self) -> bool:
+        try:
+            self.call(self.nonterminal_types_start, {TransmuterParsingState((), None, None, None)}, True)
+        except TransmuterNoTerminalError as e:
+            print(e)
+            return False
+        except TransmuterSymbolMatchError:
+            return False
+
+        return True
+
     def call(
         self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
     ) -> set[TransmuterParsingState]:
@@ -160,17 +171,6 @@ class TransmuterParser:
                 current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal
             ) for next_terminal in self.memo[cls, current_state.end_terminal]
         }
-
-    def parse(self) -> bool:
-        try:
-            self.call(self.nonterminal_types_start, {TransmuterParsingState((), None, None, None)}, True)
-        except TransmuterNoTerminalError as e:
-            print(e)
-            return False
-        except TransmuterSymbolMatchError:
-            return False
-
-        return True
 
 
 class TransmuterSyntacticError(TransmuterException):

@@ -269,7 +269,7 @@ class RightSquareBracket(TransmuterTerminalTag):
 class Lexer(TransmuterLexer):
     TERMINAL_TAGS = fset({Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket})
 
-    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
+    def nfa(self, current_states: set[int], char: str) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
         current_terminal_tags = set()
         next_states = set()
 

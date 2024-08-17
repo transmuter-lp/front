@@ -112,25 +112,25 @@ class TransmuterLexer:
             current_position = start_position
             current_states = set(self.states_start)
 
-            while current_states:
+            while len(current_states) > 0:
                 if self.STATE_ACCEPT in current_states:
                     accepted_terminal_tags = fset(current_terminal_tags)
                     accepted_position = current_position
 
                 if current_position.index_ == len(self.input):
-                    if accepted_terminal_tags - self.terminal_tags_ignore:
+                    if len(accepted_terminal_tags - self.terminal_tags_ignore) > 0:
                         break
 
                     return None
 
-                current_terminal_tags, current_states = self.nfa(self.input[current_position.index_], current_states)
+                current_terminal_tags, current_states = self.nfa(current_states, self.input[current_position.index_])
                 current_position = TransmuterPosition(
                     current_position.index_ + 1,
                     current_position.line + (0 if self.input[current_position.index_] != "\n" else 1),
                     current_position.column + 1 if self.input[current_position.index_] != "\n" else 1
                 )
 
-            if not accepted_terminal_tags:
+            if len(accepted_terminal_tags) == 0:
                 raise TransmuterNoTerminalError(self.filename, start_position)
 
             if accepted_terminal_tags not in self.accepted_terminal_tags:
@@ -139,7 +139,7 @@ class TransmuterLexer:
             else:
                 accepted_terminal_tags = self.accepted_terminal_tags[accepted_terminal_tags]
 
-            if accepted_terminal_tags - self.terminal_tags_ignore:
+            if len(accepted_terminal_tags - self.terminal_tags_ignore) > 0:
                 return TransmuterTerminal(
                     start_position,
                     accepted_position,
@@ -190,7 +190,7 @@ class TransmuterLexer:
 
         return fset(positive_terminal_tags - negative_terminal_tags)
 
-    def nfa(self, char: str, current_states: set[int]) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
+    def nfa(self, current_states: set[int], char: str) -> tuple[set[type[TransmuterTerminalTag]], set[int]]:
         raise NotImplementedError()
 
 
