@@ -18,7 +18,9 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import fset, TransmuterConditions, TransmuterPosition, TransmuterException
+from .common import TransmuterConditions, TransmuterPosition, TransmuterException
+
+fset = frozenset
 
 
 class TransmuterTerminalTag:
@@ -50,30 +52,30 @@ class TransmuterTerminal:
     start_position: TransmuterPosition
     end_position: TransmuterPosition
     value: str
-    tags: fset[type[TransmuterTerminalTag]]
+    tags: set[type[TransmuterTerminalTag]]
     next: "TransmuterTerminal | None" = field(default=None, init=False, repr=False)
 
 
 @dataclass
 class TransmuterLexer:
-    TERMINAL_TAGS: ClassVar[fset[type[TransmuterTerminalTag]]]
+    TERMINAL_TAGS: ClassVar[set[type[TransmuterTerminalTag]]]
 
     input: str
     filename: str
     conditions: TransmuterConditions
-    terminal_tags_ignore: fset[type[TransmuterTerminalTag]] = field(init=False, repr=False)
+    terminal_tags_ignore: set[type[TransmuterTerminalTag]] = field(init=False, repr=False)
     states_start: dict[type[TransmuterTerminalTag], int] = field(init=False, repr=False)
-    terminal_tags_positives: dict[type[TransmuterTerminalTag], fset[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
-    terminal_tags_negatives: dict[type[TransmuterTerminalTag], fset[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
+    terminal_tags_positives: dict[type[TransmuterTerminalTag], set[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
+    terminal_tags_negatives: dict[type[TransmuterTerminalTag], set[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
     start: TransmuterTerminal | None = field(default=None, init=False, repr=False)
-    accepted_terminal_tags: dict[fset[type[TransmuterTerminalTag]], fset[type[TransmuterTerminalTag]]] = field(
+    accepted_terminal_tags: dict[fset[type[TransmuterTerminalTag]], set[type[TransmuterTerminalTag]]] = field(
         default_factory=dict,
         init=False,
         repr=False
     )
 
     def __post_init__(self):
-        terminal_tags_ignore = set()
+        self.terminal_tags_ignore = set()
         self.states_start = {}
         self.terminal_tags_positives = {}
         self.terminal_tags_negatives = {}
@@ -81,17 +83,11 @@ class TransmuterLexer:
         for terminal_tag in self.TERMINAL_TAGS:
             if terminal_tag.start(self.conditions):
                 if terminal_tag.ignore(self.conditions):
-                    terminal_tags_ignore.add(terminal_tag)
+                    self.terminal_tags_ignore.add(terminal_tag)
 
                 self.states_start[terminal_tag] = terminal_tag.STATES_START
-                self.terminal_tags_positives[terminal_tag] = fset({
-                    tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)
-                })
-                self.terminal_tags_negatives[terminal_tag] = fset({
-                    tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)
-                })
-
-        self.terminal_tags_ignore = fset(terminal_tags_ignore)
+                self.terminal_tags_positives[terminal_tag] = {tag for tag in terminal_tag.positives(self.conditions) if tag.start(self.conditions)}
+                self.terminal_tags_negatives[terminal_tag] = {tag for tag in terminal_tag.negatives(self.conditions) if tag.start(self.conditions)}
 
     def next_terminal(self, current_terminal: TransmuterTerminal | None) -> TransmuterTerminal | None:
         if not current_terminal:
@@ -107,38 +103,50 @@ class TransmuterLexer:
 
     def get_terminal(self, start_position: TransmuterPosition) -> TransmuterTerminal | None:
         while True:
-            accepted_terminal_tags = fset()
-            accepted_position = start_position
             current_terminal_tags = set()
-            current_position = start_position
+            current_position = start_position.copy()
             current_states = self.states_start
+            accepted_terminal_tags = current_terminal_tags
+            accepted_position = current_position
 
-            while current_states:
-                if current_position.index_ == len(self.input):
-                    if accepted_terminal_tags - self.terminal_tags_ignore:
-                        break
+            while current_states and current_position.index_ < len(self.input):
+                char = self.input[current_position.index_]
+                current_terminal_tags = set()
+                next_states = {}
 
-                    return None
+                for terminal_tag in current_states:
+                    state_accept, states = terminal_tag.nfa(current_states[terminal_tag], char)
 
-                current_terminal_tags, current_states = self.nfa(current_states, self.input[current_position.index_])
-                current_position = TransmuterPosition(
-                    current_position.index_ + 1,
-                    current_position.line + (0 if self.input[current_position.index_] != "\n" else 1),
-                    current_position.column + 1 if self.input[current_position.index_] != "\n" else 1
-                )
+                    if state_accept:
+                        current_terminal_tags.add(terminal_tag)
+
+                    if states:
+                        next_states[terminal_tag] = states
+
+                current_states = next_states
+
+                if char != "\n":
+                    current_position.column += 1
+                else:
+                    current_position.line += 1
+                    current_position.column = 1
+
+                current_position.index_ += 1
 
                 if current_terminal_tags:
-                    accepted_terminal_tags = fset(current_terminal_tags)
-                    accepted_position = current_position
+                    accepted_terminal_tags = current_terminal_tags
+                    accepted_position = current_position.copy()
 
             if not accepted_terminal_tags:
                 raise TransmuterNoTerminalError(self.filename, start_position)
 
-            if accepted_terminal_tags not in self.accepted_terminal_tags:
-                accepted_terminal_tags = self.process_positives_negatives(accepted_terminal_tags)
-                self.accepted_terminal_tags[accepted_terminal_tags] = accepted_terminal_tags
+            initial_accepted_terminal_tags = fset(accepted_terminal_tags)
+
+            if initial_accepted_terminal_tags not in self.accepted_terminal_tags:
+                self.process_positives_negatives(accepted_terminal_tags)
+                self.accepted_terminal_tags[initial_accepted_terminal_tags] = accepted_terminal_tags
             else:
-                accepted_terminal_tags = self.accepted_terminal_tags[accepted_terminal_tags]
+                accepted_terminal_tags = self.accepted_terminal_tags[initial_accepted_terminal_tags]
 
             if accepted_terminal_tags - self.terminal_tags_ignore:
                 return TransmuterTerminal(
@@ -148,10 +156,13 @@ class TransmuterLexer:
                     accepted_terminal_tags - self.terminal_tags_ignore
                 )
 
+            if current_position.index_ == len(self.input):
+                return None
+
             start_position = accepted_position
 
-    def process_positives_negatives(self, accepted_terminal_tags: fset[type[TransmuterTerminalTag]]) -> fset[type[TransmuterTerminalTag]]:
-        positive_terminal_tags = set(accepted_terminal_tags)
+    def process_positives_negatives(self, accepted_terminal_tags: set[type[TransmuterTerminalTag]]) -> None:
+        positive_terminal_tags = accepted_terminal_tags
         current_positive_terminal_tags = positive_terminal_tags
 
         while True:
@@ -189,24 +200,7 @@ class TransmuterLexer:
             negative_terminal_tags |= next_negative_terminal_tags
             current_negative_terminal_tags = next_negative_terminal_tags
 
-        return fset(positive_terminal_tags - negative_terminal_tags)
-
-    def nfa(
-        self, current_states: dict[type[TransmuterTerminalTag], int], char: str
-    ) -> tuple[set[type[TransmuterTerminalTag]], dict[type[TransmuterTerminalTag], int]]:
-        current_terminal_tags = set()
-        next_states = {}
-
-        for terminal_tag in current_states:
-            state_accept, states = terminal_tag.nfa(current_states[terminal_tag], char)
-
-            if state_accept:
-                current_terminal_tags.add(terminal_tag)
-
-            if states:
-                next_states[terminal_tag] = states
-
-        return (current_terminal_tags, next_states)
+        positive_terminal_tags -= negative_terminal_tags
 
 
 class TransmuterLexicalError(TransmuterException):
