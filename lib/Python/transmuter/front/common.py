@@ -15,17 +15,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from dataclasses import dataclass
 from enum import auto, IntFlag
-from typing import NamedTuple
 
 TransmuterConditions = IntFlag
 TransmuterCondition = auto
 
 
-class TransmuterPosition(NamedTuple):
+@dataclass
+class TransmuterPosition:
     index_: int
     line: int
     column: int
+
+    def copy(self) -> "TransmuterPosition":
+        return type(self)(self.index_, self.line, self.column)
 
 
 class TransmuterException(Exception):

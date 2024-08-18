@@ -104,7 +104,7 @@ class TransmuterLexer:
     def get_terminal(self, start_position: TransmuterPosition) -> TransmuterTerminal | None:
         while True:
             current_terminal_tags = set()
-            current_position = start_position
+            current_position = start_position.copy()
             current_states = self.states_start
             accepted_terminal_tags = current_terminal_tags
             accepted_position = current_position
@@ -117,15 +117,18 @@ class TransmuterLexer:
                     return None
 
                 current_terminal_tags, current_states = self.nfa(current_states, self.input[current_position.index_])
-                current_position = TransmuterPosition(
-                    current_position.index_ + 1,
-                    current_position.line + (0 if self.input[current_position.index_] != "\n" else 1),
-                    current_position.column + 1 if self.input[current_position.index_] != "\n" else 1
-                )
+
+                if self.input[current_position.index_] != "\n":
+                    current_position.column += 1
+                else:
+                    current_position.line += 1
+                    current_position.column = 1
+
+                current_position.index_ += 1
 
                 if current_terminal_tags:
                     accepted_terminal_tags = current_terminal_tags
-                    accepted_position = current_position
+                    accepted_position = current_position.copy()
 
             if not accepted_terminal_tags:
                 raise TransmuterNoTerminalError(self.filename, start_position)
