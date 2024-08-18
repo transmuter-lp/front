@@ -109,13 +109,7 @@ class TransmuterLexer:
             accepted_terminal_tags = current_terminal_tags
             accepted_position = current_position
 
-            while current_states:
-                if current_position.index_ == len(self.input):
-                    if accepted_terminal_tags - self.terminal_tags_ignore:
-                        break
-
-                    return None
-
+            while current_states and current_position.index_ < len(self.input):
                 current_terminal_tags, current_states = self.nfa(current_states, self.input[current_position.index_])
 
                 if self.input[current_position.index_] != "\n":
@@ -148,6 +142,9 @@ class TransmuterLexer:
                     self.input[start_position.index_:accepted_position.index_],
                     accepted_terminal_tags - self.terminal_tags_ignore
                 )
+
+            if current_position.index_ == len(self.input):
+                return None
 
             start_position = accepted_position
 
