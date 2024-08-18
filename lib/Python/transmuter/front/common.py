@@ -18,7 +18,6 @@
 from enum import auto, IntFlag
 from typing import NamedTuple
 
-fset = frozenset
 TransmuterConditions = IntFlag
 TransmuterCondition = auto
 
