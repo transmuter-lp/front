@@ -110,9 +110,22 @@ class TransmuterLexer:
             accepted_position = current_position
 
             while current_states and current_position.index_ < len(self.input):
-                current_terminal_tags, current_states = self.nfa(current_states, self.input[current_position.index_])
+                char = self.input[current_position.index_]
+                current_terminal_tags = set()
+                next_states = {}
 
-                if self.input[current_position.index_] != "\n":
+                for terminal_tag in current_states:
+                    state_accept, states = terminal_tag.nfa(current_states[terminal_tag], char)
+
+                    if state_accept:
+                        current_terminal_tags.add(terminal_tag)
+
+                    if states:
+                        next_states[terminal_tag] = states
+
+                current_states = next_states
+
+                if char != "\n":
                     current_position.column += 1
                 else:
                     current_position.line += 1
@@ -188,23 +201,6 @@ class TransmuterLexer:
             current_negative_terminal_tags = next_negative_terminal_tags
 
         positive_terminal_tags -= negative_terminal_tags
-
-    def nfa(
-        self, current_states: dict[type[TransmuterTerminalTag], int], char: str
-    ) -> tuple[set[type[TransmuterTerminalTag]], dict[type[TransmuterTerminalTag], int]]:
-        current_terminal_tags = set()
-        next_states = {}
-
-        for terminal_tag in current_states:
-            state_accept, states = terminal_tag.nfa(current_states[terminal_tag], char)
-
-            if state_accept:
-                current_terminal_tags.add(terminal_tag)
-
-            if states:
-                next_states[terminal_tag] = states
-
-        return (current_terminal_tags, next_states)
 
 
 class TransmuterLexicalError(TransmuterException):
