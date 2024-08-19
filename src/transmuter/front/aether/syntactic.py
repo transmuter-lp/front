@@ -16,7 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from ..common import TransmuterConditions
-from ..syntactic import transmuter_once, TransmuterNonterminalType, TransmuterParsingState, TransmuterParser, TransmuterSymbolMatchError
+from ..syntactic import transmuter_selection, TransmuterNonterminalType, TransmuterParsingState, TransmuterParser, TransmuterSymbolMatchError
 from .common import Conditions
 from .lexical import Whitespace, Identifier, Colon, Semicolon, CommercialAt, LeftParenthesis, RightParenthesis, VerticalLine, Solidus, DoubleVerticalLine, Comma, DoubleAmpersand, PlusSign, HyphenMinus, Ignore, Start, Asterisk, QuestionMark, ExpressionRange, LeftCurlyBracket, LeftCurlyBracketSolidus, RightCurlyBracket, OrdChar, QuotedChar, FullStop, BracketExpression, ExclamationMark, LeftSquareBracket, LeftSquareBracketSolidus, RightSquareBracket
 
@@ -119,7 +119,7 @@ class SelectionExpression(TransmuterNonterminalType):
             next_states1 = next_states0
 
             try:
-                for _ in transmuter_once:  # begin selection
+                for _ in transmuter_selection:  # begin selection
                     try:  # begin option 1
                         next_states2 = next_states1
                         next_states2 = parser.call(VerticalLine, next_states2)
@@ -196,7 +196,7 @@ class SequenceExpression(TransmuterNonterminalType):
     def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
-        for _ in transmuter_once:  # begin selection
+        for _ in transmuter_selection:  # begin selection
             if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
@@ -269,16 +269,16 @@ class ProductionSpecifier(TransmuterNonterminalType):
     def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
-        for _ in transmuter_once:  # begin selection
+        for _ in transmuter_selection:  # begin selection
             if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
                 try:
-                    for _ in transmuter_once:  # begin selection
+                    for _ in transmuter_selection:  # begin selection
                         try:  # begin option 1
                             next_states2 = next_states1
 
-                            for _ in transmuter_once:  # begin selection
+                            for _ in transmuter_selection:  # begin selection
                                 try:  # begin option 1
                                     next_states3 = next_states2
                                     next_states3 = parser.call(PlusSign, next_states3)
@@ -351,14 +351,14 @@ class IterationExpression(TransmuterNonterminalType):
     def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
-        for _ in transmuter_once:  # begin selection
+        for _ in transmuter_selection:  # begin selection
             if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
                 try:
                     next_states1 = parser.call(PrimaryExpression, next_states1)
 
-                    for _ in transmuter_once:  # begin optional selection
+                    for _ in transmuter_selection:  # begin optional selection
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(Asterisk, next_states2)
@@ -406,7 +406,7 @@ class IterationExpression(TransmuterNonterminalType):
                 next_states1 = next_states0
 
                 try:
-                    for _ in transmuter_once:  # begin selection
+                    for _ in transmuter_selection:  # begin selection
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(LeftCurlyBracket, next_states2)
@@ -445,12 +445,12 @@ class PrimaryExpression(TransmuterNonterminalType):
     def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
-        for _ in transmuter_once:  # begin selection
+        for _ in transmuter_selection:  # begin selection
             if Conditions.lexical in parser.lexer.conditions:  # begin conditional option 1
                 next_states1 = next_states0
 
                 try:
-                    for _ in transmuter_once:  # begin selection
+                    for _ in transmuter_selection:  # begin selection
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(OrdChar, next_states2)
@@ -538,7 +538,7 @@ class PrimaryExpression(TransmuterNonterminalType):
                 next_states1 = next_states0
 
                 try:
-                    for _ in transmuter_once:  # begin selection
+                    for _ in transmuter_selection:  # begin selection
                         try:  # begin option 1
                             next_states2 = next_states1
                             next_states2 = parser.call(OptionalExpression, next_states2)
@@ -601,7 +601,7 @@ class OptionalExpression(TransmuterNonterminalType):
     def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
-        for _ in transmuter_once:  # begin selection
+        for _ in transmuter_selection:  # begin selection
             try:  # begin option 1
                 next_states1 = next_states0
                 next_states1 = parser.call(LeftSquareBracket, next_states1)
@@ -632,7 +632,7 @@ class PrimitiveCondition(TransmuterNonterminalType):
     def descend(parser: TransmuterParser, current_state: TransmuterParsingState) -> set[TransmuterParsingState]:
         next_states0 = {current_state}
 
-        for _ in transmuter_once:  # begin selection
+        for _ in transmuter_selection:  # begin selection
             try:  # begin option 1
                 next_states1 = next_states0
                 next_states1 = parser.call(Identifier, next_states1)

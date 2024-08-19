@@ -21,7 +21,7 @@ from typing import ClassVar, NamedTuple
 from .common import TransmuterConditions, TransmuterPosition, TransmuterException
 from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer, TransmuterNoTerminalError
 
-transmuter_once: range = range(1)
+transmuter_selection: range = range(1)
 
 
 class TransmuterNonterminalType:
