@@ -48,15 +48,15 @@ class TransmuterNonterminalType:
                 pass
 
 
-class TransmuterParsingState(NamedTuple):
+class TransmuterExtendedPackedNode(NamedTuple):
+    nonterminal_type: type[TransmuterNonterminalType] | None
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
     start_terminal: TransmuterTerminal | None
     split_terminal: TransmuterTerminal | None
     end_terminal: TransmuterTerminal | None
 
 
-class TransmuterExtendedPackedNode(NamedTuple):
-    nonterminal_type: type[TransmuterNonterminalType] | None
+class TransmuterParsingState(NamedTuple):
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
     start_terminal: TransmuterTerminal | None
     split_terminal: TransmuterTerminal | None
