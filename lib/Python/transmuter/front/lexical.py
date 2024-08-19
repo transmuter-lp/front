@@ -20,11 +20,10 @@ from typing import ClassVar
 
 from .common import TransmuterConditions, TransmuterPosition, TransmuterException
 
-fset = frozenset
-
 
 class TransmuterTerminalTag:
-    STATES_START: int
+    # S0
+    STATES_START: "TransmuterLexingState" = 1
 
     @staticmethod
     def start(conditions: TransmuterConditions) -> bool:
@@ -43,7 +42,7 @@ class TransmuterTerminalTag:
         return set()
 
     @staticmethod
-    def nfa(current_states: int, char: str) -> tuple[bool, int]:
+    def nfa(current_states: "TransmuterLexingState", char: str) -> tuple[bool, "TransmuterLexingState"]:
         raise NotImplementedError()
 
 
@@ -56,6 +55,9 @@ class TransmuterTerminal:
     next: "TransmuterTerminal | None" = field(default=None, init=False, repr=False)
 
 
+TransmuterLexingState = int
+
+
 @dataclass
 class TransmuterLexer:
     TERMINAL_TAGS: ClassVar[set[type[TransmuterTerminalTag]]]
@@ -64,11 +66,11 @@ class TransmuterLexer:
     filename: str
     conditions: TransmuterConditions
     terminal_tags_ignore: set[type[TransmuterTerminalTag]] = field(init=False, repr=False)
-    states_start: dict[type[TransmuterTerminalTag], int] = field(init=False, repr=False)
+    states_start: dict[type[TransmuterTerminalTag], "TransmuterLexingState"] = field(init=False, repr=False)
     terminal_tags_positives: dict[type[TransmuterTerminalTag], set[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
     terminal_tags_negatives: dict[type[TransmuterTerminalTag], set[type[TransmuterTerminalTag]]] = field(init=False, repr=False)
     start: TransmuterTerminal | None = field(default=None, init=False, repr=False)
-    accepted_terminal_tags: dict[fset[type[TransmuterTerminalTag]], set[type[TransmuterTerminalTag]]] = field(
+    accepted_terminal_tags: dict[frozenset[type[TransmuterTerminalTag]], set[type[TransmuterTerminalTag]]] = field(
         default_factory=dict,
         init=False,
         repr=False
@@ -140,7 +142,7 @@ class TransmuterLexer:
             if not accepted_terminal_tags:
                 raise TransmuterNoTerminalError(self.filename, start_position)
 
-            initial_accepted_terminal_tags = fset(accepted_terminal_tags)
+            initial_accepted_terminal_tags = frozenset(accepted_terminal_tags)
 
             if initial_accepted_terminal_tags not in self.accepted_terminal_tags:
                 self.process_positives_negatives(accepted_terminal_tags)
