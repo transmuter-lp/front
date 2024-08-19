@@ -29,7 +29,7 @@ class TransmuterPosition:
     column: int
 
     def copy(self) -> "TransmuterPosition":
-        return type(self)(self.index_, self.line, self.column)
+        return TransmuterPosition(self.index_, self.line, self.column)
 
 
 class TransmuterException(Exception):
