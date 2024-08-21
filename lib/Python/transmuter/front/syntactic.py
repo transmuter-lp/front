@@ -50,10 +50,7 @@ class TransmuterNonterminalType:
 
 class TransmuterExtendedPackedNode(NamedTuple):
     nonterminal_type: type[TransmuterNonterminalType] | None
-    string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
-    start_terminal: TransmuterTerminal | None
-    split_terminal: TransmuterTerminal | None
-    end_terminal: TransmuterTerminal | None
+    state: "TransmuterParsingState"
 
 
 class TransmuterParsingState(NamedTuple):
@@ -127,9 +124,7 @@ class TransmuterParser:
         return next_states
 
     def call_single_terminal_tag(self, cls: type[TransmuterTerminalTag], current_state: TransmuterParsingState) -> TransmuterParsingState | None:
-        self.bsr.add(TransmuterExtendedPackedNode(
-            None, current_state.string, current_state.start_terminal, current_state.split_terminal, current_state.end_terminal
-        ))
+        self.bsr.add(TransmuterExtendedPackedNode(None, current_state))
         next_terminal = self.lexer.next_terminal(current_state.end_terminal)
 
         if next_terminal is None or cls not in next_terminal.tags:
@@ -140,9 +135,7 @@ class TransmuterParser:
     def call_single_nonterminal_type(
         self, cls: type[TransmuterNonterminalType], current_state: TransmuterParsingState, ascend: bool
     ) -> set[TransmuterParsingState]:
-        self.bsr.add(TransmuterExtendedPackedNode(
-            None, current_state.string, current_state.start_terminal, current_state.split_terminal, current_state.end_terminal
-        ))
+        self.bsr.add(TransmuterExtendedPackedNode(None, current_state))
 
         if ascend or (cls, current_state.end_terminal) not in self.memo:
             if (cls, current_state.end_terminal) not in self.memo:
@@ -158,9 +151,7 @@ class TransmuterParser:
                 pass
             else:
                 for next_state in next_states:
-                    self.bsr.add(TransmuterExtendedPackedNode(
-                        cls, next_state.string, next_state.start_terminal, next_state.split_terminal, next_state.end_terminal
-                    ))
+                    self.bsr.add(TransmuterExtendedPackedNode(cls, next_state))
                     self.memo[cls, current_state.end_terminal].add(next_state.end_terminal)
 
                 if ascend and initial_memo_len != len(self.memo[cls, current_state.end_terminal]):
