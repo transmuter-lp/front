@@ -146,16 +146,17 @@ class TransmuterLexer:
 
             if initial_accepted_terminal_tags not in self.accepted_terminal_tags:
                 self.process_positives_negatives(accepted_terminal_tags)
+                accepted_terminal_tags -= self.terminal_tags_ignore
                 self.accepted_terminal_tags[initial_accepted_terminal_tags] = accepted_terminal_tags
             else:
                 accepted_terminal_tags = self.accepted_terminal_tags[initial_accepted_terminal_tags]
 
-            if accepted_terminal_tags - self.terminal_tags_ignore:
+            if accepted_terminal_tags:
                 return TransmuterTerminal(
                     start_position,
                     accepted_position,
                     self.input[start_position.index_:accepted_position.index_],
-                    accepted_terminal_tags - self.terminal_tags_ignore
+                    accepted_terminal_tags
                 )
 
             if current_position.index_ == len(self.input):
