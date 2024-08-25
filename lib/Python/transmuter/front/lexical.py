@@ -18,10 +18,10 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import TransmuterConditions, TransmuterPosition, TransmuterException
+from .common import TransmuterConditions, TransmuterMeta, TransmuterPosition, TransmuterException
 
 
-class TransmuterTerminalTag:
+class TransmuterTerminalTag(metaclass=TransmuterMeta):
     # S0
     STATES_START: "TransmuterLexingState" = 1
 
@@ -53,6 +53,9 @@ class TransmuterTerminal:
     value: str
     tags: set[type[TransmuterTerminalTag]]
     next: "TransmuterTerminal | None" = field(default=None, init=False, repr=False)
+
+    def __repr__(self) -> str:
+        return repr((self.start_position, self.end_position, self.value, self.tags))
 
 
 TransmuterLexingState = int

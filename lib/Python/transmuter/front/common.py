@@ -22,11 +22,19 @@ TransmuterConditions = IntFlag
 TransmuterCondition = auto
 
 
+class TransmuterMeta(type):
+    def __repr__(cls) -> str:
+        return repr(cls.__name__)
+
+
 @dataclass
 class TransmuterPosition:
     index_: int
     line: int
     column: int
+
+    def __repr__(self) -> str:
+        return repr((self.index_, self.line, self.column))
 
     def copy(self) -> "TransmuterPosition":
         return TransmuterPosition(self.index_, self.line, self.column)

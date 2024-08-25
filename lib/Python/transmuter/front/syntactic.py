@@ -18,13 +18,13 @@
 from dataclasses import dataclass, field
 from typing import ClassVar, NamedTuple
 
-from .common import TransmuterConditions, TransmuterPosition, TransmuterException
+from .common import TransmuterConditions, TransmuterMeta, TransmuterPosition, TransmuterException
 from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer, TransmuterNoTerminalError
 
 transmuter_selection: range = range(1)
 
 
-class TransmuterNonterminalType:
+class TransmuterNonterminalType(metaclass=TransmuterMeta):
     @staticmethod
     def start(conditions: TransmuterConditions) -> bool:
         return False
@@ -52,12 +52,18 @@ class TransmuterExtendedPackedNode(NamedTuple):
     nonterminal_type: type[TransmuterNonterminalType] | None
     state: "TransmuterParsingState"
 
+    def __repr__(self) -> str:
+        return repr((self.nonterminal_type, self.state))
+
 
 class TransmuterParsingState(NamedTuple):
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
     start_terminal: TransmuterTerminal | None
     split_terminal: TransmuterTerminal | None
     end_terminal: TransmuterTerminal | None
+
+    def __repr__(self) -> str:
+        return repr((self.string, self.start_terminal, self.split_terminal, self.end_terminal))
 
 
 @dataclass
