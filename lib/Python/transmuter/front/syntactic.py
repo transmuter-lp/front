@@ -73,7 +73,14 @@ class TransmuterParser:
     lexer: TransmuterLexer
     nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
     nonterminal_types_ascend_parents: dict[type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]] = field(init=False, repr=False)
-    bsr: set[TransmuterExtendedPackedNode] = field(default_factory=set, init=False, repr=False)
+    bsr: dict[
+        tuple[
+            type[TransmuterNonterminalType] | tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...],
+            TransmuterTerminal | None,
+            TransmuterTerminal | None
+        ],
+        set[TransmuterExtendedPackedNode]
+    ] = field(default_factory=dict, init=False, repr=False)
     memo: dict[tuple[type[TransmuterNonterminalType], TransmuterTerminal | None], set[TransmuterTerminal]] = field(
         default_factory=dict,
         init=False,
@@ -107,7 +114,69 @@ class TransmuterParser:
         except TransmuterSymbolMatchError:
             return False
 
+        bsr = set()
+        epns = self.get_start()
+
+        while len(epns):
+            current = epns.pop()
+            bsr.add(current)
+            epns |= self.get_left_children(current)
+            epns |= self.get_right_children(current)
+            epns -= bsr
+
+        self.bsr = {}
+
+        for epn in bsr:
+            self.bsr_add(epn)
+
         return True
+
+    def bsr_add(self, epn: TransmuterExtendedPackedNode) -> None:
+        key = (epn.nonterminal_type if epn.nonterminal_type else epn.state.string, epn.state.start_terminal, epn.state.end_terminal)
+
+        if key not in self.bsr:
+            self.bsr[key] = set()
+
+        self.bsr[key].add(epn)
+
+    def get_start(self) -> set[TransmuterExtendedPackedNode]:
+        eoi = self.lexer.start
+
+        while eoi.next is not None:
+            eoi = eoi.next
+
+        if (self.nonterminal_types_start, None, eoi) not in self.bsr:
+            return set()
+
+        return self.bsr[self.nonterminal_types_start, None, eoi]
+
+    def get_left_children(self, parent: TransmuterExtendedPackedNode) -> set[TransmuterExtendedPackedNode]:
+        if parent.state.start_terminal == parent.state.split_terminal:
+            return set()
+
+        if len(parent.state.string) == 2:
+            if (
+                issubclass(parent.state.string[0], TransmuterTerminalTag)
+                or (parent.state.string[0], parent.state.start_terminal, parent.state.split_terminal) not in self.bsr
+            ):
+                return set()
+
+            return self.bsr[parent.state.string[0], parent.state.start_terminal, parent.state.split_terminal]
+
+        if (parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal) not in self.bsr:
+            return set()
+
+        return self.bsr[parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal]
+
+    def get_right_children(self, parent: TransmuterExtendedPackedNode) -> set[TransmuterExtendedPackedNode]:
+        if (
+            parent.state.split_terminal == parent.state.end_terminal
+            or issubclass(parent.state.string[-1], TransmuterTerminalTag)
+            or (parent.state.string[-1], parent.state.split_terminal, parent.state.end_terminal) not in self.bsr
+        ):
+            return set()
+
+        return self.bsr[parent.state.string[-1], parent.state.split_terminal, parent.state.end_terminal]
 
     def call(
         self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
@@ -130,7 +199,7 @@ class TransmuterParser:
         return next_states
 
     def call_single_terminal_tag(self, cls: type[TransmuterTerminalTag], current_state: TransmuterParsingState) -> TransmuterParsingState | None:
-        self.bsr.add(TransmuterExtendedPackedNode(None, current_state))
+        self.bsr_add(TransmuterExtendedPackedNode(None, current_state))
         next_terminal = self.lexer.next_terminal(current_state.end_terminal)
 
         if next_terminal is None or cls not in next_terminal.tags:
@@ -141,7 +210,7 @@ class TransmuterParser:
     def call_single_nonterminal_type(
         self, cls: type[TransmuterNonterminalType], current_state: TransmuterParsingState, ascend: bool
     ) -> set[TransmuterParsingState]:
-        self.bsr.add(TransmuterExtendedPackedNode(None, current_state))
+        self.bsr_add(TransmuterExtendedPackedNode(None, current_state))
 
         if ascend or (cls, current_state.end_terminal) not in self.memo:
             if (cls, current_state.end_terminal) not in self.memo:
@@ -157,7 +226,7 @@ class TransmuterParser:
                 pass
             else:
                 for next_state in next_states:
-                    self.bsr.add(TransmuterExtendedPackedNode(cls, next_state))
+                    self.bsr_add(TransmuterExtendedPackedNode(cls, next_state))
                     self.memo[cls, current_state.end_terminal].add(next_state.end_terminal)
 
                 if ascend and initial_memo_len != len(self.memo[cls, current_state.end_terminal]):
