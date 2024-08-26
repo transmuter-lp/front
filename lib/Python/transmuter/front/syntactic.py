@@ -145,38 +145,41 @@ class TransmuterParser:
         while eoi.next is not None:
             eoi = eoi.next
 
-        if (self.nonterminal_types_start, None, eoi) not in self.bsr:
+        key = (self.nonterminal_types_start, None, eoi)
+
+        if key not in self.bsr:
             return set()
 
-        return self.bsr[self.nonterminal_types_start, None, eoi]
+        return self.bsr[key]
 
     def get_left_children(self, parent: TransmuterExtendedPackedNode) -> set[TransmuterExtendedPackedNode]:
-        if parent.state.start_terminal == parent.state.split_terminal:
-            return set()
-
         if len(parent.state.string) == 2:
-            if (
-                issubclass(parent.state.string[0], TransmuterTerminalTag)
-                or (parent.state.string[0], parent.state.start_terminal, parent.state.split_terminal) not in self.bsr
-            ):
+            if issubclass(parent.state.string[0], TransmuterTerminalTag):
                 return set()
 
-            return self.bsr[parent.state.string[0], parent.state.start_terminal, parent.state.split_terminal]
+            key = (parent.state.string[0], parent.state.start_terminal, parent.state.split_terminal)
+        else:
+            if parent.state.start_terminal == parent.state.split_terminal:
+                return set()
 
-        if (parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal) not in self.bsr:
+            key = (parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal)
+
+        if key not in self.bsr:
             return set()
 
-        return self.bsr[parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal]
+        return self.bsr[key]
 
     def get_right_children(self, parent: TransmuterExtendedPackedNode) -> set[TransmuterExtendedPackedNode]:
+        key = (parent.state.string[-1], parent.state.split_terminal, parent.state.end_terminal)
+
         if (
             parent.state.split_terminal == parent.state.end_terminal
             or issubclass(parent.state.string[-1], TransmuterTerminalTag)
-            or (parent.state.string[-1], parent.state.split_terminal, parent.state.end_terminal) not in self.bsr
+            or key not in self.bsr
         ):
             return set()
 
-        return self.bsr[parent.state.string[-1], parent.state.split_terminal, parent.state.end_terminal]
+        return self.bsr[key]
 
     def call(
         self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
