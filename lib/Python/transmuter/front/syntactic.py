@@ -1,6 +1,7 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
 # Copyright (C) 2021, 2023, 2024  Natan Junges <natanajunges@gmail.com>
+# Copyright (C) 2024  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
