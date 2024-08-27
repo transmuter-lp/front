@@ -44,7 +44,7 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
             try:
                 parser.call(ascend_parent, current_states, True)
-            except TransmuterNoSymbolMatchError:
+            except TransmuterInternalError:
                 pass
 
 
@@ -168,7 +168,7 @@ class TransmuterParser:
     def parse(self) -> None:
         try:
             self.call(self.nonterminal_types_start, {TransmuterParsingState((), None, None, None)}, True)
-        except TransmuterNoSymbolMatchError:
+        except TransmuterInternalError:
             pass
 
         eoi = self.lexer.start
@@ -205,7 +205,7 @@ class TransmuterParser:
                 next_states |= self.call_single_nonterminal_type(cls, current_state, ascend)
 
         if len(next_states) == 0:
-            raise TransmuterNoSymbolMatchError()
+            raise TransmuterInternalError()
 
         return next_states
 
@@ -233,7 +233,7 @@ class TransmuterParser:
                 next_states = cls.descend(
                     self, TransmuterParsingState((), current_state.end_terminal, current_state.end_terminal, current_state.end_terminal)
                 )
-            except TransmuterNoSymbolMatchError:
+            except TransmuterInternalError:
                 pass
             else:
                 for next_state in next_states:
@@ -265,11 +265,11 @@ class TransmuterMultipleStartsError(TransmuterSyntacticError):
         super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Matched multiple starting symbols from given conditions.")
 
 
-class TransmuterNoSymbolMatchError(TransmuterSyntacticError):
-    def __init__(self) -> None:
-        super().__init__("<internal>", TransmuterPosition(0, 0, 0), "Could not match symbol.")
-
-
 class TransmuterNoDerivationError(TransmuterSyntacticError):
     def __init__(self, filename: str, position: TransmuterPosition) -> None:
         super().__init__(filename, position, "Could not derive input from any production rule.")
+
+
+class TransmuterInternalError(TransmuterNoDerivationError):
+    def __init__(self) -> None:
+        super().__init__("<internal>", TransmuterPosition(0, 0, 0))
