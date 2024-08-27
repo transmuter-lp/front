@@ -105,17 +105,14 @@ class TransmuterParser:
 
         self.nonterminal_types_start = nonterminal_types_start
 
-    def parse(self) -> bool:
+    def parse(self) -> None:
         try:
             self.call(self.nonterminal_types_start, {TransmuterParsingState((), None, None, None)}, True)
-        except TransmuterNoTerminalError as e:
-            print(e)
-            return False
         except TransmuterNoSymbolMatchError:
-            return False
+            pass
 
-        bsr = set()
         epns = self.get_start()
+        bsr = set()
 
         while len(epns):
             current = epns.pop()
@@ -128,8 +125,6 @@ class TransmuterParser:
 
         for epn in bsr:
             self.bsr_add(epn)
-
-        return True
 
     def bsr_add(self, epn: TransmuterExtendedPackedNode) -> None:
         key = (epn.nonterminal_type or epn.state.string, epn.state.start_terminal, epn.state.end_terminal)
@@ -148,7 +143,12 @@ class TransmuterParser:
         key = (self.nonterminal_types_start, None, eoi)
 
         if key not in self.bsr:
-            return set()
+            raise TransmuterNoDerivationError(self.lexer.filename, eoi.start_position)
+
+        if self.lexer.next_terminal(eoi):
+            next_position = eoi.next.start_position
+            eoi.next = None
+            raise TransmuterNoDerivationError(self.lexer.filename, next_position)
 
         return self.bsr[key]
 
@@ -260,3 +260,8 @@ class TransmuterMultipleStartsError(TransmuterSyntacticError):
 class TransmuterNoSymbolMatchError(TransmuterSyntacticError):
     def __init__(self) -> None:
         super().__init__("<internal>", TransmuterPosition(0, 0, 0), "Could not match symbol.")
+
+
+class TransmuterNoDerivationError(TransmuterSyntacticError):
+    def __init__(self, filename: str, position: TransmuterPosition) -> None:
+        super().__init__(filename, position, "Could not derive input from any production rule.")
