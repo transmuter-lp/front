@@ -115,6 +115,22 @@ class TransmuterBinarySubtreeRepresentation:
 
         return self.epns[key]
 
+    def cleanup(self) -> None:
+        current_epns = set(self.epns[self.start])
+        next_epns = set()
+
+        while current_epns:
+            current_epn = current_epns.pop()
+            next_epns.add(current_epn)
+            current_epns |= self.left_children(current_epn)
+            current_epns |= self.right_children(current_epn)
+            current_epns -= next_epns
+
+        self.epns = {}
+
+        for epn in next_epns:
+            self.add(epn)
+
 
 @dataclass
 class TransmuterParser:
@@ -171,20 +187,7 @@ class TransmuterParser:
             raise TransmuterNoDerivationError(self.lexer.filename, next_position)
 
         self.bsr.start = key
-        epns = set(self.bsr.epns[key])
-        bsr = set()
-
-        while len(epns):
-            current = epns.pop()
-            bsr.add(current)
-            epns |= self.bsr.left_children(current)
-            epns |= self.bsr.right_children(current)
-            epns -= bsr
-
-        self.bsr.epns = {}
-
-        for epn in bsr:
-            self.bsr.add(epn)
+        self.bsr.cleanup()
 
     def call(
         self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
