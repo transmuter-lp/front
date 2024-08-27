@@ -44,7 +44,7 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
             try:
                 parser.call(ascend_parent, current_states, True)
-            except TransmuterSymbolMatchError:
+            except TransmuterNoSymbolMatchError:
                 pass
 
 
@@ -111,7 +111,7 @@ class TransmuterParser:
         except TransmuterNoTerminalError as e:
             print(e)
             return False
-        except TransmuterSymbolMatchError:
+        except TransmuterNoSymbolMatchError:
             return False
 
         bsr = set()
@@ -132,7 +132,7 @@ class TransmuterParser:
         return True
 
     def bsr_add(self, epn: TransmuterExtendedPackedNode) -> None:
-        key = (epn.nonterminal_type if epn.nonterminal_type else epn.state.string, epn.state.start_terminal, epn.state.end_terminal)
+        key = (epn.nonterminal_type or epn.state.string, epn.state.start_terminal, epn.state.end_terminal)
 
         if key not in self.bsr:
             self.bsr[key] = set()
@@ -197,7 +197,7 @@ class TransmuterParser:
                 next_states |= self.call_single_nonterminal_type(cls, current_state, ascend)
 
         if len(next_states) == 0:
-            raise TransmuterSymbolMatchError()
+            raise TransmuterNoSymbolMatchError()
 
         return next_states
 
@@ -225,7 +225,7 @@ class TransmuterParser:
                 next_states = cls.descend(
                     self, TransmuterParsingState((), current_state.end_terminal, current_state.end_terminal, current_state.end_terminal)
                 )
-            except TransmuterSymbolMatchError:
+            except TransmuterNoSymbolMatchError:
                 pass
             else:
                 for next_state in next_states:
@@ -257,6 +257,6 @@ class TransmuterMultipleStartsError(TransmuterSyntacticError):
         super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Matched multiple starting symbols from given conditions.")
 
 
-class TransmuterSymbolMatchError(TransmuterSyntacticError):
+class TransmuterNoSymbolMatchError(TransmuterSyntacticError):
     def __init__(self) -> None:
         super().__init__("<internal>", TransmuterPosition(0, 0, 0), "Could not match symbol.")
