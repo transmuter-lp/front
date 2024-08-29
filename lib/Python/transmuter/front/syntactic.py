@@ -117,19 +117,20 @@ class TransmuterBinarySubtreeRepresentation:
 
     def cleanup(self) -> None:
         current_epns = set(self.epns[self.start])
-        next_epns = set()
+        epns_kept = set()
+        next_epns = {}
 
         while current_epns:
-            current_epn = current_epns.pop()
-            next_epns.add(current_epn)
-            current_epns |= self.left_children(current_epn)
-            current_epns |= self.right_children(current_epn)
-            current_epns -= next_epns
-
-        self.epns = {}
-
-        for epn in next_epns:
+            epn = current_epns.pop()
+            epns_kept.add(epn)
+            next_epns, self.epns = self.epns, next_epns
             self.add(epn)
+            next_epns, self.epns = self.epns, next_epns
+            current_epns |= self.left_children(epn)
+            current_epns |= self.right_children(epn)
+            current_epns -= epns_kept
+
+        self.epns = next_epns
 
 
 @dataclass
