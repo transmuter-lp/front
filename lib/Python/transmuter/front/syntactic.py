@@ -19,7 +19,7 @@ from dataclasses import dataclass, field
 from typing import ClassVar, NamedTuple
 
 from .common import TransmuterConditions, TransmuterMeta, TransmuterPosition, TransmuterException
-from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer, TransmuterNoTerminalError
+from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer
 
 transmuter_selection: range = range(1)
 
@@ -116,6 +116,9 @@ class TransmuterBinarySubtreeRepresentation:
         return self.epns[key]
 
     def cleanup(self) -> None:
+        if not self.start:
+            return
+
         current_epns = set(self.epns[self.start])
         epns_kept = set()
         next_epns = {}
@@ -141,6 +144,7 @@ class TransmuterParser:
     nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
     nonterminal_types_ascend_parents: dict[type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]] = field(init=False, repr=False)
     bsr: TransmuterBinarySubtreeRepresentation = field(init=False, repr=False)
+    eoi: TransmuterTerminal | None = field(default=None, init=False, repr=False)
     memo: dict[tuple[type[TransmuterNonterminalType], TransmuterTerminal | None], set[TransmuterTerminal]] = field(
         default_factory=dict,
         init=False,
@@ -154,14 +158,14 @@ class TransmuterParser:
 
         for nonterminal_type in self.NONTERMINAL_TYPES:
             if nonterminal_type.start(self.lexer.conditions) and nonterminal_types_start != nonterminal_type:
-                if nonterminal_types_start is not None:
+                if nonterminal_types_start:
                     raise TransmuterMultipleStartsError()
 
                 nonterminal_types_start = nonterminal_type
 
             self.nonterminal_types_ascend_parents[nonterminal_type] = nonterminal_type.ascend_parents(self.lexer.conditions)
 
-        if nonterminal_types_start is None:
+        if not nonterminal_types_start:
             raise TransmuterNoStartError()
 
         self.nonterminal_types_start = nonterminal_types_start
@@ -172,19 +176,17 @@ class TransmuterParser:
         except TransmuterInternalError:
             pass
 
-        eoi = self.lexer.start
+        if not self.eoi:
+            return
 
-        while eoi.next is not None:
-            eoi = eoi.next
-
-        key = (self.nonterminal_types_start, None, eoi)
+        key = (self.nonterminal_types_start, None, self.eoi)
 
         if key not in self.bsr.epns:
-            raise TransmuterNoDerivationError(self.lexer.filename, eoi.start_position)
+            raise TransmuterNoDerivationError(self.lexer.filename, self.eoi.start_position)
 
-        if self.lexer.next_terminal(eoi):
-            next_position = eoi.next.start_position
-            eoi.next = None
+        if self.lexer.next_terminal(self.eoi):
+            next_position = self.eoi.next.start_position
+            self.eoi.next = None
             raise TransmuterNoDerivationError(self.lexer.filename, next_position)
 
         self.bsr.start = key
@@ -199,7 +201,7 @@ class TransmuterParser:
             for current_state in current_states:
                 next_state = self.call_single_terminal_tag(cls, current_state)
 
-                if next_state is not None:
+                if next_state:
                     next_states.add(next_state)
         else:  # TransmuterNonterminalType
             for current_state in current_states:
@@ -214,7 +216,10 @@ class TransmuterParser:
         self.bsr.add(TransmuterExtendedPackedNode(None, current_state))
         next_terminal = self.lexer.next_terminal(current_state.end_terminal)
 
-        if next_terminal is None or cls not in next_terminal.tags:
+        if next_terminal and (not self.eoi or self.eoi.start_position.index_ < next_terminal.start_position.index_):
+            self.eoi = next_terminal
+
+        if not next_terminal or cls not in next_terminal.tags:
             return None
 
         return TransmuterParsingState(current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal)

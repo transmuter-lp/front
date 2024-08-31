@@ -107,6 +107,9 @@ class TransmuterLexer:
         return current_terminal.next
 
     def get_terminal(self, start_position: TransmuterPosition) -> TransmuterTerminal | None:
+        if start_position.index_ == len(self.input):
+            return None
+
         while True:
             current_terminal_tags = set()
             current_position = start_position.copy()
