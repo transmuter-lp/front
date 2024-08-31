@@ -19,10 +19,10 @@
 from dataclasses import dataclass, field
 from typing import ClassVar
 
-from .common import TransmuterConditions, TransmuterPosition, TransmuterException
+from .common import TransmuterConditions, TransmuterMeta, TransmuterPosition, TransmuterException
 
 
-class TransmuterTerminalTag:
+class TransmuterTerminalTag(metaclass=TransmuterMeta):
     # S0
     STATES_START: "TransmuterLexingState" = 1
 
@@ -54,6 +54,9 @@ class TransmuterTerminal:
     value: str
     tags: set[type[TransmuterTerminalTag]]
     next: "TransmuterTerminal | None" = field(default=None, init=False, repr=False)
+
+    def __repr__(self) -> str:
+        return repr((self.start_position, self.end_position, self.value, self.tags))
 
 
 TransmuterLexingState = int
@@ -105,6 +108,9 @@ class TransmuterLexer:
         return current_terminal.next
 
     def get_terminal(self, start_position: TransmuterPosition) -> TransmuterTerminal | None:
+        if start_position.index_ == len(self.input):
+            return None
+
         while True:
             current_terminal_tags = set()
             current_position = start_position.copy()
