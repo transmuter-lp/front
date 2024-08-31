@@ -185,9 +185,7 @@ class TransmuterParser:
             raise TransmuterNoDerivationError(self.lexer.filename, self.eoi.start_position)
 
         if self.lexer.next_terminal(self.eoi):
-            next_position = self.eoi.next.start_position
-            self.eoi.next = None
-            raise TransmuterNoDerivationError(self.lexer.filename, next_position)
+            raise TransmuterNoDerivationError(self.lexer.filename, self.eoi.next.start_position)
 
         self.bsr.start = key
         self.bsr.cleanup()
