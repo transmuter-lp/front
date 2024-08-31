@@ -188,7 +188,6 @@ class TransmuterParser:
             raise TransmuterNoDerivationError(self.lexer.filename, self.eoi.next.start_position)
 
         self.bsr.start = key
-        self.bsr.cleanup()
 
     def call(
         self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
