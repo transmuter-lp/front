@@ -49,11 +49,11 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
 
 
 class TransmuterExtendedPackedNode(NamedTuple):
-    nonterminal_type: type[TransmuterNonterminalType] | None
+    type_: type[TransmuterNonterminalType] | None
     state: "TransmuterParsingState"
 
     def __repr__(self) -> str:
-        return repr((self.nonterminal_type, self.state))
+        return repr((self.type_, self.state))
 
 
 class TransmuterParsingState(NamedTuple):
@@ -79,7 +79,7 @@ class TransmuterBinarySubtreeRepresentation:
     ] = field(default_factory=dict, init=False, repr=False)
 
     def add(self, epn: TransmuterExtendedPackedNode) -> None:
-        key = (epn.nonterminal_type or epn.state.string, epn.state.start_terminal, epn.state.end_terminal)
+        key = (epn.type_ or epn.state.string, epn.state.start_terminal, epn.state.end_terminal)
 
         if key not in self.epns:
             self.epns[key] = set()
