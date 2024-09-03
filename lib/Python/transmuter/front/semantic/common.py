@@ -76,27 +76,21 @@ class TransmuterBSRVisitor:
     def top_after(self) -> bool:
         return True
 
+
 @dataclass
-class TransmuterBSRPruner(TransmuterBSRVisitor):
-    epns: dict[
-        tuple[
-            type[TransmuterNonterminalType] | tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...],
-            TransmuterTerminal | None,
-            TransmuterTerminal | None
-        ],
-        set[TransmuterEPN]
-    ] = field(default_factory=dict, init=False, repr=False)
+class TransmuterBSRTransformer(TransmuterBSRVisitor):
+    new_bsr: TransmuterBSR = field(init=False, repr=False)
 
+    def __post_init__(self) -> None:
+         self.new_bsr = TransmuterBSR()
+
+
+class TransmuterBSRPruner(TransmuterBSRTransformer):
     def descend(self, epns: list[TransmuterEPN]) -> bool:
-        self.epns, self.bsr.epns = self.bsr.epns, self.epns
-
         for epn in epns:
-            self.bsr.add(epn)
+            self.new_bsr.add(epn)
 
-        self.epns, self.bsr.epns = self.bsr.epns, self.epns
         return True
 
     def bottom(self) -> bool:
-        self.bsr.epns = self.epns
-        self.epns = {}
         return False

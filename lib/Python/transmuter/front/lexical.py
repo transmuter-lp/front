@@ -79,7 +79,7 @@ class TransmuterLexer:
         repr=False
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.terminal_tags_ignore = set()
         self.states_start = {}
         self.terminal_tags_positives = {}

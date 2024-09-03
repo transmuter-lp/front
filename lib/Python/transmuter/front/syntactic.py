@@ -131,7 +131,7 @@ class TransmuterParser:
         repr=False
     )
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         nonterminal_types_start = None
         self.nonterminal_types_ascend_parents = {}
         self.bsr = TransmuterBSR()
