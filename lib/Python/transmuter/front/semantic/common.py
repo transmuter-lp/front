@@ -82,7 +82,11 @@ class TransmuterBSRTransformer(TransmuterBSRVisitor):
     new_bsr: TransmuterBSR = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-         self.new_bsr = TransmuterBSR()
+        self.new_bsr = self.bsr
+
+    def top_before(self) -> bool:
+        self.new_bsr = TransmuterBSR()
+        return True
 
 
 class TransmuterBSRPruner(TransmuterBSRTransformer):
