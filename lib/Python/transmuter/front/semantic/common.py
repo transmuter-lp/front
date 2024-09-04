@@ -97,3 +97,16 @@ class TransmuterBSRPruner(TransmuterBSRTransformer):
 
     def bottom(self) -> bool:
         return False
+
+
+class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
+    def descend(self, epns: list[TransmuterEPN]) -> list[TransmuterEPN]:
+        epn = self.disambiguate(epns) if len(epns) > 1 else epns[0]
+        self.new_bsr.add(epn)
+        return [epn]
+
+    def bottom(self) -> bool:
+        return False
+
+    def disambiguate(self, epns: list[TransmuterEPN]) -> TransmuterEPN:
+        raise NotImplementedError()
