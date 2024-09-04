@@ -17,8 +17,7 @@
 
 from dataclasses import dataclass, field
 
-from ..lexical import TransmuterTerminalTag, TransmuterTerminal
-from ..syntactic import TransmuterNonterminalType, TransmuterEPN, TransmuterBSR
+from ..syntactic import TransmuterEPN, TransmuterBSR
 
 
 @dataclass
@@ -26,40 +25,42 @@ class TransmuterBSRVisitor:
     bsr: TransmuterBSR
 
     def visit(self) -> bool:
-        if self.bsr.start and self.bsr.epns[self.bsr.start]:
-            descend_queue = [list(self.bsr.epns[self.bsr.start])]
-            ascend_stack = []
+        if not self.bsr.start or not self.bsr.epns[self.bsr.start]:
+            return True
 
-            if not self.top_before():
-                return True
+        descend_queue = [list(self.bsr.epns[self.bsr.start])]
+        ascend_stack = []
 
-            while descend_queue:
-                epns = descend_queue.pop(0)
-                ascend_stack.append(epns)
+        if not self.top_before():
+            return True
 
-                for epn in epns:
-                    left_children = list(self.bsr.left_children(epn))
-                    right_children = list(self.bsr.right_children(epn))
+        while descend_queue:
+            epns = descend_queue.pop(0)
+            ascend_stack.append(epns)
 
-                    if left_children:
-                        descend_queue.append(left_children)
+            for epn in epns:
+                left_children = list(self.bsr.left_children(epn))
+                right_children = list(self.bsr.right_children(epn))
 
-                    if right_children:
-                        descend_queue.append(right_children)
+                if left_children:
+                    descend_queue.append(left_children)
 
-                if not self.descend(epns):
-                    break
+                if right_children:
+                    descend_queue.append(right_children)
 
-            if not self.bottom():
-                return True
+            if not self.descend(epns):
+                break
 
-            while ascend_stack:
-                epns = ascend_stack.pop()
+        if not self.bottom():
+            return True
 
-                if not self.ascend(epns):
-                    break
+        while ascend_stack:
+            epns = ascend_stack.pop()
 
-            return self.top_after()
+            if not self.ascend(epns):
+                break
+
+        return self.top_after()
 
     def top_before(self) -> bool:
         return True
@@ -86,6 +87,7 @@ class TransmuterBSRTransformer(TransmuterBSRVisitor):
 
     def top_before(self) -> bool:
         self.new_bsr = TransmuterBSR()
+        self.new_bsr.start = self.bsr.start
         return True
 
 
