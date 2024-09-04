@@ -56,7 +56,7 @@ class TransmuterBSRVisitor:
 
         while ascend_stack:
             epns = ascend_stack.pop()
-            self.ascend(epns):
+            self.ascend(epns)
 
         self.top_after()
 
