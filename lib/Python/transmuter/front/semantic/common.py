@@ -87,6 +87,11 @@ class TransmuterBSRTransformer(TransmuterBSRVisitor):
         self.new_bsr = TransmuterBSR()
         self.new_bsr.start = self.bsr.start
 
+    def apply(self) -> None:
+        self.bsr.epns = self.new_bsr.epns
+        self.bsr.start = self.new_bsr.start
+        self.new_bsr = self.bsr
+
 
 class TransmuterBSRPruner(TransmuterBSRTransformer):
     def descend(self, epns: list[TransmuterEPN]) -> list[TransmuterEPN]:
