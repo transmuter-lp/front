@@ -24,18 +24,21 @@ from ..syntactic import TransmuterEPN, TransmuterBSR
 class TransmuterBSRVisitor:
     bsr: TransmuterBSR
 
-    def visit(self) -> bool:
+    def visit(self) -> None:
         if not self.bsr.start or not self.bsr.epns[self.bsr.start]:
-            return True
+            return
 
         descend_queue = [list(self.bsr.epns[self.bsr.start])]
         ascend_stack = []
-
-        if not self.top_before():
-            return True
+        self.top_before()
 
         while descend_queue:
             epns = descend_queue.pop(0)
+            epns = self.descend(epns)
+
+            if not epns:
+                continue
+
             ascend_stack.append(epns)
 
             for epn in epns:
@@ -48,34 +51,29 @@ class TransmuterBSRVisitor:
                 if right_children:
                     descend_queue.append(right_children)
 
-            if not self.descend(epns):
-                break
-
         if not self.bottom():
-            return True
+            return
 
         while ascend_stack:
             epns = ascend_stack.pop()
+            self.ascend(epns):
 
-            if not self.ascend(epns):
-                break
+        self.top_after()
 
-        return self.top_after()
+    def top_before(self) -> None:
+        pass
 
-    def top_before(self) -> bool:
-        return True
-
-    def descend(self, epns: list[TransmuterEPN]) -> bool:
-        return True
+    def descend(self, epns: list[TransmuterEPN]) -> list[TransmuterEPN]:
+        return epns
 
     def bottom(self) -> bool:
         return True
 
-    def ascend(self, epns: list[TransmuterEPN]) -> bool:
-        return True
+    def ascend(self, epns: list[TransmuterEPN]) -> None:
+        pass
 
-    def top_after(self) -> bool:
-        return True
+    def top_after(self) -> None:
+        pass
 
 
 @dataclass
@@ -85,18 +83,17 @@ class TransmuterBSRTransformer(TransmuterBSRVisitor):
     def __post_init__(self) -> None:
         self.new_bsr = self.bsr
 
-    def top_before(self) -> bool:
+    def top_before(self) -> None:
         self.new_bsr = TransmuterBSR()
         self.new_bsr.start = self.bsr.start
-        return True
 
 
 class TransmuterBSRPruner(TransmuterBSRTransformer):
-    def descend(self, epns: list[TransmuterEPN]) -> bool:
+    def descend(self, epns: list[TransmuterEPN]) -> list[TransmuterEPN]:
         for epn in epns:
             self.new_bsr.add(epn)
 
-        return True
+        return epns
 
     def bottom(self) -> bool:
         return False
