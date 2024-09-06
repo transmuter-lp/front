@@ -87,18 +87,9 @@ class TransmuterBSR:
         self.epns[key].add(epn)
 
     def left_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
-        if parent.state.start_terminal == parent.state.split_terminal:
-            return set()
+        key = (parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal)
 
-        if len(parent.state.string) == 2:
-            if issubclass(parent.state.string[0], TransmuterTerminalTag):
-                return set()
-
-            key = (parent.state.string[0], parent.state.start_terminal, parent.state.split_terminal)
-        else:
-            key = (parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal)
-
-        if key not in self.epns:
+        if parent.state.start_terminal == parent.state.split_terminal or key not in self.epns:
             return set()
 
         return self.epns[key]
