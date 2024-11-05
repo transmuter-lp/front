@@ -18,7 +18,12 @@
 from dataclasses import dataclass, field
 from typing import ClassVar, NamedTuple
 
-from .common import TransmuterConditions, TransmuterMeta, TransmuterPosition, TransmuterException
+from .common import (
+    TransmuterConditions,
+    TransmuterMeta,
+    TransmuterPosition,
+    TransmuterException,
+)
 from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer
 
 transmuter_selection: range = range(1)
@@ -30,15 +35,23 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         return False
 
     @staticmethod
-    def ascend_parents(conditions: TransmuterConditions) -> set[type["TransmuterNonterminalType"]]:
+    def ascend_parents(
+        conditions: TransmuterConditions,
+    ) -> set[type["TransmuterNonterminalType"]]:
         return set()
 
     @staticmethod
-    def descend(parser: "TransmuterParser", current_state: "TransmuterParsingState") -> set["TransmuterParsingState"]:
+    def descend(
+        parser: "TransmuterParser", current_state: "TransmuterParsingState"
+    ) -> set["TransmuterParsingState"]:
         raise NotImplementedError()
 
     @classmethod
-    def ascend(cls, parser: "TransmuterParser", current_state: "TransmuterParsingState") -> None:
+    def ascend(
+        cls,
+        parser: "TransmuterParser",
+        current_state: "TransmuterParsingState",
+    ) -> None:
         current_states = {current_state}
 
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
@@ -63,23 +76,39 @@ class TransmuterParsingState(NamedTuple):
     end_terminal: TransmuterTerminal | None
 
     def __repr__(self) -> str:
-        return repr((self.string, self.start_terminal, self.split_terminal, self.end_terminal))
+        return repr(
+            (
+                self.string,
+                self.start_terminal,
+                self.split_terminal,
+                self.end_terminal,
+            )
+        )
 
 
 @dataclass
 class TransmuterBSR:
-    start: tuple[type[TransmuterNonterminalType],  None, TransmuterTerminal] | None = field(default=None, init=False, repr=False)
+    start: (
+        tuple[type[TransmuterNonterminalType], None, TransmuterTerminal] | None
+    ) = field(default=None, init=False, repr=False)
     epns: dict[
         tuple[
-            type[TransmuterNonterminalType] | tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...],
+            type[TransmuterNonterminalType]
+            | tuple[
+                type[TransmuterTerminalTag | TransmuterNonterminalType], ...
+            ],
             TransmuterTerminal | None,
-            TransmuterTerminal | None
+            TransmuterTerminal | None,
         ],
-        set[TransmuterEPN]
+        set[TransmuterEPN],
     ] = field(default_factory=dict, init=False, repr=False)
 
     def add(self, epn: TransmuterEPN) -> None:
-        key = (epn.type_ or epn.state.string, epn.state.start_terminal, epn.state.end_terminal)
+        key = (
+            epn.type_ or epn.state.string,
+            epn.state.start_terminal,
+            epn.state.end_terminal,
+        )
 
         if key not in self.epns:
             self.epns[key] = set()
@@ -87,15 +116,26 @@ class TransmuterBSR:
         self.epns[key].add(epn)
 
     def left_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
-        key = (parent.state.string[:-1], parent.state.start_terminal, parent.state.split_terminal)
+        key = (
+            parent.state.string[:-1],
+            parent.state.start_terminal,
+            parent.state.split_terminal,
+        )
 
-        if parent.state.start_terminal == parent.state.split_terminal or key not in self.epns:
+        if (
+            parent.state.start_terminal == parent.state.split_terminal
+            or key not in self.epns
+        ):
             return set()
 
         return self.epns[key]
 
     def right_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
-        key = (parent.state.string[-1], parent.state.split_terminal, parent.state.end_terminal)
+        key = (
+            parent.state.string[-1],
+            parent.state.split_terminal,
+            parent.state.end_terminal,
+        )
 
         if (
             parent.state.split_terminal == parent.state.end_terminal
@@ -112,15 +152,20 @@ class TransmuterParser:
     NONTERMINAL_TYPES: ClassVar[set[type[TransmuterNonterminalType]]]
 
     lexer: TransmuterLexer
-    nonterminal_types_start: type[TransmuterNonterminalType] = field(init=False, repr=False)
-    nonterminal_types_ascend_parents: dict[type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]] = field(init=False, repr=False)
-    bsr: TransmuterBSR = field(init=False, repr=False)
-    eoi: TransmuterTerminal | None = field(default=None, init=False, repr=False)
-    memo: dict[tuple[type[TransmuterNonterminalType], TransmuterTerminal | None], set[TransmuterTerminal]] = field(
-        default_factory=dict,
-        init=False,
-        repr=False
+    nonterminal_types_start: type[TransmuterNonterminalType] = field(
+        init=False, repr=False
     )
+    nonterminal_types_ascend_parents: dict[
+        type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]
+    ] = field(init=False, repr=False)
+    bsr: TransmuterBSR = field(init=False, repr=False)
+    eoi: TransmuterTerminal | None = field(
+        default=None, init=False, repr=False
+    )
+    memo: dict[
+        tuple[type[TransmuterNonterminalType], TransmuterTerminal | None],
+        set[TransmuterTerminal],
+    ] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
         nonterminal_types_start = None
@@ -128,13 +173,18 @@ class TransmuterParser:
         self.bsr = TransmuterBSR()
 
         for nonterminal_type in self.NONTERMINAL_TYPES:
-            if nonterminal_type.start(self.lexer.conditions) and nonterminal_types_start != nonterminal_type:
+            if (
+                nonterminal_type.start(self.lexer.conditions)
+                and nonterminal_types_start != nonterminal_type
+            ):
                 if nonterminal_types_start:
                     raise TransmuterMultipleStartsError()
 
                 nonterminal_types_start = nonterminal_type
 
-            self.nonterminal_types_ascend_parents[nonterminal_type] = nonterminal_type.ascend_parents(self.lexer.conditions)
+            self.nonterminal_types_ascend_parents[nonterminal_type] = (
+                nonterminal_type.ascend_parents(self.lexer.conditions)
+            )
 
         if not nonterminal_types_start:
             raise TransmuterNoStartError()
@@ -143,7 +193,11 @@ class TransmuterParser:
 
     def parse(self) -> None:
         try:
-            self.call(self.nonterminal_types_start, {TransmuterParsingState((), None, None, None)}, True)
+            self.call(
+                self.nonterminal_types_start,
+                {TransmuterParsingState((), None, None, None)},
+                True,
+            )
         except TransmuterInternalError:
             pass
 
@@ -153,15 +207,23 @@ class TransmuterParser:
         key = (self.nonterminal_types_start, None, self.eoi)
 
         if key not in self.bsr.epns:
-            raise TransmuterNoDerivationError(self.lexer.filename, self.eoi.start_position)
+            raise TransmuterNoDerivationError(
+                self.lexer.filename, self.eoi.start_position
+            )
 
         if self.lexer.next_terminal(self.eoi):
-            raise TransmuterNoDerivationError(self.lexer.filename, self.eoi.next.start_position)
+            assert self.eoi.next
+            raise TransmuterNoDerivationError(
+                self.lexer.filename, self.eoi.next.start_position
+            )
 
         self.bsr.start = key
 
     def call(
-        self, cls: type[TransmuterTerminalTag | TransmuterNonterminalType], current_states: set[TransmuterParsingState], ascend: bool = False
+        self,
+        cls: type[TransmuterTerminalTag | TransmuterNonterminalType],
+        current_states: set[TransmuterParsingState],
+        ascend: bool = False,
     ) -> set[TransmuterParsingState]:
         next_states = set()
 
@@ -173,27 +235,45 @@ class TransmuterParser:
                     next_states.add(next_state)
         else:  # TransmuterNonterminalType
             for current_state in current_states:
-                next_states |= self.call_single_nonterminal_type(cls, current_state, ascend)
+                next_states |= self.call_single_nonterminal_type(
+                    cls, current_state, ascend
+                )
 
         if len(next_states) == 0:
             raise TransmuterInternalError()
 
         return next_states
 
-    def call_single_terminal_tag(self, cls: type[TransmuterTerminalTag], current_state: TransmuterParsingState) -> TransmuterParsingState | None:
+    def call_single_terminal_tag(
+        self,
+        cls: type[TransmuterTerminalTag],
+        current_state: TransmuterParsingState,
+    ) -> TransmuterParsingState | None:
         self.bsr.add(TransmuterEPN(None, current_state))
         next_terminal = self.lexer.next_terminal(current_state.end_terminal)
 
-        if next_terminal and (not self.eoi or self.eoi.start_position.index_ < next_terminal.start_position.index_):
+        if next_terminal and (
+            not self.eoi
+            or self.eoi.start_position.index_
+            < next_terminal.start_position.index_
+        ):
             self.eoi = next_terminal
 
         if not next_terminal or cls not in next_terminal.tags:
             return None
 
-        return TransmuterParsingState(current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal)
+        return TransmuterParsingState(
+            current_state.string + (cls,),
+            current_state.start_terminal,
+            current_state.end_terminal,
+            next_terminal,
+        )
 
     def call_single_nonterminal_type(
-        self, cls: type[TransmuterNonterminalType], current_state: TransmuterParsingState, ascend: bool
+        self,
+        cls: type[TransmuterNonterminalType],
+        current_state: TransmuterParsingState,
+        ascend: bool,
     ) -> set[TransmuterParsingState]:
         self.bsr.add(TransmuterEPN(None, current_state))
 
@@ -205,43 +285,72 @@ class TransmuterParser:
 
             try:
                 next_states = cls.descend(
-                    self, TransmuterParsingState((), current_state.end_terminal, current_state.end_terminal, current_state.end_terminal)
+                    self,
+                    TransmuterParsingState(
+                        (),
+                        current_state.end_terminal,
+                        current_state.end_terminal,
+                        current_state.end_terminal,
+                    ),
                 )
             except TransmuterInternalError:
                 pass
             else:
                 for next_state in next_states:
                     self.bsr.add(TransmuterEPN(cls, next_state))
-                    self.memo[cls, current_state.end_terminal].add(next_state.end_terminal)
+                    assert next_state.end_terminal
+                    self.memo[cls, current_state.end_terminal].add(
+                        next_state.end_terminal
+                    )
 
-                if ascend and initial_memo_len != len(self.memo[cls, current_state.end_terminal]):
+                if ascend and initial_memo_len != len(
+                    self.memo[cls, current_state.end_terminal]
+                ):
                     cls.ascend(self, current_state)
 
         return {
             TransmuterParsingState(
-                current_state.string + (cls, ), current_state.start_terminal, current_state.end_terminal, next_terminal
-            ) for next_terminal in self.memo[cls, current_state.end_terminal]
+                current_state.string + (cls,),
+                current_state.start_terminal,
+                current_state.end_terminal,
+                next_terminal,
+            )
+            for next_terminal in self.memo[cls, current_state.end_terminal]
         }
 
 
 class TransmuterSyntacticError(TransmuterException):
-    def __init__(self, filename: str, position: TransmuterPosition, description: str) -> None:
+    def __init__(
+        self, filename: str, position: TransmuterPosition, description: str
+    ) -> None:
         super().__init__(filename, position, "Syntactic Error", description)
 
 
 class TransmuterNoStartError(TransmuterSyntacticError):
     def __init__(self) -> None:
-        super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Could not match any starting symbol from given conditions.")
+        super().__init__(
+            "<conditions>",
+            TransmuterPosition(0, 0, 0),
+            "Could not match any starting symbol from given conditions.",
+        )
 
 
 class TransmuterMultipleStartsError(TransmuterSyntacticError):
     def __init__(self) -> None:
-        super().__init__("<conditions>", TransmuterPosition(0, 0, 0), "Matched multiple starting symbols from given conditions.")
+        super().__init__(
+            "<conditions>",
+            TransmuterPosition(0, 0, 0),
+            "Matched multiple starting symbols from given conditions.",
+        )
 
 
 class TransmuterNoDerivationError(TransmuterSyntacticError):
     def __init__(self, filename: str, position: TransmuterPosition) -> None:
-        super().__init__(filename, position, "Could not derive input from any production rule.")
+        super().__init__(
+            filename,
+            position,
+            "Could not derive input from any production rule.",
+        )
 
 
 class TransmuterInternalError(TransmuterNoDerivationError):
