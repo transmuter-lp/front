@@ -136,3 +136,65 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
     children: list[TransmuterTreeNode] = field(
         default_factory=list, init=False, repr=False
     )
+
+
+@dataclass
+class TransmuterTreeVisitor:
+    tree: TransmuterTreeNode
+
+    def visit(self) -> None:
+        descend_queue = [self.tree]
+        ascend_stack = []
+        self.top_before()
+
+        while descend_queue:
+            node = descend_queue.pop(0)
+            node_opt = self.descend(node)
+
+            if not node_opt:
+                continue
+
+            node = node_opt
+            ascend_stack.append(node)
+
+            if isinstance(node, TransmuterNonterminalTreeNode):
+                descend_queue.extend(node.children)
+
+        if not self.bottom():
+            return
+
+        while ascend_stack:
+            node = ascend_stack.pop()
+            self.ascend(node)
+
+        self.top_after()
+
+    def top_before(self) -> None:
+        pass
+
+    def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
+        return node
+
+    def bottom(self) -> bool:
+        return True
+
+    def ascend(self, node: TransmuterTreeNode) -> None:
+        pass
+
+    def top_after(self) -> None:
+        pass
+
+
+@dataclass
+class TransmuterTreeTransformer(TransmuterTreeVisitor):
+    new_tree: TransmuterTreeNode | None = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self.new_tree = self.tree
+
+    def top_before(self) -> None:
+        self.new_tree = None
+
+    def apply(self) -> None:
+        if self.new_tree:
+            self.tree = self.new_tree
