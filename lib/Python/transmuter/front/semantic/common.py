@@ -17,7 +17,8 @@
 
 from dataclasses import dataclass, field
 
-from ..syntactic import TransmuterEPN, TransmuterBSR
+from ..lexical import TransmuterTerminalTag, TransmuterTerminal
+from ..syntactic import TransmuterNonterminalType, TransmuterEPN, TransmuterBSR
 
 
 @dataclass
@@ -115,3 +116,23 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 
     def disambiguate(self, epns: list[TransmuterEPN]) -> TransmuterEPN:
         raise NotImplementedError()
+
+
+@dataclass
+class TransmuterTreeNode:
+    type_: type[TransmuterTerminalTag | TransmuterNonterminalType]
+    start_terminal: TransmuterTerminal | None
+    end_terminal: TransmuterTerminal
+
+
+@dataclass
+class TransmuterTerminalTreeNode(TransmuterTreeNode):
+    type_: type[TransmuterTerminalTag]
+
+
+@dataclass
+class TransmuterNonterminalTreeNode(TransmuterTreeNode):
+    type_: type[TransmuterNonterminalType]
+    children: list[TransmuterTreeNode] = field(
+        default_factory=list, init=False, repr=False
+    )
