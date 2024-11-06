@@ -139,6 +139,69 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
 
 
 @dataclass
+class TransmuterBSRTreeGenerator(TransmuterBSRVisitor):
+    tree: TransmuterNonterminalTreeNode | None = field(
+        default=None, init=False, repr=False
+    )
+    parents: list[TransmuterNonterminalTreeNode] = field(
+        default_factory=list, init=False, repr=False
+    )
+
+    def top_before(self) -> None:
+        self.tree = None
+        self.parents = []
+
+    def descend(self, epns: list[TransmuterEPN]) -> list[TransmuterEPN]:
+        parent = self.parents.pop(0) if self.parents else None
+        assert epns[0].state.end_terminal
+
+        if epns[0].type_:
+            node = TransmuterNonterminalTreeNode(
+                epns[0].type_,
+                epns[0].state.start_terminal,
+                epns[0].state.end_terminal,
+            )
+
+            if parent:
+                if parent.children and (
+                    not parent.children[0].start_terminal
+                    or node.start_terminal
+                    and parent.children[0].start_terminal.start_position.index_
+                    < node.start_terminal.start_position.index_
+                ):
+                    parent.children.insert(1, node)
+                else:
+                    parent.children.insert(0, node)
+            else:
+                self.tree = node
+
+            parent = node
+
+        assert parent
+
+        if self.bsr.left_children(epns[0]):
+            self.parents.append(parent)
+
+        if self.bsr.right_children(epns[0]):
+            self.parents.append(parent)
+        elif epns[0].state.split_terminal != epns[0].state.end_terminal:
+            assert issubclass(epns[0].state.string[-1], TransmuterTerminalTag)
+            parent.children.insert(
+                0,
+                TransmuterTerminalTreeNode(
+                    epns[0].state.string[-1],
+                    epns[0].state.split_terminal,
+                    epns[0].state.end_terminal,
+                ),
+            )
+
+        return epns
+
+    def bottom(self) -> bool:
+        return False
+
+
+@dataclass
 class TransmuterTreeVisitor:
     tree: TransmuterTreeNode
 
