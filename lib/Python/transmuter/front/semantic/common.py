@@ -18,7 +18,12 @@
 from dataclasses import dataclass, field
 
 from ..lexical import TransmuterTerminalTag, TransmuterTerminal
-from ..syntactic import TransmuterNonterminalType, TransmuterEPN, TransmuterParsingState, TransmuterBSR
+from ..syntactic import (
+    TransmuterNonterminalType,
+    TransmuterEPN,
+    TransmuterParsingState,
+    TransmuterBSR,
+)
 
 
 @dataclass
@@ -129,6 +134,9 @@ class TransmuterTreeNode:
 class TransmuterTerminalTreeNode(TransmuterTreeNode):
     type_: type[TransmuterTerminalTag]
 
+    def __repr__(self) -> str:
+        return repr((self.type_, self.start_terminal, self.end_terminal))
+
 
 @dataclass
 class TransmuterNonterminalTreeNode(TransmuterTreeNode):
@@ -136,6 +144,11 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
     children: list[TransmuterTreeNode] = field(
         default_factory=list, init=False, repr=False
     )
+
+    def __repr__(self) -> str:
+        return repr(
+            (self.type_, self.start_terminal, self.end_terminal, self.children)
+        )
 
 
 @dataclass
