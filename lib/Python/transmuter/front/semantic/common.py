@@ -18,7 +18,7 @@
 from dataclasses import dataclass, field
 
 from ..lexical import TransmuterTerminalTag, TransmuterTerminal
-from ..syntactic import TransmuterNonterminalType, TransmuterEPN, TransmuterBSR
+from ..syntactic import TransmuterNonterminalType, TransmuterEPN, TransmuterParsingState, TransmuterBSR
 
 
 @dataclass
@@ -263,3 +263,52 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
     def apply(self) -> None:
         if self.new_tree:
             self.tree = self.new_tree
+
+
+@dataclass
+class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
+    bsr: TransmuterBSR = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        self.bsr = TransmuterBSR()
+
+    def top_before(self) -> None:
+        if self.bsr.start or self.bsr.epns:
+            self.bsr = TransmuterBSR()
+
+        self.bsr.start = (self.tree.type_, None, self.tree.end_terminal)
+
+    def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
+        if isinstance(node, TransmuterNonterminalTreeNode):
+            string = tuple(child.type_ for child in node.children)
+            epn = TransmuterEPN(
+                node.type_,
+                TransmuterParsingState(
+                    string,
+                    node.start_terminal,
+                    (
+                        node.children[-1].start_terminal
+                        if node.children
+                        else node.start_terminal
+                    ),
+                    node.end_terminal,
+                ),
+            )
+            self.bsr.add(epn)
+
+            for i in range(len(node.children) - 1):
+                epn = TransmuterEPN(
+                    None,
+                    TransmuterParsingState(
+                        string[: i + 1],
+                        node.start_terminal,
+                        node.children[i].start_terminal,
+                        node.children[i].end_terminal,
+                    ),
+                )
+                self.bsr.add(epn)
+
+        return node
+
+    def bottom(self) -> bool:
+        return False
