@@ -203,10 +203,10 @@ class TransmuterBSRTreeGenerator(TransmuterBSRVisitor):
 
 @dataclass
 class TransmuterTreeVisitor:
-    tree: TransmuterTreeNode
+    tree: TransmuterNonterminalTreeNode
 
     def visit(self) -> None:
-        descend_queue = [self.tree]
+        descend_queue: list[TransmuterTreeNode] = [self.tree]
         ascend_stack = []
         self.top_before()
 
@@ -250,7 +250,9 @@ class TransmuterTreeVisitor:
 
 @dataclass
 class TransmuterTreeTransformer(TransmuterTreeVisitor):
-    new_tree: TransmuterTreeNode | None = field(init=False, repr=False)
+    new_tree: TransmuterNonterminalTreeNode | None = field(
+        init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
         self.new_tree = self.tree
