@@ -17,6 +17,7 @@
 
 from dataclasses import dataclass, field
 
+from ..common import TransmuterPosition, TransmuterException
 from ..lexical import TransmuterTerminalTag, TransmuterTerminal
 from ..syntactic import (
     TransmuterNonterminalType,
@@ -325,3 +326,15 @@ class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
 
     def bottom(self) -> bool:
         return False
+
+
+class TransmuterSemanticError(TransmuterException):
+    def __init__(
+        self, filename: str, position: TransmuterPosition, description: str
+    ) -> None:
+        super().__init__(filename, position, "Semantic Error", description)
+
+
+class TransmuterAmbiguousGrammarError(TransmuterSemanticError):
+    def __init__(self, filename: str, position: TransmuterPosition) -> None:
+        super().__init__(filename, position, "Unexpected grammar ambiguity.")
