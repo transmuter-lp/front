@@ -202,7 +202,7 @@ class TransmuterBSRTreeGenerator(TransmuterBSRVisitor):
             self.parents.append(parent)
         elif (
             epns[0].state.split_position
-            != epns[0].state.end_terminal.start_position
+            != epns[0].state.end_terminal.end_position
         ):
             assert issubclass(epns[0].state.string[-1], TransmuterTerminalTag)
             parent.children.insert(
@@ -298,7 +298,7 @@ class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
         self.bsr.start = (
             self.tree.type_,
             None,
-            self.tree.end_terminal.start_position,
+            self.tree.end_terminal.end_position,
         )
 
     def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:

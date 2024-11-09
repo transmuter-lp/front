@@ -108,7 +108,7 @@ class TransmuterBSR:
             epn.type_ or epn.state.string,
             epn.state.start_position,
             (
-                epn.state.end_terminal.start_position
+                epn.state.end_terminal.end_position
                 if epn.state.end_terminal
                 else None
             ),
@@ -139,7 +139,7 @@ class TransmuterBSR:
             parent.state.string[-1],
             parent.state.split_position,
             (
-                parent.state.end_terminal.start_position
+                parent.state.end_terminal.end_position
                 if parent.state.end_terminal
                 else None
             ),
@@ -148,7 +148,7 @@ class TransmuterBSR:
         if (
             parent.state.split_position
             == (
-                parent.state.end_terminal.start_position
+                parent.state.end_terminal.end_position
                 if parent.state.end_terminal
                 else None
             )
@@ -217,7 +217,7 @@ class TransmuterParser:
         if not self.eoi:
             return
 
-        key = (self.nonterminal_types_start, None, self.eoi.start_position)
+        key = (self.nonterminal_types_start, None, self.eoi.end_position)
 
         if key not in self.bsr.epns:
             raise TransmuterNoDerivationError(self.eoi.start_position)
@@ -275,7 +275,7 @@ class TransmuterParser:
             current_state.string + (cls,),
             current_state.start_position,
             (
-                current_state.end_terminal.start_position
+                current_state.end_terminal.end_position
                 if current_state.end_terminal
                 else None
             ),
@@ -290,7 +290,7 @@ class TransmuterParser:
     ) -> set[TransmuterParsingState]:
         self.bsr.add(TransmuterEPN(None, current_state))
         current_state_end_position = (
-            current_state.end_terminal.start_position
+            current_state.end_terminal.end_position
             if current_state.end_terminal
             else None
         )
