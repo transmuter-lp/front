@@ -131,7 +131,9 @@ class TransmuterLexer:
     ) -> TransmuterTerminal | None:
         if not current_terminal:
             if not self.start:
-                self.start = self.get_terminal(TransmuterPosition(0, 1, 1))
+                self.start = self.get_terminal(
+                    TransmuterPosition(self.filename, 0, 1, 1)
+                )
 
             return self.start
 
@@ -186,7 +188,7 @@ class TransmuterLexer:
                     accepted_position = current_position.copy()
 
             if not accepted_terminal_tags:
-                raise TransmuterNoTerminalError(self.filename, start_position)
+                raise TransmuterNoTerminalError(start_position)
 
             initial_accepted_terminal_tags = frozenset(accepted_terminal_tags)
 
@@ -270,12 +272,10 @@ class TransmuterLexer:
 
 
 class TransmuterLexicalError(TransmuterException):
-    def __init__(
-        self, filename: str, position: TransmuterPosition, description: str
-    ) -> None:
-        super().__init__(filename, position, "Lexical Error", description)
+    def __init__(self, position: TransmuterPosition, description: str) -> None:
+        super().__init__(position, "Lexical Error", description)
 
 
 class TransmuterNoTerminalError(TransmuterLexicalError):
-    def __init__(self, filename: str, position: TransmuterPosition) -> None:
-        super().__init__(filename, position, "Could not match any terminal.")
+    def __init__(self, position: TransmuterPosition) -> None:
+        super().__init__(position, "Could not match any terminal.")

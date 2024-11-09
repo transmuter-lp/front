@@ -329,12 +329,10 @@ class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
 
 
 class TransmuterSemanticError(TransmuterException):
-    def __init__(
-        self, filename: str, position: TransmuterPosition, description: str
-    ) -> None:
-        super().__init__(filename, position, "Semantic Error", description)
+    def __init__(self, position: TransmuterPosition, description: str) -> None:
+        super().__init__(position, "Semantic Error", description)
 
 
 class TransmuterAmbiguousGrammarError(TransmuterSemanticError):
-    def __init__(self, filename: str, position: TransmuterPosition) -> None:
-        super().__init__(filename, position, "Unexpected grammar ambiguity.")
+    def __init__(self, position: TransmuterPosition) -> None:
+        super().__init__(position, "Unexpected grammar ambiguity.")

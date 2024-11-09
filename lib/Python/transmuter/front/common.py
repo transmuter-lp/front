@@ -29,25 +29,24 @@ class TransmuterMeta(type):
 
 @dataclass
 class TransmuterPosition:
+    filename: str
     index_: int
     line: int
     column: int
 
     def __repr__(self) -> str:
-        return repr((self.index_, self.line, self.column))
+        return repr((self.filename, self.index_, self.line, self.column))
 
     def copy(self) -> "TransmuterPosition":
-        return TransmuterPosition(self.index_, self.line, self.column)
+        return TransmuterPosition(
+            self.filename, self.index_, self.line, self.column
+        )
 
 
 class TransmuterException(Exception):
     def __init__(
-        self,
-        filename: str,
-        position: TransmuterPosition,
-        type_: str,
-        description: str,
+        self, position: TransmuterPosition, type_: str, description: str
     ) -> None:
         super().__init__(
-            f"{filename}:{position.line}:{position.column}: {type_}: {description}"
+            f"{position.filename}:{position.line}:{position.column}: {type_}: {description}"
         )

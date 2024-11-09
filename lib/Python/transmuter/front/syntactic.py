@@ -207,15 +207,11 @@ class TransmuterParser:
         key = (self.nonterminal_types_start, None, self.eoi)
 
         if key not in self.bsr.epns:
-            raise TransmuterNoDerivationError(
-                self.lexer.filename, self.eoi.start_position
-            )
+            raise TransmuterNoDerivationError(self.eoi.start_position)
 
         if self.lexer.next_terminal(self.eoi):
             assert self.eoi.next
-            raise TransmuterNoDerivationError(
-                self.lexer.filename, self.eoi.next.start_position
-            )
+            raise TransmuterNoDerivationError(self.eoi.next.start_position)
 
         self.bsr.start = key
 
@@ -320,17 +316,14 @@ class TransmuterParser:
 
 
 class TransmuterSyntacticError(TransmuterException):
-    def __init__(
-        self, filename: str, position: TransmuterPosition, description: str
-    ) -> None:
-        super().__init__(filename, position, "Syntactic Error", description)
+    def __init__(self, position: TransmuterPosition, description: str) -> None:
+        super().__init__(position, "Syntactic Error", description)
 
 
 class TransmuterNoStartError(TransmuterSyntacticError):
     def __init__(self) -> None:
         super().__init__(
-            "<conditions>",
-            TransmuterPosition(0, 0, 0),
+            TransmuterPosition("<conditions>", 0, 0, 0),
             "Could not match any starting symbol from given conditions.",
         )
 
@@ -338,21 +331,18 @@ class TransmuterNoStartError(TransmuterSyntacticError):
 class TransmuterMultipleStartsError(TransmuterSyntacticError):
     def __init__(self) -> None:
         super().__init__(
-            "<conditions>",
-            TransmuterPosition(0, 0, 0),
+            TransmuterPosition("<conditions>", 0, 0, 0),
             "Matched multiple starting symbols from given conditions.",
         )
 
 
 class TransmuterNoDerivationError(TransmuterSyntacticError):
-    def __init__(self, filename: str, position: TransmuterPosition) -> None:
+    def __init__(self, position: TransmuterPosition) -> None:
         super().__init__(
-            filename,
-            position,
-            "Could not derive input from any production rule.",
+            position, "Could not derive input from any production rule."
         )
 
 
 class TransmuterInternalError(TransmuterNoDerivationError):
     def __init__(self) -> None:
-        super().__init__("<internal>", TransmuterPosition(0, 0, 0))
+        super().__init__(TransmuterPosition("<internal>", 0, 0, 0))
