@@ -27,7 +27,7 @@ class TransmuterMeta(type):
         return repr(cls.__name__)
 
 
-@dataclass
+@dataclass(eq=False)
 class TransmuterPosition:
     filename: str
     index_: int

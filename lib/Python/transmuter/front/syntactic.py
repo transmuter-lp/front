@@ -71,16 +71,16 @@ class TransmuterEPN(NamedTuple):
 
 class TransmuterParsingState(NamedTuple):
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
-    start_terminal: TransmuterTerminal | None
-    split_terminal: TransmuterTerminal | None
+    start_position: TransmuterPosition | None
+    split_position: TransmuterPosition | None
     end_terminal: TransmuterTerminal | None
 
     def __repr__(self) -> str:
         return repr(
             (
                 self.string,
-                self.start_terminal,
-                self.split_terminal,
+                self.start_position,
+                self.split_position,
                 self.end_terminal,
             )
         )
@@ -89,7 +89,7 @@ class TransmuterParsingState(NamedTuple):
 @dataclass
 class TransmuterBSR:
     start: (
-        tuple[type[TransmuterNonterminalType], None, TransmuterTerminal] | None
+        tuple[type[TransmuterNonterminalType], None, TransmuterPosition] | None
     ) = field(default=None, init=False, repr=False)
     epns: dict[
         tuple[
@@ -97,8 +97,8 @@ class TransmuterBSR:
             | tuple[
                 type[TransmuterTerminalTag | TransmuterNonterminalType], ...
             ],
-            TransmuterTerminal | None,
-            TransmuterTerminal | None,
+            TransmuterPosition | None,
+            TransmuterPosition | None,
         ],
         set[TransmuterEPN],
     ] = field(default_factory=dict, init=False, repr=False)
@@ -106,8 +106,12 @@ class TransmuterBSR:
     def add(self, epn: TransmuterEPN) -> None:
         key = (
             epn.type_ or epn.state.string,
-            epn.state.start_terminal,
-            epn.state.end_terminal,
+            epn.state.start_position,
+            (
+                epn.state.end_terminal.start_position
+                if epn.state.end_terminal
+                else None
+            ),
         )
 
         if key not in self.epns:
@@ -118,12 +122,12 @@ class TransmuterBSR:
     def left_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
         key = (
             parent.state.string[:-1],
-            parent.state.start_terminal,
-            parent.state.split_terminal,
+            parent.state.start_position,
+            parent.state.split_position,
         )
 
         if (
-            parent.state.start_terminal == parent.state.split_terminal
+            parent.state.start_position == parent.state.split_position
             or key not in self.epns
         ):
             return set()
@@ -133,12 +137,21 @@ class TransmuterBSR:
     def right_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
         key = (
             parent.state.string[-1],
-            parent.state.split_terminal,
-            parent.state.end_terminal,
+            parent.state.split_position,
+            (
+                parent.state.end_terminal.start_position
+                if parent.state.end_terminal
+                else None
+            ),
         )
 
         if (
-            parent.state.split_terminal == parent.state.end_terminal
+            parent.state.split_position
+            == (
+                parent.state.end_terminal.start_position
+                if parent.state.end_terminal
+                else None
+            )
             or issubclass(parent.state.string[-1], TransmuterTerminalTag)
             or key not in self.epns
         ):
@@ -163,7 +176,7 @@ class TransmuterParser:
         default=None, init=False, repr=False
     )
     memo: dict[
-        tuple[type[TransmuterNonterminalType], TransmuterTerminal | None],
+        tuple[type[TransmuterNonterminalType], TransmuterPosition | None],
         set[TransmuterTerminal],
     ] = field(default_factory=dict, init=False, repr=False)
 
@@ -204,7 +217,7 @@ class TransmuterParser:
         if not self.eoi:
             return
 
-        key = (self.nonterminal_types_start, None, self.eoi)
+        key = (self.nonterminal_types_start, None, self.eoi.start_position)
 
         if key not in self.bsr.epns:
             raise TransmuterNoDerivationError(self.eoi.start_position)
@@ -260,8 +273,12 @@ class TransmuterParser:
 
         return TransmuterParsingState(
             current_state.string + (cls,),
-            current_state.start_terminal,
-            current_state.end_terminal,
+            current_state.start_position,
+            (
+                current_state.end_terminal.start_position
+                if current_state.end_terminal
+                else None
+            ),
             next_terminal,
         )
 
@@ -272,20 +289,25 @@ class TransmuterParser:
         ascend: bool,
     ) -> set[TransmuterParsingState]:
         self.bsr.add(TransmuterEPN(None, current_state))
+        current_state_end_position = (
+            current_state.end_terminal.start_position
+            if current_state.end_terminal
+            else None
+        )
 
-        if ascend or (cls, current_state.end_terminal) not in self.memo:
-            if (cls, current_state.end_terminal) not in self.memo:
-                self.memo[cls, current_state.end_terminal] = set()
+        if ascend or (cls, current_state_end_position) not in self.memo:
+            if (cls, current_state_end_position) not in self.memo:
+                self.memo[cls, current_state_end_position] = set()
 
-            initial_memo_len = len(self.memo[cls, current_state.end_terminal])
+            initial_memo_len = len(self.memo[cls, current_state_end_position])
 
             try:
                 next_states = cls.descend(
                     self,
                     TransmuterParsingState(
                         (),
-                        current_state.end_terminal,
-                        current_state.end_terminal,
+                        current_state_end_position,
+                        current_state_end_position,
                         current_state.end_terminal,
                     ),
                 )
@@ -295,23 +317,23 @@ class TransmuterParser:
                 for next_state in next_states:
                     self.bsr.add(TransmuterEPN(cls, next_state))
                     assert next_state.end_terminal
-                    self.memo[cls, current_state.end_terminal].add(
+                    self.memo[cls, current_state_end_position].add(
                         next_state.end_terminal
                     )
 
                 if ascend and initial_memo_len != len(
-                    self.memo[cls, current_state.end_terminal]
+                    self.memo[cls, current_state_end_position]
                 ):
                     cls.ascend(self, current_state)
 
         return {
             TransmuterParsingState(
                 current_state.string + (cls,),
-                current_state.start_terminal,
-                current_state.end_terminal,
+                current_state.start_position,
+                current_state_end_position,
                 next_terminal,
             )
-            for next_terminal in self.memo[cls, current_state.end_terminal]
+            for next_terminal in self.memo[cls, current_state_end_position]
         }
 
 

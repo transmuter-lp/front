@@ -127,7 +127,7 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 @dataclass
 class TransmuterTreeNode:
     type_: type[TransmuterTerminalTag | TransmuterNonterminalType]
-    start_terminal: TransmuterTerminal | None
+    start_position: TransmuterPosition | None
     end_terminal: TransmuterTerminal
 
 
@@ -136,7 +136,7 @@ class TransmuterTerminalTreeNode(TransmuterTreeNode):
     type_: type[TransmuterTerminalTag]
 
     def __repr__(self) -> str:
-        return repr((self.type_, self.start_terminal, self.end_terminal))
+        return repr((self.type_, self.start_position, self.end_terminal))
 
 
 @dataclass
@@ -148,7 +148,7 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
 
     def __repr__(self) -> str:
         return repr(
-            (self.type_, self.start_terminal, self.end_terminal, self.children)
+            (self.type_, self.start_position, self.end_terminal, self.children)
         )
 
 
@@ -162,8 +162,10 @@ class TransmuterBSRTreeGenerator(TransmuterBSRVisitor):
     )
 
     def top_before(self) -> None:
+        if self.parents:
+            self.parents = []
+
         self.tree = None
-        self.parents = []
 
     def descend(self, epns: list[TransmuterEPN]) -> list[TransmuterEPN]:
         parent = self.parents.pop(0) if self.parents else None
@@ -172,16 +174,16 @@ class TransmuterBSRTreeGenerator(TransmuterBSRVisitor):
         if epns[0].type_:
             node = TransmuterNonterminalTreeNode(
                 epns[0].type_,
-                epns[0].state.start_terminal,
+                epns[0].state.start_position,
                 epns[0].state.end_terminal,
             )
 
             if parent:
                 if parent.children and (
-                    not parent.children[0].start_terminal
-                    or node.start_terminal
-                    and parent.children[0].start_terminal.start_position.index_
-                    < node.start_terminal.start_position.index_
+                    not parent.children[0].start_position
+                    or node.start_position
+                    and parent.children[0].start_position.index_
+                    < node.start_position.index_
                 ):
                     parent.children.insert(1, node)
                 else:
@@ -198,13 +200,16 @@ class TransmuterBSRTreeGenerator(TransmuterBSRVisitor):
 
         if self.bsr.right_children(epns[0]):
             self.parents.append(parent)
-        elif epns[0].state.split_terminal != epns[0].state.end_terminal:
+        elif (
+            epns[0].state.split_position
+            != epns[0].state.end_terminal.start_position
+        ):
             assert issubclass(epns[0].state.string[-1], TransmuterTerminalTag)
             parent.children.insert(
                 0,
                 TransmuterTerminalTreeNode(
                     epns[0].state.string[-1],
-                    epns[0].state.split_terminal,
+                    epns[0].state.split_position,
                     epns[0].state.end_terminal,
                 ),
             )
@@ -290,7 +295,11 @@ class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
         if self.bsr.start or self.bsr.epns:
             self.bsr = TransmuterBSR()
 
-        self.bsr.start = (self.tree.type_, None, self.tree.end_terminal)
+        self.bsr.start = (
+            self.tree.type_,
+            None,
+            self.tree.end_terminal.start_position,
+        )
 
     def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
         if isinstance(node, TransmuterNonterminalTreeNode):
@@ -299,11 +308,11 @@ class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
                 node.type_,
                 TransmuterParsingState(
                     string,
-                    node.start_terminal,
+                    node.start_position,
                     (
-                        node.children[-1].start_terminal
+                        node.children[-1].start_position
                         if node.children
-                        else node.start_terminal
+                        else node.start_position
                     ),
                     node.end_terminal,
                 ),
@@ -315,8 +324,8 @@ class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
                     None,
                     TransmuterParsingState(
                         string[: i + 1],
-                        node.start_terminal,
-                        node.children[i].start_terminal,
+                        node.start_position,
+                        node.children[i].start_position,
                         node.children[i].end_terminal,
                     ),
                 )
