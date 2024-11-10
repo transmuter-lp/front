@@ -61,14 +61,6 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
                 pass
 
 
-class TransmuterEPN(NamedTuple):
-    type_: type[TransmuterNonterminalType] | None
-    state: "TransmuterParsingState"
-
-    def __repr__(self) -> str:
-        return repr((self.type_, self.state))
-
-
 class TransmuterParsingState(NamedTuple):
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
     start_position: TransmuterPosition | None
@@ -84,6 +76,14 @@ class TransmuterParsingState(NamedTuple):
                 self.end_terminal,
             )
         )
+
+
+class TransmuterEPN(NamedTuple):
+    type_: type[TransmuterNonterminalType] | None
+    state: TransmuterParsingState
+
+    def __repr__(self) -> str:
+        return repr((self.type_, self.state))
 
 
 @dataclass

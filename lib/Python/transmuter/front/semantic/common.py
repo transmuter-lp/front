@@ -21,8 +21,8 @@ from ..common import TransmuterPosition, TransmuterException
 from ..lexical import TransmuterTerminalTag, TransmuterTerminal
 from ..syntactic import (
     TransmuterNonterminalType,
-    TransmuterEPN,
     TransmuterParsingState,
+    TransmuterEPN,
     TransmuterBSR,
 )
 

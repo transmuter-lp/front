@@ -25,10 +25,12 @@ from .common import (
     TransmuterException,
 )
 
+TransmuterLexingState = int
+
 
 class TransmuterTerminalTag(metaclass=TransmuterMeta):
     # S0
-    STATES_START: "TransmuterLexingState" = 1
+    STATES_START: TransmuterLexingState = 1
 
     @staticmethod
     def start(conditions: TransmuterConditions) -> bool:
@@ -52,43 +54,40 @@ class TransmuterTerminalTag(metaclass=TransmuterMeta):
 
     @staticmethod
     def nfa(
-        current_states: "TransmuterLexingState", char: str
-    ) -> tuple[bool, "TransmuterLexingState"]:
+        current_states: TransmuterLexingState, char: str
+    ) -> tuple[bool, TransmuterLexingState]:
         raise NotImplementedError()
 
 
 @dataclass(eq=False)
 class TransmuterTerminal:
+    tags: set[type[TransmuterTerminalTag]]
+    value: str
     start_position: TransmuterPosition
     end_position: TransmuterPosition
-    value: str
-    tags: set[type[TransmuterTerminalTag]]
     next: "TransmuterTerminal | None" = field(
         default=None, init=False, repr=False
     )
 
     def __repr__(self) -> str:
         return repr(
-            (self.start_position, self.end_position, self.value, self.tags)
+            (self.tags, self.value, self.start_position, self.end_position)
         )
-
-
-TransmuterLexingState = int
 
 
 @dataclass
 class TransmuterLexer:
     TERMINAL_TAGS: ClassVar[set[type[TransmuterTerminalTag]]]
 
-    input: str
     filename: str
+    input: str
     conditions: TransmuterConditions
+    states_start: dict[type[TransmuterTerminalTag], TransmuterLexingState] = (
+        field(init=False, repr=False)
+    )
     terminal_tags_ignore: set[type[TransmuterTerminalTag]] = field(
         init=False, repr=False
     )
-    states_start: dict[
-        type[TransmuterTerminalTag], "TransmuterLexingState"
-    ] = field(init=False, repr=False)
     terminal_tags_positives: dict[
         type[TransmuterTerminalTag], set[type[TransmuterTerminalTag]]
     ] = field(init=False, repr=False)
@@ -104,17 +103,18 @@ class TransmuterLexer:
     ] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self.terminal_tags_ignore = set()
         self.states_start = {}
+        self.terminal_tags_ignore = set()
         self.terminal_tags_positives = {}
         self.terminal_tags_negatives = {}
 
         for terminal_tag in self.TERMINAL_TAGS:
             if terminal_tag.start(self.conditions):
+                self.states_start[terminal_tag] = terminal_tag.STATES_START
+
                 if terminal_tag.ignore(self.conditions):
                     self.terminal_tags_ignore.add(terminal_tag)
 
-                self.states_start[terminal_tag] = terminal_tag.STATES_START
                 self.terminal_tags_positives[terminal_tag] = {
                     tag
                     for tag in terminal_tag.positives(self.conditions)
@@ -208,12 +208,12 @@ class TransmuterLexer:
 
             if accepted_terminal_tags:
                 return TransmuterTerminal(
-                    start_position,
-                    accepted_position,
+                    accepted_terminal_tags,
                     self.input[
                         start_position.index_ : accepted_position.index_
                     ],
-                    accepted_terminal_tags,
+                    start_position,
+                    accepted_position,
                 )
 
             if current_position.index_ == len(self.input):
