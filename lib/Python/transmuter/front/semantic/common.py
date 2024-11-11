@@ -152,6 +152,11 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
         )
 
 
+TransmuterSyntacticElement = (
+    TransmuterTerminal | TransmuterEPN | TransmuterTreeNode
+)
+
+
 @dataclass
 class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
     tree: TransmuterNonterminalTreeNode | None = field(
