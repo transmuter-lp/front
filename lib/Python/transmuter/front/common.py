@@ -23,16 +23,31 @@ TransmuterConditions = IntFlag
 TransmuterCondition = auto
 
 
-@dataclass
+class TransmuterMeta(type):
+    def __repr__(cls) -> str:
+        return repr(cls.__name__)
+
+
+@dataclass(eq=False)
 class TransmuterPosition:
+    filename: str
     index_: int
     line: int
     column: int
 
+    def __repr__(self) -> str:
+        return repr((self.filename, self.index_, self.line, self.column))
+
     def copy(self) -> "TransmuterPosition":
-        return TransmuterPosition(self.index_, self.line, self.column)
+        return TransmuterPosition(
+            self.filename, self.index_, self.line, self.column
+        )
 
 
 class TransmuterException(Exception):
-    def __init__(self, filename: str, position: TransmuterPosition, type_: str, description: str) -> None:
-        super().__init__(f"{filename}:{position.line}:{position.column}: {type_}: {description}")
+    def __init__(
+        self, position: TransmuterPosition, type_: str, description: str
+    ) -> None:
+        super().__init__(
+            f"{position.filename}:{position.line}:{position.column}: {type_}: {description}"
+        )

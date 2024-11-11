@@ -17,7 +17,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from ..common import TransmuterConditions
-from ..lexical import TransmuterTerminalTag, TransmuterLexingState, TransmuterLexer
+from ..lexical import TransmuterLexingState, TransmuterTerminalTag, TransmuterLexer
 from .common import Conditions
 
 
