@@ -153,7 +153,7 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
 
 
 @dataclass
-class TransmuterBSRTreeGenerator(TransmuterBSRVisitor):
+class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
     tree: TransmuterNonterminalTreeNode | None = field(
         default=None, init=False, repr=False
     )
@@ -285,7 +285,7 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
 
 
 @dataclass
-class TransmuterTreeBSRGenerator(TransmuterTreeVisitor):
+class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
     bsr: TransmuterBSR = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
