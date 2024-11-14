@@ -31,3 +31,8 @@ Front-end libraries and utilities for the Transmuter language processing infrast
 - Syntax sugar for optionals and expression grouping
 
 ### Semantic Analyzer
+
+## References
+- FROST, R. A.; HAFIZ, R.; CALLAGHAN, P. C. **Modular and efficient top-down parsing for ambiguous left-recursive grammars**. Proceedings of the 10th International Conference on Parsing Technologies - IWPT ’07. Morristown, NJ, USA: Association for Computational Linguistics, 2007. Available at https://doi.org/10.3115/1621410.1621425.
+- SCOTT, E.; JOHNSTONE, A. GLL Parsing. **Electronic Notes in Theoretical Computer Science**, v. 253, n. 7, p. 177–189, 2010. Available at https://doi.org/10.1016/j.entcs.2010.08.041.
+- SCOTT, E.; JOHNSTONE, A.; THOMAS VAN BINSBERGEN, L. Derivation representation using binary subtree sets. **Science of Computer Programming**, v. 175, p. 63–84, 2019. Available at https://doi.org/10.1016/j.scico.2019.01.008.
