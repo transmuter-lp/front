@@ -4,6 +4,7 @@ Front-end libraries and utilities for the Transmuter language processing infrast
 
 ## Features
 
+- Aether - a self-declared and self-implemented language declaration language
 - Conditional declaration of language features
 
 ### Lexical Analyzer
@@ -31,6 +32,11 @@ Front-end libraries and utilities for the Transmuter language processing infrast
 - Syntax sugar for optionals and expression grouping
 
 ### Semantic Analyzer
+
+- Dual BSR / Syntax Tree APIs
+    - Visitors and transformers
+    - BSR <-> Syntax Tree converters
+- Symbol Table
 
 ## References
 - FROST, R. A.; HAFIZ, R.; CALLAGHAN, P. C. **Modular and efficient top-down parsing for ambiguous left-recursive grammars**. Proceedings of the 10th International Conference on Parsing Technologies - IWPT ’07. Morristown, NJ, USA: Association for Computational Linguistics, 2007. Available at: https://doi.org/10.3115/1621410.1621425.
