@@ -74,7 +74,7 @@ class TransmuterBSRVisitor:
         return epns
 
     def bottom(self) -> bool:
-        return True
+        return False
 
     def ascend(self, epns: list[TransmuterEPN]) -> None:
         pass
@@ -107,18 +107,12 @@ class TransmuterBSRPruner(TransmuterBSRTransformer):
 
         return epns
 
-    def bottom(self) -> bool:
-        return False
-
 
 class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
     def descend(self, epns: list[TransmuterEPN]) -> list[TransmuterEPN]:
         epn = self.disambiguate(epns) if len(epns) > 1 else epns[0]
         self.new_bsr.add(epn)
         return [epn]
-
-    def bottom(self) -> bool:
-        return False
 
     def disambiguate(self, epns: list[TransmuterEPN]) -> TransmuterEPN:
         raise NotImplementedError()
@@ -221,9 +215,6 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
 
         return epns
 
-    def bottom(self) -> bool:
-        return False
-
 
 @dataclass
 class TransmuterTreeVisitor:
@@ -263,7 +254,7 @@ class TransmuterTreeVisitor:
         return node
 
     def bottom(self) -> bool:
-        return True
+        return False
 
     def ascend(self, node: TransmuterTreeNode) -> None:
         pass
@@ -337,9 +328,6 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
                 self.bsr.add(epn)
 
         return node
-
-    def bottom(self) -> bool:
-        return False
 
 
 class TransmuterSemanticError(TransmuterException):
