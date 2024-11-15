@@ -115,7 +115,7 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
         return [epn]
 
     def disambiguate(self, epns: list[TransmuterEPN]) -> TransmuterEPN:
-        raise NotImplementedError()
+        raise TransmuterAmbiguousGrammarError(epns[0].state.start_position)
 
 
 @dataclass
