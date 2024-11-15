@@ -66,9 +66,7 @@ class TransmuterTerminal:
     value: str
     start_position: TransmuterPosition
     end_position: TransmuterPosition
-    next: "TransmuterTerminal | None" = field(
-        default=None, init=False, repr=False
-    )
+    next: "TransmuterTerminal | None" = field(default=None, init=False)
 
     def __repr__(self) -> str:
         return repr(

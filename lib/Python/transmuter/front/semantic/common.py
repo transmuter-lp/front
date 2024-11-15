@@ -137,7 +137,7 @@ class TransmuterTerminalTreeNode(TransmuterTreeNode):
 class TransmuterNonterminalTreeNode(TransmuterTreeNode):
     type_: type[TransmuterNonterminalType]
     children: list[TransmuterTreeNode] = field(
-        default_factory=list, init=False, repr=False
+        default_factory=list, init=False
     )
 
     def __repr__(self) -> str:

@@ -24,14 +24,17 @@ from .common import TransmuterSyntacticElement
 @dataclass
 class TransmuterSymbol:
     definition: TransmuterSyntacticElement | None = field(
-        default=None, init=False, repr=False
+        default=None, init=False
     )
     declarations: list[TransmuterSyntacticElement] = field(
-        default_factory=list, init=False, repr=False
+        default_factory=list, init=False
     )
     references: list[TransmuterSyntacticElement] = field(
-        default_factory=list, init=False, repr=False
+        default_factory=list, init=False
     )
+
+    def __repr__(self) -> str:
+        return repr((self.definition, self.declarations, self.references))
 
 
 @dataclass
