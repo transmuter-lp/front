@@ -121,7 +121,7 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 @dataclass
 class TransmuterTreeNode:
     type_: type[TransmuterTerminalTag | TransmuterNonterminalType]
-    start_position: TransmuterPosition | None
+    start_position: TransmuterPosition
     end_terminal: TransmuterTerminal
 
 
@@ -178,9 +178,8 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
             )
 
             if parent:
-                if parent.children and (
-                    not parent.children[0].start_position
-                    or node.start_position
+                if (
+                    parent.children
                     and parent.children[0].start_position.index_
                     < node.start_position.index_
                 ):
@@ -293,7 +292,7 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
 
         self.bsr.start = (
             self.tree.type_,
-            None,
+            self.tree.start_position,
             self.tree.end_terminal.end_position,
         )
 

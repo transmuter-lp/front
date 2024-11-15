@@ -83,6 +83,7 @@ class TransmuterLexer:
     filename: str
     input: str
     conditions: TransmuterConditions
+    start_position: TransmuterPosition = field(init=False, repr=False)
     states_start: dict[type[TransmuterTerminalTag], TransmuterLexingState] = (
         field(init=False, repr=False)
     )
@@ -104,6 +105,7 @@ class TransmuterLexer:
     ] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
+        self.start_position = TransmuterPosition(self.filename, 0, 1, 1)
         self.states_start = {}
         self.terminal_tags_ignore = set()
         self.terminal_tags_positives = {}
@@ -132,9 +134,15 @@ class TransmuterLexer:
     ) -> TransmuterTerminal | None:
         if not current_terminal:
             if not self.start:
-                self.start = self.get_terminal(
-                    TransmuterPosition(self.filename, 0, 1, 1)
-                )
+                self.start = self.get_terminal(self.start_position)
+
+                if not self.start:
+                    return None
+
+                self.start_position.index_ = self.start.start_position.index_
+                self.start_position.line = self.start.start_position.line
+                self.start_position.column = self.start.start_position.column
+                self.start.start_position = self.start_position
 
             return self.start
 
