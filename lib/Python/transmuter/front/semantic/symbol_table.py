@@ -18,7 +18,8 @@
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 
-from .common import TransmuterSyntacticElement
+from ..common import TransmuterPosition
+from .common import TransmuterSyntacticElement, TransmuterSemanticError
 
 
 @dataclass
@@ -73,3 +74,29 @@ class TransmuterSymbolTable:
 
         assert self.parent
         return self.parent.get(name)
+
+
+class TransmuterDuplicateSymbolDefinitionError(TransmuterSemanticError):
+    def __init__(
+        self,
+        position: TransmuterPosition,
+        name: str,
+        first_position: TransmuterPosition,
+    ) -> None:
+        super().__init__(
+            position,
+            f"Duplicate definition of symbol '{name}', first defined at {first_position.filename}:{first_position.line}:{first_position.column}.",
+        )
+
+
+class TransmuterUndefinedSymbolError(TransmuterSemanticError):
+    def __init__(
+        self,
+        position: TransmuterPosition,
+        name: str,
+        first_position: TransmuterPosition,
+    ) -> None:
+        super().__init__(
+            position,
+            f"Undefined symbol '{name}', first referenced at {first_position.filename}:{first_position.line}:{first_position.column}.",
+        )
