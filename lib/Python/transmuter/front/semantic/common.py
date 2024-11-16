@@ -119,45 +119,15 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 
 
 @dataclass
-class TransmuterTreeNode:
-    type_: type[TransmuterTerminalTag | TransmuterNonterminalType]
-    start_position: TransmuterPosition
-    end_terminal: TransmuterTerminal
-
-
-@dataclass
-class TransmuterTerminalTreeNode(TransmuterTreeNode):
-    type_: type[TransmuterTerminalTag]
-
-    def __repr__(self) -> str:
-        return repr((self.type_, self.start_position, self.end_terminal))
-
-
-@dataclass
-class TransmuterNonterminalTreeNode(TransmuterTreeNode):
-    type_: type[TransmuterNonterminalType]
-    children: list[TransmuterTreeNode] = field(
-        default_factory=list, init=False
-    )
-
-    def __repr__(self) -> str:
-        return repr(
-            (self.type_, self.start_position, self.end_terminal, self.children)
-        )
-
-
-TransmuterSyntacticElement = (
-    TransmuterTerminal | TransmuterEPN | TransmuterTreeNode
-)
-
-
-@dataclass
 class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
-    tree: TransmuterNonterminalTreeNode | None = field(
+    tree_fixer: "TransmuterTreePositionFixer | None" = field(
         default=None, init=False, repr=False
     )
-    parents: list[TransmuterNonterminalTreeNode] = field(
+    parents: list["TransmuterNonterminalTreeNode"] = field(
         default_factory=list, init=False, repr=False
+    )
+    tree: "TransmuterNonterminalTreeNode | None" = field(
+        default=None, init=False, repr=False
     )
 
     def top_before(self) -> None:
@@ -213,6 +183,50 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
             )
 
         return epns
+
+    def bottom(self) -> bool:
+        if self.tree:
+            if not self.tree_fixer:
+                self.tree_fixer = TransmuterTreePositionFixer(self.tree)
+            else:
+                self.tree_fixer.tree = self.tree
+
+            self.tree_fixer.visit()
+
+        return False
+
+
+@dataclass
+class TransmuterTreeNode:
+    type_: type[TransmuterTerminalTag | TransmuterNonterminalType]
+    start_position: TransmuterPosition
+    end_terminal: TransmuterTerminal
+
+
+@dataclass
+class TransmuterTerminalTreeNode(TransmuterTreeNode):
+    type_: type[TransmuterTerminalTag]
+
+    def __repr__(self) -> str:
+        return repr((self.type_, self.start_position, self.end_terminal))
+
+
+@dataclass
+class TransmuterNonterminalTreeNode(TransmuterTreeNode):
+    type_: type[TransmuterNonterminalType]
+    children: list[TransmuterTreeNode] = field(
+        default_factory=list, init=False
+    )
+
+    def __repr__(self) -> str:
+        return repr(
+            (self.type_, self.start_position, self.end_terminal, self.children)
+        )
+
+
+TransmuterSyntacticElement = (
+    TransmuterTerminal | TransmuterEPN | TransmuterTreeNode
+)
 
 
 @dataclass
@@ -279,11 +293,39 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
             self.tree = self.new_tree
 
 
+class TransmuterTreePositionFixer(TransmuterTreeVisitor):
+    def bottom(self) -> bool:
+        return True
+
+    def ascend(self, node: TransmuterTreeNode) -> None:
+        if isinstance(node, TransmuterNonterminalTreeNode):
+            node.start_position = node.children[0].start_position
+        else:  # TransmuterTerminalTreeNode
+            node.start_position = node.end_terminal.start_position
+
+
+class TransmuterTreePositionUnfixer(TransmuterTreeVisitor):
+    def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
+        if isinstance(node, TransmuterNonterminalTreeNode):
+            node.children[0].start_position = node.start_position
+
+            for i in range(1, len(node.children)):
+                node.children[i].start_position = node.children[
+                    i - 1
+                ].end_terminal.end_position
+
+        return node
+
+
 @dataclass
 class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
+    tree_fixer: TransmuterTreePositionFixer = field(init=False, repr=False)
+    tree_unfixer: TransmuterTreePositionUnfixer = field(init=False, repr=False)
     bsr: TransmuterBSR = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        self.tree_fixer = TransmuterTreePositionFixer(self.tree)
+        self.tree_unfixer = TransmuterTreePositionUnfixer(self.tree)
         self.bsr = TransmuterBSR()
 
     def top_before(self) -> None:
@@ -295,6 +337,10 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
             self.tree.start_position,
             self.tree.end_terminal.end_position,
         )
+
+        self.tree_fixer.tree = self.tree
+        self.tree_unfixer.tree = self.tree
+        self.tree_unfixer.visit()
 
     def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
         if isinstance(node, TransmuterNonterminalTreeNode):
@@ -327,6 +373,10 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
                 self.bsr.add(epn)
 
         return node
+
+    def bottom(self) -> bool:
+        self.tree_fixer.visit()
+        return False
 
 
 class TransmuterSemanticError(TransmuterException):
