@@ -18,6 +18,8 @@
 
 from dataclasses import dataclass
 from enum import auto, IntFlag
+import sys
+import warnings
 
 TransmuterConditions = IntFlag
 TransmuterCondition = auto
@@ -51,3 +53,45 @@ class TransmuterException(Exception):
         super().__init__(
             f"{position.filename}:{position.line}:{position.column}: {type_}: {description}"
         )
+
+
+class TransmuterExceptionHandler:
+    def __enter__(self) -> "TransmuterExceptionHandler":
+        return self
+
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        _,
+    ) -> bool:
+        if exc_type and issubclass(exc_type, TransmuterException):
+            print(exc_value, file=sys.stderr)
+            return True
+
+        return False
+
+
+class TransmuterWarning(TransmuterException, Warning):
+    pass
+
+
+def transmuter_init_warnings() -> None:
+    original_formatwarning = warnings.formatwarning
+
+    def formatwarning(
+        message: Warning | str,
+        category: type[Warning],
+        filename: str,
+        lineno: int,
+        line: str | None = None,
+    ) -> str:
+        if issubclass(category, TransmuterWarning):
+            return f"{str(message)}\n"
+
+        return original_formatwarning(
+            message, category, filename, lineno, line
+        )
+
+    warnings.formatwarning = formatwarning
+    warnings.filterwarnings("always", category=TransmuterWarning)
