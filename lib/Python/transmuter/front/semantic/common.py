@@ -17,7 +17,7 @@
 
 from dataclasses import dataclass, field
 
-from ..common import TransmuterPosition, TransmuterException
+from ..common import TransmuterPosition, TransmuterException, TransmuterWarning
 from ..lexical import TransmuterTerminalTag, TransmuterTerminal
 from ..syntactic import (
     TransmuterNonterminalType,
@@ -382,6 +382,11 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
 class TransmuterSemanticError(TransmuterException):
     def __init__(self, position: TransmuterPosition, description: str) -> None:
         super().__init__(position, "Semantic Error", description)
+
+
+class TransmuterSemanticWarning(TransmuterWarning):
+    def __init__(self, position: TransmuterPosition, description: str) -> None:
+        super().__init__(position, "Semantic Warning", description)
 
 
 class TransmuterAmbiguousGrammarError(TransmuterSemanticError):
