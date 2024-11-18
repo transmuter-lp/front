@@ -50,30 +50,31 @@ class TransmuterSymbolTable:
         return iter(self.symbols.items())
 
     def add_get(self, name: str) -> TransmuterSymbol:
+        table: TransmuterSymbolTable | None = self
+
         if name not in self.symbols and (
-            self.can_shadow or not self.parent or not self.parent.has(name)
+            self.can_shadow
+            or not self.parent
+            or not (table := self.parent.table(name))
         ):
             symbol = TransmuterSymbol()
             self.symbols[name] = symbol
             return symbol
 
-        return self.get(name)
+        assert table
+        return table.get(name)
 
-    def has(self, name: str) -> bool:
+    def table(self, name: str) -> "TransmuterSymbolTable | None":
         if name in self.symbols:
-            return True
+            return self
 
         if not self.parent:
-            return False
+            return None
 
-        return self.parent.has(name)
+        return self.parent.table(name)
 
     def get(self, name: str) -> TransmuterSymbol:
-        if name in self.symbols:
-            return self.symbols[name]
-
-        assert self.parent
-        return self.parent.get(name)
+        return self.symbols[name]
 
 
 class TransmuterDuplicateSymbolDefinitionError(TransmuterSemanticError):
