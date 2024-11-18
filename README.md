@@ -4,7 +4,7 @@ Front-end libraries and utilities for the Transmuter language processing infrast
 
 ## Features
 
-- Aether -- a self-declared and self-implemented language declaration language
+- Aether -- a self-declared language declaration language
 - Conditional declaration of language features
 
 ### Lexical Analyzer
