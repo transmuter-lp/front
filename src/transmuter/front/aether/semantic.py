@@ -26,6 +26,7 @@ from ..semantic.symbol_table import (
 from .lexical import Identifier, PlusSign, HyphenMinus
 from .syntactic import (
     Production,
+    ProductionBody,
     ProductionSpecifier,
     PrimaryExpression,
     PrimitiveCondition,
@@ -57,6 +58,8 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                 )
 
             symbol.definition = node
+        elif node.type_ == ProductionBody:
+            return None
         elif node.type_ == ProductionSpecifier and node.children[0].type_ in (
             PlusSign,
             HyphenMinus,
