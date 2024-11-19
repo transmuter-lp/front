@@ -98,9 +98,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
     nonterminal_table: TransmuterSymbolTable = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        self.nonterminal_table = TransmuterSymbolTable(
-            self.terminal_table, False
-        )
+        self.nonterminal_table = TransmuterSymbolTable(self.terminal_table)
 
     def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
         if node.type_ == Production:

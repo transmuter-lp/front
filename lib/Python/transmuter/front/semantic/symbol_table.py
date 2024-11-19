@@ -41,7 +41,6 @@ class TransmuterSymbol:
 @dataclass
 class TransmuterSymbolTable:
     parent: "TransmuterSymbolTable | None" = None
-    can_shadow: bool = True
     symbols: dict[str, TransmuterSymbol] = field(
         default_factory=dict, init=False, repr=False
     )
@@ -50,14 +49,15 @@ class TransmuterSymbolTable:
         return iter(self.symbols.items())
 
     def add_get(
-        self, name: str, type_: type[TransmuterSymbol] = TransmuterSymbol
+        self,
+        name: str,
+        shadow: bool = False,
+        type_: type[TransmuterSymbol] = TransmuterSymbol,
     ) -> TransmuterSymbol:
         table: TransmuterSymbolTable | None = self
 
         if name not in self.symbols and (
-            self.can_shadow
-            or not self.parent
-            or not (table := self.parent.table(name))
+            shadow or not self.parent or not (table := self.parent.table(name))
         ):
             symbol = type_()
             self.symbols[name] = symbol
