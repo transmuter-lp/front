@@ -49,7 +49,9 @@ class TransmuterSymbolTable:
     def __iter__(self) -> Iterator[tuple[str, TransmuterSymbol]]:
         return iter(self.symbols.items())
 
-    def add_get(self, name: str) -> TransmuterSymbol:
+    def add_get(
+        self, name: str, type_: type[TransmuterSymbol] = TransmuterSymbol
+    ) -> TransmuterSymbol:
         table: TransmuterSymbolTable | None = self
 
         if name not in self.symbols and (
@@ -57,7 +59,7 @@ class TransmuterSymbolTable:
             or not self.parent
             or not (table := self.parent.table(name))
         ):
-            symbol = TransmuterSymbol()
+            symbol = type_()
             self.symbols[name] = symbol
             return symbol
 
