@@ -42,7 +42,9 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
         default_factory=TransmuterSymbolTable, init=False, repr=False
     )
 
-    def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
+    def descend(
+        self, node: TransmuterTreeNode, _
+    ) -> TransmuterTreeNode | None:
         if node.type_ == Production:
             name = node.children[0].children[0].end_terminal.value
             symbol = self.terminal_table.add_get(name)
@@ -95,7 +97,9 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
     def __post_init__(self) -> None:
         self.nonterminal_table = TransmuterSymbolTable(self.terminal_table)
 
-    def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
+    def descend(
+        self, node: TransmuterTreeNode, _
+    ) -> TransmuterTreeNode | None:
         if node.type_ == Production:
             name = node.children[0].children[0].end_terminal.value
             symbol = self.nonterminal_table.add_get(name)
