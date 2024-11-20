@@ -44,17 +44,12 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
 
     def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
         if node.type_ == Production:
-            symbol = self.terminal_table.add_get(
-                node.children[0].children[0].end_terminal.value
-            )
+            name = node.children[0].children[0].end_terminal.value
+            symbol = self.terminal_table.add_get(name)
 
             if symbol.definition:
                 raise TransmuterDuplicateSymbolDefinitionError(
-                    node.start_position,
-                    symbol.definition.children[0]
-                    .children[0]
-                    .end_terminal.value,
-                    symbol.definition.start_position,
+                    node.start_position, name, symbol.definition.start_position
                 )
 
             symbol.definition = node
@@ -102,17 +97,12 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
 
     def descend(self, node: TransmuterTreeNode) -> TransmuterTreeNode | None:
         if node.type_ == Production:
-            symbol = self.nonterminal_table.add_get(
-                node.children[0].children[0].end_terminal.value
-            )
+            name = node.children[0].children[0].end_terminal.value
+            symbol = self.nonterminal_table.add_get(name)
 
             if symbol.definition:
                 raise TransmuterDuplicateSymbolDefinitionError(
-                    node.start_position,
-                    symbol.definition.children[0]
-                    .children[0]
-                    .end_terminal.value,
-                    symbol.definition.start_position,
+                    node.start_position, name, symbol.definition.start_position
                 )
 
             symbol.definition = node
