@@ -17,8 +17,13 @@
 
 from dataclasses import dataclass, field
 
-from ..semantic.common import TransmuterTreeNode, TransmuterTreeVisitor
+from ..semantic.common import (
+    TransmuterTreeNode,
+    TransmuterNonterminalTreeNode,
+    TransmuterTreeVisitor,
+)
 from ..semantic.symbol_table import (
+    TransmuterSymbol,
     TransmuterSymbolTable,
     TransmuterDuplicateSymbolDefinitionError,
     TransmuterUndefinedSymbolError,
@@ -27,10 +32,30 @@ from .lexical import Identifier, PlusSign, HyphenMinus
 from .syntactic import (
     Production,
     ProductionBody,
+    Condition,
+    ProductionSpecifiers,
     ProductionSpecifier,
     PrimaryExpression,
     PrimitiveCondition,
 )
+
+
+@dataclass
+class LexicalSymbol(TransmuterSymbol):
+    start: TransmuterNonterminalTreeNode | None = field(
+        default=None, init=False
+    )
+    ignore: TransmuterNonterminalTreeNode | bool = field(
+        default=False, init=False
+    )
+    static_positives: list[str] = field(default_factory=list, init=False)
+    conditional_positives: dict[str, TransmuterNonterminalTreeNode] = field(
+        default_factory=dict, init=False
+    )
+    static_negatives: list[str] = field(default_factory=list, init=False)
+    conditional_negatives: dict[str, TransmuterNonterminalTreeNode] = field(
+        default_factory=dict, init=False
+    )
 
 
 @dataclass
@@ -47,7 +72,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
     ) -> TransmuterTreeNode | None:
         if node.type_ == Production:
             name = node.children[0].children[0].end_terminal.value
-            symbol = self.terminal_table.add_get(name)
+            symbol = self.terminal_table.add_get(name, type_=LexicalSymbol)
 
             if symbol.definition:
                 raise TransmuterDuplicateSymbolDefinitionError(
@@ -62,7 +87,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             HyphenMinus,
         ):
             symbol = self.terminal_table.add_get(
-                node.children[1].end_terminal.value
+                node.children[1].end_terminal.value, type_=LexicalSymbol
             )
             symbol.references.append(node)
         elif (
@@ -85,7 +110,53 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                     symbol.references[0].start_position,
                 )
 
+            self.process_conditionals(symbol)
+
         return False
+
+    def process_conditionals(self, symbol: LexicalSymbol) -> None:
+        header = symbol.definition.children[0]
+
+        if header.children[1].type_ == Condition:
+            symbol.start = header.children[1]
+
+        if header.children[1].type_ == ProductionSpecifiers:
+            specifiers = header.children[1]
+        elif (
+            len(header.children) > 2
+            and header.children[2].type_ == ProductionSpecifiers
+        ):
+            specifiers = header.children[2]
+        else:
+            return
+
+        for i in range(0, len(specifiers.children[1].children), 2):
+            specifier = specifiers.children[1].children[i]
+
+            if specifier.children[0].type_ == PlusSign:
+                positive = specifier.children[1].end_terminal.value
+
+                if len(specifier.children) > 2:
+                    symbol.conditional_positives[positive] = (
+                        specifier.children[2]
+                    )
+                else:
+                    symbol.static_positives.append(positive)
+            elif specifier.children[0].type_ == HyphenMinus:
+                negative = specifier.children[1].end_terminal.value
+
+                if len(specifier.children) > 2:
+                    symbol.conditional_negatives[negative] = (
+                        specifier.children[2]
+                    )
+                else:
+                    symbol.static_negatives.append(negative)
+            else:  # Ignore
+                symbol.ignore = (
+                    specifier.children[1]
+                    if len(specifier.children) > 1
+                    else True
+                )
 
 
 @dataclass
