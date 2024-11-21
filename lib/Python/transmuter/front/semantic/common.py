@@ -147,39 +147,28 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 
 @dataclass
 class TransmuterBSRFold[T](TransmuterBSRVisitor):
-    previous_queue: list[list[T]] = field(
-        default_factory=list, init=False, repr=False
-    )
-    current_queue: list[list[T]] = field(
+    fold_queue: list[list[T]] = field(
         default_factory=list, init=False, repr=False
     )
 
     def bottom(self) -> bool:
         return True
 
-    def ascend(self, epns: list[TransmuterEPN], level_changed: bool) -> None:
+    def ascend(self, epns: list[TransmuterEPN], _) -> None:
         fold = []
-
-        if level_changed:
-            self.previous_queue, self.current_queue = (
-                self.current_queue,
-                self.previous_queue,
-            )
 
         for epn in epns:
             left_children = bool(self.bsr.left_children(epn))
             right_children = bool(self.bsr.right_children(epn))
 
             if left_children or right_children:
-                fold_right = (
-                    self.previous_queue.pop() if right_children else []
-                )
-                fold_left = self.previous_queue.pop() if left_children else []
+                fold_right = self.fold_queue.pop() if right_children else []
+                fold_left = self.fold_queue.pop() if left_children else []
                 fold.append(self.fold_internal(epn, fold_left, fold_right))
             else:
                 fold.append(self.fold_external(epn))
 
-        self.current_queue.insert(0, fold)
+        self.fold_queue.insert(0, fold)
 
     def fold_internal(
         self,
@@ -396,32 +385,21 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
 
 @dataclass
 class TransmuterTreeFold[T](TransmuterTreeVisitor):
-    previous_queue: list[T] = field(
-        default_factory=list, init=False, repr=False
-    )
-    current_queue: list[T] = field(
-        default_factory=list, init=False, repr=False
-    )
+    fold_queue: list[T] = field(default_factory=list, init=False, repr=False)
 
     def bottom(self) -> bool:
         return True
 
-    def ascend(self, node: TransmuterTreeNode, level_changed: bool) -> None:
-        if level_changed:
-            self.previous_queue, self.current_queue = (
-                self.current_queue,
-                self.previous_queue,
-            )
-
+    def ascend(self, node: TransmuterTreeNode, _) -> None:
         if isinstance(node, TransmuterNonterminalTreeNode):
-            fold_children = self.previous_queue[-len(node.children) :]
-            self.previous_queue = self.previous_queue[: -len(node.children)]
+            fold_children = self.fold_queue[-len(node.children) :]
+            self.fold_queue = self.fold_queue[: -len(node.children)]
             fold = self.fold_internal(node, fold_children)
         else:  # TransmuterTerminalTreeNode
             assert isinstance(node, TransmuterTerminalTreeNode)
             fold = self.fold_external(node)
 
-        self.current_queue.insert(0, fold)
+        self.fold_queue.insert(0, fold)
 
     def fold_internal(
         self, node: TransmuterNonterminalTreeNode, children: list[T]
