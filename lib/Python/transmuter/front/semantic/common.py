@@ -146,6 +146,54 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 
 
 @dataclass
+class TransmuterBSRFold[T](TransmuterBSRVisitor):
+    previous_queue: list[list[T]] = field(
+        default_factory=list, init=False, repr=False
+    )
+    current_queue: list[list[T]] = field(
+        default_factory=list, init=False, repr=False
+    )
+
+    def bottom(self) -> bool:
+        return True
+
+    def ascend(self, epns: list[TransmuterEPN], level_changed: bool) -> None:
+        fold = []
+
+        if level_changed:
+            self.previous_queue, self.current_queue = (
+                self.current_queue,
+                self.previous_queue,
+            )
+
+        for epn in epns:
+            left_children = bool(self.bsr.left_children(epn))
+            right_children = bool(self.bsr.right_children(epn))
+
+            if left_children or right_children:
+                fold_right = (
+                    self.previous_queue.pop() if right_children else []
+                )
+                fold_left = self.previous_queue.pop() if left_children else []
+                fold.append(self.fold_internal(epn, fold_left, fold_right))
+            else:
+                fold.append(self.fold_external(epn))
+
+        self.current_queue.insert(0, fold)
+
+    def fold_internal(
+        self,
+        epn: TransmuterEPN,
+        left_children: list[T],
+        right_children: list[T],
+    ) -> T:
+        raise NotImplementedError()
+
+    def fold_external(self, epn: TransmuterEPN) -> T:
+        raise NotImplementedError()
+
+
+@dataclass
 class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
     tree_fixer: "TransmuterTreePositionFixer | None" = field(
         default=None, init=False, repr=False
@@ -344,6 +392,44 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
     def apply(self) -> None:
         if self.new_tree:
             self.tree = self.new_tree
+
+
+@dataclass
+class TransmuterTreeFold[T](TransmuterTreeVisitor):
+    previous_queue: list[T] = field(
+        default_factory=list, init=False, repr=False
+    )
+    current_queue: list[T] = field(
+        default_factory=list, init=False, repr=False
+    )
+
+    def bottom(self) -> bool:
+        return True
+
+    def ascend(self, node: TransmuterTreeNode, level_changed: bool) -> None:
+        if level_changed:
+            self.previous_queue, self.current_queue = (
+                self.current_queue,
+                self.previous_queue,
+            )
+
+        if isinstance(node, TransmuterNonterminalTreeNode):
+            fold_children = self.previous_queue[-len(node.children) :]
+            self.previous_queue = self.previous_queue[: -len(node.children)]
+            fold = self.fold_internal(node, fold_children)
+        else:  # TransmuterTerminalTreeNode
+            assert isinstance(node, TransmuterTerminalTreeNode)
+            fold = self.fold_external(node)
+
+        self.current_queue.insert(0, fold)
+
+    def fold_internal(
+        self, node: TransmuterNonterminalTreeNode, children: list[T]
+    ) -> T:
+        raise NotImplementedError()
+
+    def fold_external(self, node: TransmuterTerminalTreeNode) -> T:
+        raise NotImplementedError()
 
 
 class TransmuterTreePositionFixer(TransmuterTreeVisitor):
