@@ -147,7 +147,7 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 
 @dataclass
 class TransmuterBSRFold[T](TransmuterBSRVisitor):
-    fold_queue: list[list[T]] = field(
+    fold_queue: list[list[T | None]] = field(
         default_factory=list, init=False, repr=False
     )
 
@@ -162,8 +162,16 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
             right_children = bool(self.bsr.right_children(epn))
 
             if left_children or right_children:
-                fold_right = self.fold_queue.pop() if right_children else []
-                fold_left = self.fold_queue.pop() if left_children else []
+                fold_right = (
+                    list(filter(None, self.fold_queue.pop()))
+                    if right_children
+                    else []
+                )
+                fold_left = (
+                    list(filter(None, self.fold_queue.pop()))
+                    if left_children
+                    else []
+                )
                 fold.append(self.fold_internal(epn, fold_left, fold_right))
             else:
                 fold.append(self.fold_external(epn))
@@ -175,10 +183,10 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
         epn: TransmuterEPN,
         left_children: list[T],
         right_children: list[T],
-    ) -> T:
+    ) -> T | None:
         raise NotImplementedError()
 
-    def fold_external(self, epn: TransmuterEPN) -> T:
+    def fold_external(self, epn: TransmuterEPN) -> T | None:
         raise NotImplementedError()
 
 
@@ -385,14 +393,18 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
 
 @dataclass
 class TransmuterTreeFold[T](TransmuterTreeVisitor):
-    fold_queue: list[T] = field(default_factory=list, init=False, repr=False)
+    fold_queue: list[T | None] = field(
+        default_factory=list, init=False, repr=False
+    )
 
     def bottom(self) -> bool:
         return True
 
     def ascend(self, node: TransmuterTreeNode, _) -> None:
         if isinstance(node, TransmuterNonterminalTreeNode):
-            fold_children = self.fold_queue[-len(node.children) :]
+            fold_children = list(
+                filter(None, self.fold_queue[-len(node.children) :])
+            )
             self.fold_queue = self.fold_queue[: -len(node.children)]
             fold = self.fold_internal(node, fold_children)
         else:  # TransmuterTerminalTreeNode
@@ -403,10 +415,10 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
 
     def fold_internal(
         self, node: TransmuterNonterminalTreeNode, children: list[T]
-    ) -> T:
+    ) -> T | None:
         raise NotImplementedError()
 
-    def fold_external(self, node: TransmuterTerminalTreeNode) -> T:
+    def fold_external(self, node: TransmuterTerminalTreeNode) -> T | None:
         raise NotImplementedError()
 
 
