@@ -16,6 +16,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from dataclasses import dataclass, field
+from typing import TypeGuard
 
 from ..common import TransmuterPosition, TransmuterException, TransmuterWarning
 from ..lexical import TransmuterTerminalTag, TransmuterTerminal
@@ -151,6 +152,10 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
         default_factory=list, init=False, repr=False
     )
 
+    @staticmethod
+    def fold_filter(item: T | None) -> TypeGuard[T]:
+        return item is not None
+
     def bottom(self) -> bool:
         return True
 
@@ -163,12 +168,12 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
 
             if left_children or right_children:
                 fold_right = (
-                    list(filter(None, self.fold_queue.pop()))
+                    list(filter(self.fold_filter, self.fold_queue.pop()))
                     if right_children
                     else []
                 )
                 fold_left = (
-                    list(filter(None, self.fold_queue.pop()))
+                    list(filter(self.fold_filter, self.fold_queue.pop()))
                     if left_children
                     else []
                 )
@@ -397,13 +402,19 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
         default_factory=list, init=False, repr=False
     )
 
+    @staticmethod
+    def fold_filter(item: T | None) -> TypeGuard[T]:
+        return item is not None
+
     def bottom(self) -> bool:
         return True
 
     def ascend(self, node: TransmuterTreeNode, _) -> None:
         if isinstance(node, TransmuterNonterminalTreeNode):
             fold_children = list(
-                filter(None, self.fold_queue[-len(node.children) :])
+                filter(
+                    self.fold_filter, self.fold_queue[-len(node.children) :]
+                )
             )
             self.fold_queue = self.fold_queue[: -len(node.children)]
             fold = self.fold_internal(node, fold_children)
