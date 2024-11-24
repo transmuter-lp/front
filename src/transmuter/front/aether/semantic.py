@@ -19,8 +19,10 @@ from dataclasses import dataclass, field
 
 from ..semantic.common import (
     TransmuterTreeNode,
+    TransmuterTerminalTreeNode,
     TransmuterNonterminalTreeNode,
     TransmuterTreeVisitor,
+    TransmuterTreeFold,
 )
 from ..semantic.symbol_table import (
     TransmuterSymbol,
@@ -28,20 +30,311 @@ from ..semantic.symbol_table import (
     TransmuterDuplicateSymbolDefinitionError,
     TransmuterUndefinedSymbolError,
 )
-from .lexical import Identifier, PlusSign, HyphenMinus
+from .lexical import (
+    Identifier,
+    LeftParenthesis,
+    RightParenthesis,
+    VerticalLine,
+    PlusSign,
+    HyphenMinus,
+    Asterisk,
+    QuestionMark,
+    ExpressionRange,
+    OrdChar,
+    QuotedChar,
+    FullStop,
+)
 from .syntactic import (
     Production,
     ProductionBody,
     Condition,
     ProductionSpecifiers,
+    SelectionExpression,
     ProductionSpecifier,
+    IterationExpression,
     PrimaryExpression,
     PrimitiveCondition,
 )
 
 
 @dataclass
+class LexicalSimplePattern:
+    char: str
+
+
+class LexicalWildcardPattern:
+    pass
+
+
+@dataclass
+class LexicalRangePattern:
+    first_char: str
+    last_char: str
+
+
+@dataclass
+class LexicalBracketPattern:
+    negative_match: bool
+    patterns: list[LexicalSimplePattern | LexicalRangePattern]
+
+
+@dataclass(eq=False)
+class LexicalState:
+    pattern: (
+        LexicalSimplePattern | LexicalWildcardPattern | LexicalBracketPattern
+    )
+    next_states: set["LexicalState"] | None = None
+    state_accept: bool = field(default=False, init=False)
+    next_states_indexes: list[int] = field(default_factory=list, init=False)
+
+    def copy(self) -> "LexicalState":
+        return LexicalState(self.pattern, self.next_states)
+
+
+@dataclass
+class LexicalFragment:
+    states: dict[LexicalState, None]
+    first: set[LexicalState]
+    last: set[LexicalState]
+    bypass: bool = False
+
+    def copy(self, bypass: bool) -> "LexicalFragment":
+        new_states = {}
+
+        for state in self.states:
+            new_states[state] = state.copy()
+
+        fragment = LexicalFragment(
+            {s: None for s in new_states.values()},
+            {new_states[s] for s in self.first},
+            {new_states[s] for s in self.last},
+            bypass,
+        )
+
+        for state in fragment.states:
+            if state.next_states:
+                state.next_states = {new_states[s] for s in state.next_states}
+
+        return fragment
+
+    def connect(self, fragment: "LexicalFragment") -> None:
+        for state in self.last:
+            if not state.next_states:
+                state.next_states = set()
+
+            state.next_states |= fragment.first
+
+
+class LexicalFold(TransmuterTreeFold[LexicalFragment]):
+    def top_after(self) -> None:
+        if self.fold_queue[0]:
+            for state in self.fold_queue[0].last:
+                state.state_accept = True
+
+    def fold_internal(
+        self,
+        node: TransmuterNonterminalTreeNode,
+        children: list[LexicalFragment],
+    ) -> LexicalFragment | None:
+        if len(children) == 0:
+            return None
+
+        if len(children) == 1:
+            if node.type_ == IterationExpression and len(node.children) == 2:
+                return self.fold_iteration(node.children[1], children[0])
+
+            return children[0]
+
+        if node.type_ == SelectionExpression:
+            return self.fold_selection(children)
+
+        # SequenceExpression
+        return self.fold_sequence(children)
+
+    def fold_external(
+        self, node: TransmuterTerminalTreeNode
+    ) -> LexicalFragment | None:
+        if node.type_ in (
+            VerticalLine,
+            Asterisk,
+            PlusSign,
+            QuestionMark,
+            ExpressionRange,
+            LeftParenthesis,
+            RightParenthesis,
+        ):
+            return None
+
+        chars = node.end_terminal.value
+        pattern: (
+            LexicalSimplePattern
+            | LexicalWildcardPattern
+            | LexicalBracketPattern
+        )
+
+        if node.type_ in (OrdChar, QuotedChar):
+            if node.type_ == QuotedChar or len(chars) == 1:
+                pattern = LexicalSimplePattern(chars)
+            else:
+                fragments = [
+                    self.fold_pattern(LexicalSimplePattern(c)) for c in chars
+                ]
+                return self.fold_sequence(fragments)
+        elif node.type_ == FullStop:
+            pattern = LexicalWildcardPattern()
+        else:  # BracketExpression
+            pattern = self.process_bracket(chars)
+
+        return self.fold_pattern(pattern)
+
+    def fold_iteration(
+        self, iterator: TransmuterTerminalTreeNode, child: LexicalFragment
+    ) -> LexicalFragment | None:
+        iterator_type = iterator.type_
+
+        if iterator_type == ExpressionRange:
+            range_ = iterator.end_terminal.value
+
+            if range_ in ("{0}", "{0,0}"):
+                return None
+
+            if range_ == "{0,}":
+                iterator_type = Asterisk
+            elif range_ == "{1,}":
+                iterator_type = PlusSign
+            elif range_ == "{0,1}":
+                iterator_type = QuestionMark
+            elif range_ not in ("{1}", "{1,0}", "{1,1}"):
+                return self.fold_range(range_, child)
+
+        if iterator_type in (Asterisk, QuestionMark):
+            child.bypass = True
+
+        if iterator_type in (Asterisk, PlusSign):
+            child.connect(child)
+
+        return child
+
+    def fold_range(
+        self, range_str: str, child: LexicalFragment
+    ) -> LexicalFragment:
+        range_split = range_str[1:-1].split(",")
+        range_ = [
+            int(range_split[0]),
+            (
+                (int(range_split[1]) if range_split[1] else -1)
+                if len(range_split) == 2
+                else None
+            ),
+        ]
+        assert range_[0] is not None
+
+        if range_[1] is not None and range_[1] != -1:
+            if range_[1] <= range_[0]:
+                range_[1] = None
+            elif child.bypass or range_[0] == 0:
+                child.bypass = True
+                range_[0] = range_[1]
+                range_[1] = None
+
+        fragments = [
+            child.copy(child.bypass) if i else child for i in range(range_[0])
+        ]
+
+        if range_[1]:
+            if range_[1] == -1:
+                fragments[-1].connect(fragments[-1])
+            else:
+                fragments.extend(
+                    child.copy(True) for _ in range(range_[1] - range_[0])
+                )
+
+        return self.fold_sequence(fragments)
+
+    def fold_selection(
+        self, children: list[LexicalFragment]
+    ) -> LexicalFragment:
+        fragment = children[0]
+
+        for i in range(1, len(children)):
+            fragment.bypass = fragment.bypass or children[i].bypass
+            fragment.states |= children[i].states
+            fragment.first |= children[i].first
+            fragment.last |= children[i].last
+
+        return fragment
+
+    def fold_sequence(
+        self, children: list[LexicalFragment]
+    ) -> LexicalFragment:
+        fragment = children[0]
+
+        for i in range(1, len(children)):
+            children[i - 1].connect(children[i])
+
+            if children[i - 1].bypass:
+                children[i - 1].first |= children[i].first
+                children[i].first = children[i - 1].first
+
+            if children[i].bypass:
+                children[i].last |= children[i - 1].last
+                children[i - 1].last = children[i].last
+
+            fragment.bypass = fragment.bypass and children[i].bypass
+            fragment.states |= children[i].states
+
+        fragment.last = children[-1].last
+        return fragment
+
+    def fold_pattern(
+        self,
+        pattern: (
+            LexicalSimplePattern
+            | LexicalWildcardPattern
+            | LexicalBracketPattern
+        ),
+    ) -> LexicalFragment:
+        state = LexicalState(pattern)
+        return LexicalFragment({state: None}, {state}, {state})
+
+    def process_bracket(self, chars: str) -> LexicalBracketPattern:
+        chars = chars[1:-1]
+        negative_match = False
+        patterns: list[LexicalSimplePattern | LexicalRangePattern] = []
+
+        if chars[0] == "^":
+            negative_match = True
+            chars = chars[1:]
+
+        i = 0
+        j = 0
+
+        while i < len(chars):
+            j = i + 1
+
+            if chars[i] == "\\":
+                j += 3 if chars[j] in "01" else 1
+
+            if j >= len(chars) - 1 or chars[j] != "-":
+                patterns.append(LexicalSimplePattern(chars[i:j]))
+            else:
+                first_char = chars[i:j]
+                i = j + 1
+                j = i + 1
+
+                if chars[i] == "\\":
+                    j += 3 if chars[j] in "01" else 1
+
+                patterns.append(LexicalRangePattern(first_char, chars[i:j]))
+
+            i = j
+
+        return LexicalBracketPattern(negative_match, patterns)
+
+
+@dataclass
 class LexicalSymbol(TransmuterSymbol):
+    states_start: list[int] = field(default_factory=list, init=False)
     start: TransmuterNonterminalTreeNode | None = field(
         default=None, init=False
     )
@@ -56,6 +349,7 @@ class LexicalSymbol(TransmuterSymbol):
     conditional_negatives: dict[str, TransmuterNonterminalTreeNode] = field(
         default_factory=dict, init=False
     )
+    states: list[LexicalState] = field(default_factory=list, init=False)
 
 
 @dataclass
@@ -66,6 +360,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
     terminal_table: TransmuterSymbolTable = field(
         default_factory=TransmuterSymbolTable, init=False, repr=False
     )
+    fold: LexicalFold | None = field(default=None, init=False, repr=False)
 
     def descend(
         self, node: TransmuterTreeNode, _
@@ -111,6 +406,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                 )
 
             self.process_conditionals(symbol)
+            self.process_states(symbol)
 
         return False
 
@@ -157,6 +453,34 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                     if len(specifier.children) > 1
                     else True
                 )
+
+    def process_states(self, symbol: LexicalSymbol) -> None:
+        if not self.fold:
+            self.fold = LexicalFold(symbol.definition.children[1].children[0])
+        else:
+            self.fold.tree = symbol.definition.children[1].children[0]
+            self.fold.fold_queue.clear()
+
+        self.fold.visit()
+        fragment = self.fold.fold_queue[0]
+
+        if fragment:
+            states_indexes = {}
+
+            for i, s in zip(range(len(fragment.states)), fragment.states):
+                symbol.states.append(s)
+                states_indexes[s] = i
+
+            symbol.states_start = sorted(
+                states_indexes[s] for s in fragment.first
+            )
+
+            for state in symbol.states:
+                if state.next_states:
+                    state.next_states_indexes = sorted(
+                        states_indexes[s] for s in state.next_states
+                    )
+                    state.next_states = None
 
 
 @dataclass
