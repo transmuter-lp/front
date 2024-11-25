@@ -34,7 +34,7 @@ Front-end libraries and utilities for the Transmuter language processing infrast
 ### Semantic Analyzer
 
 - Dual BSR / Syntax Tree APIs
-    - Visitors and transformers
+    - Visitors, transformers and folds
     - BSR <-> Syntax Tree converters
 - Symbol Table
 
