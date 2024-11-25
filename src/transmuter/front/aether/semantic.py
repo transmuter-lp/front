@@ -61,9 +61,13 @@ from .syntactic import (
 class LexicalSimplePattern:
     char: str
 
+    def __repr__(self) -> str:
+        return repr((self.char,))
+
 
 class LexicalWildcardPattern:
-    pass
+    def __repr__(self) -> str:
+        return repr(())
 
 
 @dataclass
@@ -71,11 +75,17 @@ class LexicalRangePattern:
     first_char: str
     last_char: str
 
+    def __repr__(self) -> str:
+        return repr((self.first_char, self.last_char))
+
 
 @dataclass
 class LexicalBracketPattern:
     negative_match: bool
     patterns: list[LexicalSimplePattern | LexicalRangePattern]
+
+    def __repr__(self) -> str:
+        return repr((self.negative_match, self.patterns))
 
 
 @dataclass(eq=False)
@@ -86,6 +96,11 @@ class LexicalState:
     next_states: set["LexicalState"] | None = None
     state_accept: bool = field(default=False, init=False)
     next_states_indexes: list[int] = field(default_factory=list, init=False)
+
+    def __repr__(self) -> str:
+        return repr(
+            (self.pattern, self.state_accept, self.next_states_indexes)
+        )
 
     def copy(self) -> "LexicalState":
         return LexicalState(self.pattern, self.next_states)
