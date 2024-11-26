@@ -156,6 +156,7 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
 
         if len(children) == 1:
             if node.type_ == IterationExpression and len(node.children) == 2:
+                assert isinstance(node.children[1], TransmuterTerminalTreeNode)
                 return self.fold_iteration(node.children[1], children[0])
 
             return children[0]
@@ -349,7 +350,7 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
 
 
 @dataclass
-class LexicalSymbol(TransmuterSymbol):
+class LexicalSymbol(TransmuterSymbol[TransmuterNonterminalTreeNode]):
     states_start: list[int] = field(default_factory=list, init=False)
     start: TransmuterNonterminalTreeNode | None = field(
         default=None, init=False
@@ -370,50 +371,69 @@ class LexicalSymbol(TransmuterSymbol):
 
 @dataclass
 class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
-    condition_table: TransmuterSymbolTable = field(
-        default_factory=TransmuterSymbolTable, init=False, repr=False
+    condition_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode] = (
+        field(
+            default_factory=TransmuterSymbolTable[
+                TransmuterNonterminalTreeNode
+            ],
+            init=False,
+            repr=False,
+        )
     )
-    terminal_table: TransmuterSymbolTable = field(
-        default_factory=TransmuterSymbolTable, init=False, repr=False
+    terminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode] = (
+        field(
+            default_factory=TransmuterSymbolTable[
+                TransmuterNonterminalTreeNode
+            ],
+            init=False,
+            repr=False,
+        )
     )
     fold: LexicalFold | None = field(default=None, init=False, repr=False)
 
     def descend(
         self, node: TransmuterTreeNode, _
     ) -> TransmuterTreeNode | None:
-        if node.type_ == Production:
-            name = node.children[0].children[0].end_terminal.value
-            symbol = self.terminal_table.add_get(name, type_=LexicalSymbol)
-
-            if symbol.definition is not None:
-                raise TransmuterDuplicateSymbolDefinitionError(
-                    node.start_position, name, symbol.definition.start_position
+        if isinstance(node, TransmuterNonterminalTreeNode):
+            if node.type_ == Production:
+                assert isinstance(
+                    node.children[0], TransmuterNonterminalTreeNode
                 )
+                name = node.children[0].children[0].end_terminal.value
+                symbol = self.terminal_table.add_get(name, type_=LexicalSymbol)
 
-            symbol.definition = node
-        elif node.type_ == ProductionBody:
-            return None
-        elif node.type_ == ProductionSpecifier and node.children[0].type_ in (
-            PlusSign,
-            HyphenMinus,
-        ):
-            symbol = self.terminal_table.add_get(
-                node.children[1].end_terminal.value, type_=LexicalSymbol
-            )
-            symbol.references.append(node)
-        elif (
-            node.type_ == PrimitiveCondition
-            and node.children[0].type_ == Identifier
-        ):
-            symbol = self.condition_table.add_get(
-                node.children[0].end_terminal.value
-            )
-            symbol.references.append(node)
+                if symbol.definition is not None:
+                    raise TransmuterDuplicateSymbolDefinitionError(
+                        node.start_position,
+                        name,
+                        symbol.definition.start_position,
+                    )
+
+                symbol.definition = node
+            elif node.type_ == ProductionBody:
+                return None
+            elif node.type_ == ProductionSpecifier and node.children[
+                0
+            ].type_ in (PlusSign, HyphenMinus):
+                symbol = self.terminal_table.add_get(
+                    node.children[1].end_terminal.value, type_=LexicalSymbol
+                )
+                symbol.references.append(node)
+            elif (
+                node.type_ == PrimitiveCondition
+                and node.children[0].type_ == Identifier
+            ):
+                symbol = self.condition_table.add_get(
+                    node.children[0].end_terminal.value
+                )
+                symbol.references.append(node)
 
         return node
 
     def bottom(self) -> bool:
         for name, symbol in self.terminal_table:
+            assert isinstance(symbol, LexicalSymbol)
+
             if symbol.definition is None:
                 raise TransmuterUndefinedSymbolError(
                     self.tree.end_terminal.end_position,
@@ -427,28 +447,47 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
         return False
 
     def process_conditionals(self, symbol: LexicalSymbol) -> None:
+        assert symbol.definition is not None
         header = symbol.definition.children[0]
+        assert isinstance(header, TransmuterNonterminalTreeNode)
 
         if header.children[1].type_ == Condition:
+            assert isinstance(
+                header.children[1], TransmuterNonterminalTreeNode
+            )
             symbol.start = header.children[1]
 
         if header.children[1].type_ == ProductionSpecifiers:
+            assert isinstance(
+                header.children[1], TransmuterNonterminalTreeNode
+            )
             specifiers = header.children[1]
         elif (
             len(header.children) > 2
             and header.children[2].type_ == ProductionSpecifiers
         ):
+            assert isinstance(
+                header.children[2], TransmuterNonterminalTreeNode
+            )
             specifiers = header.children[2]
         else:
             return
 
+        assert isinstance(
+            specifiers.children[1], TransmuterNonterminalTreeNode
+        )
+
         for i in range(0, len(specifiers.children[1].children), 2):
             specifier = specifiers.children[1].children[i]
+            assert isinstance(specifier, TransmuterNonterminalTreeNode)
 
             if specifier.children[0].type_ == PlusSign:
                 positive = specifier.children[1].end_terminal.value
 
                 if len(specifier.children) > 2:
+                    assert isinstance(
+                        specifier.children[2], TransmuterNonterminalTreeNode
+                    )
                     symbol.conditional_positives[positive] = (
                         specifier.children[2]
                     )
@@ -458,19 +497,33 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                 negative = specifier.children[1].end_terminal.value
 
                 if len(specifier.children) > 2:
+                    assert isinstance(
+                        specifier.children[2], TransmuterNonterminalTreeNode
+                    )
                     symbol.conditional_negatives[negative] = (
                         specifier.children[2]
                     )
                 else:
                     symbol.static_negatives.append(negative)
             else:  # Ignore
-                symbol.ignore = (
-                    specifier.children[1]
-                    if len(specifier.children) > 1
-                    else True
-                )
+                if len(specifier.children) > 1:
+                    assert isinstance(
+                        specifier.children[1], TransmuterNonterminalTreeNode
+                    )
+                    symbol.ignore = specifier.children[1]
+                else:
+                    symbol.ignore = True
 
     def process_states(self, symbol: LexicalSymbol) -> None:
+        assert symbol.definition is not None
+        assert isinstance(
+            symbol.definition.children[1], TransmuterNonterminalTreeNode
+        )
+        assert isinstance(
+            symbol.definition.children[1].children[0],
+            TransmuterNonterminalTreeNode,
+        )
+
         if self.fold is None:
             self.fold = LexicalFold(symbol.definition.children[1].children[0])
         else:
@@ -501,42 +554,52 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
 
 @dataclass
 class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
-    condition_table: TransmuterSymbolTable
-    terminal_table: TransmuterSymbolTable
-    nonterminal_table: TransmuterSymbolTable = field(init=False, repr=False)
+    condition_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode]
+    terminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode]
+    nonterminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode] = (
+        field(init=False, repr=False)
+    )
 
     def __post_init__(self) -> None:
-        self.nonterminal_table = TransmuterSymbolTable(self.terminal_table)
+        self.nonterminal_table = TransmuterSymbolTable[
+            TransmuterNonterminalTreeNode
+        ](self.terminal_table)
 
     def descend(
         self, node: TransmuterTreeNode, _
     ) -> TransmuterTreeNode | None:
-        if node.type_ == Production:
-            name = node.children[0].children[0].end_terminal.value
-            symbol = self.nonterminal_table.add_get(name)
-
-            if symbol.definition is not None:
-                raise TransmuterDuplicateSymbolDefinitionError(
-                    node.start_position, name, symbol.definition.start_position
+        if isinstance(node, TransmuterNonterminalTreeNode):
+            if node.type_ == Production:
+                assert isinstance(
+                    node.children[0], TransmuterNonterminalTreeNode
                 )
+                name = node.children[0].children[0].end_terminal.value
+                symbol = self.nonterminal_table.add_get(name)
 
-            symbol.definition = node
-        elif (
-            node.type_ == PrimaryExpression
-            and node.children[0].type_ == Identifier
-        ):
-            symbol = self.nonterminal_table.add_get(
-                node.children[0].end_terminal.value
-            )
-            symbol.references.append(node)
-        elif (
-            node.type_ == PrimitiveCondition
-            and node.children[0].type_ == Identifier
-        ):
-            symbol = self.condition_table.add_get(
-                node.children[0].end_terminal.value
-            )
-            symbol.references.append(node)
+                if symbol.definition is not None:
+                    raise TransmuterDuplicateSymbolDefinitionError(
+                        node.start_position,
+                        name,
+                        symbol.definition.start_position,
+                    )
+
+                symbol.definition = node
+            elif (
+                node.type_ == PrimaryExpression
+                and node.children[0].type_ == Identifier
+            ):
+                symbol = self.nonterminal_table.add_get(
+                    node.children[0].end_terminal.value
+                )
+                symbol.references.append(node)
+            elif (
+                node.type_ == PrimitiveCondition
+                and node.children[0].type_ == Identifier
+            ):
+                symbol = self.condition_table.add_get(
+                    node.children[0].end_terminal.value
+                )
+                symbol.references.append(node)
 
         return node
 

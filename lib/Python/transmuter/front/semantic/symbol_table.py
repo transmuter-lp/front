@@ -19,42 +19,36 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 
 from ..common import TransmuterPosition
-from .common import TransmuterSyntacticElement, TransmuterSemanticError
+from .common import TransmuterSemanticError
 
 
 @dataclass
-class TransmuterSymbol:
-    definition: TransmuterSyntacticElement | None = field(
-        default=None, init=False
-    )
-    declarations: list[TransmuterSyntacticElement] = field(
-        default_factory=list, init=False
-    )
-    references: list[TransmuterSyntacticElement] = field(
-        default_factory=list, init=False
-    )
+class TransmuterSymbol[T]:
+    definition: T | None = field(default=None, init=False)
+    declarations: list[T] = field(default_factory=list, init=False)
+    references: list[T] = field(default_factory=list, init=False)
 
     def __repr__(self) -> str:
         return repr((self.definition, self.declarations, self.references))
 
 
 @dataclass
-class TransmuterSymbolTable:
-    parent: "TransmuterSymbolTable | None" = None
-    symbols: dict[str, TransmuterSymbol] = field(
+class TransmuterSymbolTable[T]:
+    parent: "TransmuterSymbolTable[T] | None" = None
+    symbols: dict[str, TransmuterSymbol[T]] = field(
         default_factory=dict, init=False, repr=False
     )
 
-    def __iter__(self) -> Iterator[tuple[str, TransmuterSymbol]]:
+    def __iter__(self) -> Iterator[tuple[str, TransmuterSymbol[T]]]:
         return iter(self.symbols.items())
 
     def add_get(
         self,
         name: str,
         shadow: bool = False,
-        type_: type[TransmuterSymbol] = TransmuterSymbol,
-    ) -> TransmuterSymbol:
-        table: TransmuterSymbolTable | None = self
+        type_: type[TransmuterSymbol[T]] = TransmuterSymbol[T],
+    ) -> TransmuterSymbol[T]:
+        table: TransmuterSymbolTable[T] | None = self
 
         if name not in self.symbols and (
             shadow
@@ -68,7 +62,7 @@ class TransmuterSymbolTable:
         assert table is not None
         return table.symbols[name]
 
-    def table(self, name: str) -> "TransmuterSymbolTable | None":
+    def table(self, name: str) -> "TransmuterSymbolTable[T] | None":
         if name in self.symbols:
             return self
 

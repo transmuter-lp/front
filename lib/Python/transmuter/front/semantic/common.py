@@ -301,11 +301,6 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
         )
 
 
-TransmuterSyntacticElement = (
-    TransmuterTerminal | TransmuterEPN | TransmuterTreeNode
-)
-
-
 @dataclass
 class TransmuterTreeVisitor:
     tree: TransmuterNonterminalTreeNode
