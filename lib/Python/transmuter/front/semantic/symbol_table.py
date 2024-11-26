@@ -64,7 +64,7 @@ class TransmuterSymbolTable:
             return symbol
 
         assert table
-        return table.get(name)
+        return table.symbols[name]
 
     def table(self, name: str) -> "TransmuterSymbolTable | None":
         if name in self.symbols:
@@ -74,9 +74,6 @@ class TransmuterSymbolTable:
             return None
 
         return self.parent.table(name)
-
-    def get(self, name: str) -> TransmuterSymbol:
-        return self.symbols[name]
 
 
 class TransmuterDuplicateSymbolDefinitionError(TransmuterSemanticError):
