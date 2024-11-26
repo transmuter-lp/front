@@ -33,7 +33,7 @@ class TransmuterBSRVisitor:
     bsr: TransmuterBSR
 
     def visit(self) -> None:
-        if not self.bsr.start or not self.bsr.epns[self.bsr.start]:
+        if self.bsr.start is None or len(self.bsr.epns[self.bsr.start]) == 0:
             return
 
         descend_queue = [list(self.bsr.epns[self.bsr.start])]
@@ -42,11 +42,11 @@ class TransmuterBSRVisitor:
         ascend_stack_levels = [1]
         self.top_before()
 
-        while descend_queue:
+        while len(descend_queue) > 0:
             epns = descend_queue.pop(0)
             level_changed = False
 
-            if not descend_queue_levels[0]:
+            if descend_queue_levels[0] == 0:
                 level_changed = True
                 descend_queue_levels[0] = descend_queue_levels[1]
                 descend_queue_levels[1] = 0
@@ -55,10 +55,10 @@ class TransmuterBSRVisitor:
             descend_queue_levels[0] -= 1
             epns = self.descend(epns, level_changed)
 
-            if not epns:
+            if len(epns) == 0:
                 ascend_stack_levels[-1] -= 1
 
-                if not ascend_stack_levels[-1]:
+                if ascend_stack_levels[-1] == 0:
                     ascend_stack_levels.pop()
 
                 continue
@@ -69,22 +69,22 @@ class TransmuterBSRVisitor:
                 left_children = list(self.bsr.left_children(epn))
                 right_children = list(self.bsr.right_children(epn))
 
-                if left_children:
+                if len(left_children) > 0:
                     descend_queue.append(left_children)
                     descend_queue_levels[1] += 1
 
-                if right_children:
+                if len(right_children) > 0:
                     descend_queue.append(right_children)
                     descend_queue_levels[1] += 1
 
         if not self.bottom():
             return
 
-        while ascend_stack:
+        while len(ascend_stack) > 0:
             epns = ascend_stack.pop()
             level_changed = False
 
-            if not ascend_stack_levels[-1]:
+            if ascend_stack_levels[-1] == 0:
                 level_changed = True
                 ascend_stack_levels.pop()
 
@@ -163,8 +163,8 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
         fold = []
 
         for epn in epns:
-            left_children = bool(self.bsr.left_children(epn))
-            right_children = bool(self.bsr.right_children(epn))
+            left_children = len(self.bsr.left_children(epn)) > 0
+            right_children = len(self.bsr.right_children(epn)) > 0
 
             if left_children or right_children:
                 fold_right = (
@@ -208,25 +208,25 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
     )
 
     def top_before(self) -> None:
-        if self.parents:
+        if len(self.parents) > 0:
             self.parents = []
 
         self.tree = None
 
     def descend(self, epns: list[TransmuterEPN], _) -> list[TransmuterEPN]:
-        parent = self.parents.pop(0) if self.parents else None
-        assert epns[0].state.end_terminal
+        parent = self.parents.pop(0) if len(self.parents) > 0 else None
+        assert epns[0].state.end_terminal is not None
 
-        if epns[0].type_:
+        if epns[0].type_ is not None:
             node = TransmuterNonterminalTreeNode(
                 epns[0].type_,
                 epns[0].state.start_position,
                 epns[0].state.end_terminal,
             )
 
-            if parent:
+            if parent is not None:
                 if (
-                    parent.children
+                    len(parent.children) > 0
                     and parent.children[0].start_position.index_
                     < node.start_position.index_
                 ):
@@ -238,12 +238,12 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
 
             parent = node
 
-        assert parent
+        assert parent is not None
 
-        if self.bsr.left_children(epns[0]):
+        if len(self.bsr.left_children(epns[0])) > 0:
             self.parents.append(parent)
 
-        if self.bsr.right_children(epns[0]):
+        if len(self.bsr.right_children(epns[0])) > 0:
             self.parents.append(parent)
         elif (
             epns[0].state.split_position
@@ -262,8 +262,8 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
         return epns
 
     def bottom(self) -> bool:
-        if self.tree:
-            if not self.tree_fixer:
+        if self.tree is not None:
+            if self.tree_fixer is None:
                 self.tree_fixer = TransmuterTreePositionFixer(self.tree)
             else:
                 self.tree_fixer.tree = self.tree
@@ -317,11 +317,11 @@ class TransmuterTreeVisitor:
         ascend_stack_levels = [1]
         self.top_before()
 
-        while descend_queue:
+        while len(descend_queue) > 0:
             node = descend_queue.pop(0)
             level_changed = False
 
-            if not descend_queue_levels[0]:
+            if descend_queue_levels[0] == 0:
                 level_changed = True
                 descend_queue_levels[0] = descend_queue_levels[1]
                 descend_queue_levels[1] = 0
@@ -330,10 +330,10 @@ class TransmuterTreeVisitor:
             descend_queue_levels[0] -= 1
             node_opt = self.descend(node, level_changed)
 
-            if not node_opt:
+            if node_opt is None:
                 ascend_stack_levels[-1] -= 1
 
-                if not ascend_stack_levels[-1]:
+                if ascend_stack_levels[-1] == 0:
                     ascend_stack_levels.pop()
 
                 continue
@@ -348,11 +348,11 @@ class TransmuterTreeVisitor:
         if not self.bottom():
             return
 
-        while ascend_stack:
+        while len(ascend_stack) > 0:
             node = ascend_stack.pop()
             level_changed = False
 
-            if not ascend_stack_levels[-1]:
+            if ascend_stack_levels[-1] == 0:
                 level_changed = True
                 ascend_stack_levels.pop()
 
@@ -392,7 +392,7 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
         self.new_tree = None
 
     def apply(self) -> None:
-        if self.new_tree:
+        if self.new_tree is not None:
             self.tree = self.new_tree
 
 
@@ -471,7 +471,7 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
         self.bsr = TransmuterBSR()
 
     def top_before(self) -> None:
-        if self.bsr.start or self.bsr.epns:
+        if self.bsr.start is not None or len(self.bsr.epns) > 0:
             self.bsr = TransmuterBSR()
 
         self.bsr.start = (
@@ -496,7 +496,7 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
                     node.start_position,
                     (
                         node.children[-1].start_position
-                        if node.children
+                        if len(node.children) > 0
                         else node.start_position
                     ),
                     node.end_terminal,

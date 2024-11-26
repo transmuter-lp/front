@@ -130,11 +130,11 @@ class TransmuterLexer:
     def next_terminal(
         self, current_terminal: TransmuterTerminal | None
     ) -> TransmuterTerminal | None:
-        if not current_terminal:
-            if not self.start:
+        if current_terminal is None:
+            if self.start is None:
                 self.start = self.get_terminal(self.start_position)
 
-                if not self.start:
+                if self.start is None:
                     return None
 
                 self.start_position.index_ = self.start.start_position.index_
@@ -144,7 +144,7 @@ class TransmuterLexer:
 
             return self.start
 
-        if not current_terminal.next:
+        if current_terminal.next is None:
             current_terminal.next = self.get_terminal(
                 current_terminal.end_position
             )
@@ -164,7 +164,9 @@ class TransmuterLexer:
             accepted_terminal_tags = current_terminal_tags
             accepted_position = current_position
 
-            while current_states and current_position.index_ < len(self.input):
+            while len(current_states) > 0 and current_position.index_ < len(
+                self.input
+            ):
                 char = self.input[current_position.index_]
                 current_terminal_tags = set()
                 next_states = {}
@@ -177,7 +179,7 @@ class TransmuterLexer:
                     if state_accept:
                         current_terminal_tags.add(terminal_tag)
 
-                    if states:
+                    if states != 0:
                         next_states[terminal_tag] = states
 
                 current_states = next_states
@@ -190,11 +192,11 @@ class TransmuterLexer:
 
                 current_position.index_ += 1
 
-                if current_terminal_tags:
+                if len(current_terminal_tags) > 0:
                     accepted_terminal_tags = current_terminal_tags
                     accepted_position = current_position.copy()
 
-            if not accepted_terminal_tags:
+            if len(accepted_terminal_tags) == 0:
                 raise TransmuterNoTerminalError(start_position)
 
             initial_accepted_terminal_tags = frozenset(accepted_terminal_tags)
@@ -213,7 +215,7 @@ class TransmuterLexer:
                     initial_accepted_terminal_tags
                 ]
 
-            if accepted_terminal_tags:
+            if len(accepted_terminal_tags) > 0:
                 return TransmuterTerminal(
                     accepted_terminal_tags,
                     self.input[
@@ -244,7 +246,7 @@ class TransmuterLexer:
 
             next_positive_terminal_tags -= positive_terminal_tags
 
-            if not next_positive_terminal_tags:
+            if len(next_positive_terminal_tags) == 0:
                 break
 
             positive_terminal_tags |= next_positive_terminal_tags
@@ -269,7 +271,7 @@ class TransmuterLexer:
 
             next_negative_terminal_tags -= negative_terminal_tags
 
-            if not next_negative_terminal_tags:
+            if len(next_negative_terminal_tags) == 0:
                 break
 
             negative_terminal_tags |= next_negative_terminal_tags

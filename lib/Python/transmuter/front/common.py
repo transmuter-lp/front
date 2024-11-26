@@ -65,7 +65,7 @@ class TransmuterExceptionHandler:
         exc_value: BaseException | None,
         _,
     ) -> bool:
-        if exc_type and issubclass(exc_type, TransmuterException):
+        if exc_type is not None and issubclass(exc_type, TransmuterException):
             print(exc_value, file=sys.stderr)
             return True
 

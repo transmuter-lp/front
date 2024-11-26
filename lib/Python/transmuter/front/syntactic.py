@@ -111,11 +111,11 @@ class TransmuterBSR:
 
     def add(self, epn: TransmuterEPN) -> None:
         key = (
-            epn.type_ or epn.state.string,
+            epn.type_ if epn.type_ is not None else epn.state.string,
             epn.state.start_position,
             (
                 epn.state.end_terminal.end_position
-                if epn.state.end_terminal
+                if epn.state.end_terminal is not None
                 else epn.state.split_position
             ),
         )
@@ -141,7 +141,7 @@ class TransmuterBSR:
         return self.epns[key]
 
     def right_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
-        if not parent.state.end_terminal:
+        if parent.state.end_terminal is None:
             return set()
 
         key = (
@@ -191,7 +191,7 @@ class TransmuterParser:
                 nonterminal_type.start(self.lexer.conditions)
                 and nonterminal_types_start != nonterminal_type
             ):
-                if nonterminal_types_start:
+                if nonterminal_types_start is not None:
                     raise TransmuterMultipleStartsError()
 
                 nonterminal_types_start = nonterminal_type
@@ -200,7 +200,7 @@ class TransmuterParser:
                 nonterminal_type.ascend_parents(self.lexer.conditions)
             )
 
-        if not nonterminal_types_start:
+        if nonterminal_types_start is None:
             raise TransmuterNoStartError()
 
         self.nonterminal_types_start = nonterminal_types_start
@@ -222,7 +222,7 @@ class TransmuterParser:
         except TransmuterInternalError:
             pass
 
-        if not self.eoi:
+        if self.eoi is None:
             return
 
         key = (
@@ -234,8 +234,8 @@ class TransmuterParser:
         if key not in self.bsr.epns:
             raise TransmuterNoDerivationError(self.eoi.start_position)
 
-        if self.lexer.next_terminal(self.eoi):
-            assert self.eoi.next
+        if self.lexer.next_terminal(self.eoi) is not None:
+            assert self.eoi.next is not None
             raise TransmuterNoDerivationError(self.eoi.next.start_position)
 
         self.bsr.start = key
@@ -252,7 +252,7 @@ class TransmuterParser:
             for current_state in current_states:
                 next_state = self.call_single_terminal_tag(cls, current_state)
 
-                if next_state:
+                if next_state is not None:
                     next_states.add(next_state)
         else:  # TransmuterNonterminalType
             for current_state in current_states:
@@ -273,14 +273,14 @@ class TransmuterParser:
         self.bsr.add(TransmuterEPN(None, current_state))
         next_terminal = self.lexer.next_terminal(current_state.end_terminal)
 
-        if next_terminal and (
-            not self.eoi
+        if next_terminal is not None and (
+            self.eoi is None
             or self.eoi.start_position.index_
             < next_terminal.start_position.index_
         ):
             self.eoi = next_terminal
 
-        if not next_terminal or cls not in next_terminal.tags:
+        if next_terminal is None or cls not in next_terminal.tags:
             return None
 
         return TransmuterParsingState(
@@ -288,7 +288,7 @@ class TransmuterParser:
             current_state.start_position,
             (
                 current_state.end_terminal.end_position
-                if current_state.end_terminal
+                if current_state.end_terminal is not None
                 else current_state.split_position
             ),
             next_terminal,
@@ -303,7 +303,7 @@ class TransmuterParser:
         self.bsr.add(TransmuterEPN(None, current_state))
         current_state_end_position = (
             current_state.end_terminal.end_position
-            if current_state.end_terminal
+            if current_state.end_terminal is not None
             else current_state.split_position
         )
 
@@ -328,7 +328,7 @@ class TransmuterParser:
             else:
                 for next_state in next_states:
                     self.bsr.add(TransmuterEPN(cls, next_state))
-                    assert next_state.end_terminal
+                    assert next_state.end_terminal is not None
                     self.memo[cls, current_state_end_position].add(
                         next_state.end_terminal
                     )

@@ -127,14 +127,14 @@ class LexicalFragment:
         )
 
         for state in fragment.states:
-            if state.next_states:
+            if state.next_states is not None:
                 state.next_states = {new_states[s] for s in state.next_states}
 
         return fragment
 
     def connect(self, fragment: "LexicalFragment") -> None:
         for state in self.last:
-            if not state.next_states:
+            if state.next_states is None:
                 state.next_states = set()
 
             state.next_states |= fragment.first
@@ -142,7 +142,7 @@ class LexicalFragment:
 
 class LexicalFold(TransmuterTreeFold[LexicalFragment]):
     def top_after(self) -> None:
-        if self.fold_queue[0]:
+        if self.fold_queue[0] is not None:
             for state in self.fold_queue[0].last:
                 state.state_accept = True
 
@@ -237,7 +237,7 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
         range_ = [
             int(range_split[0]),
             (
-                (int(range_split[1]) if range_split[1] else -1)
+                (int(range_split[1]) if len(range_split[1]) > 0 else -1)
                 if len(range_split) == 2
                 else None
             ),
@@ -253,10 +253,11 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
                 range_[1] = None
 
         fragments = [
-            child.copy(child.bypass) if i else child for i in range(range_[0])
+            child.copy(child.bypass) if i > 0 else child
+            for i in range(range_[0])
         ]
 
-        if range_[1]:
+        if range_[1] is not None:
             if range_[1] == -1:
                 fragments[-1].connect(fragments[-1])
             else:
@@ -384,7 +385,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             name = node.children[0].children[0].end_terminal.value
             symbol = self.terminal_table.add_get(name, type_=LexicalSymbol)
 
-            if symbol.definition:
+            if symbol.definition is not None:
                 raise TransmuterDuplicateSymbolDefinitionError(
                     node.start_position, name, symbol.definition.start_position
                 )
@@ -413,7 +414,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
 
     def bottom(self) -> bool:
         for name, symbol in self.terminal_table:
-            if not symbol.definition:
+            if symbol.definition is None:
                 raise TransmuterUndefinedSymbolError(
                     self.tree.end_terminal.end_position,
                     name,
@@ -470,7 +471,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                 )
 
     def process_states(self, symbol: LexicalSymbol) -> None:
-        if not self.fold:
+        if self.fold is None:
             self.fold = LexicalFold(symbol.definition.children[1].children[0])
         else:
             self.fold.tree = symbol.definition.children[1].children[0]
@@ -479,7 +480,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
         self.fold.visit()
         fragment = self.fold.fold_queue[0]
 
-        if fragment:
+        if fragment is not None:
             states_indexes = {}
 
             for i, s in zip(range(len(fragment.states)), fragment.states):
@@ -491,7 +492,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             )
 
             for state in symbol.states:
-                if state.next_states:
+                if state.next_states is not None:
                     state.next_states_indexes = sorted(
                         states_indexes[s] for s in state.next_states
                     )
@@ -514,7 +515,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
             name = node.children[0].children[0].end_terminal.value
             symbol = self.nonterminal_table.add_get(name)
 
-            if symbol.definition:
+            if symbol.definition is not None:
                 raise TransmuterDuplicateSymbolDefinitionError(
                     node.start_position, name, symbol.definition.start_position
                 )
@@ -541,7 +542,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
 
     def bottom(self) -> bool:
         for name, symbol in self.nonterminal_table:
-            if not symbol.definition:
+            if symbol.definition is None:
                 raise TransmuterUndefinedSymbolError(
                     self.tree.end_terminal.end_position,
                     name,

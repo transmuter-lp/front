@@ -57,20 +57,22 @@ class TransmuterSymbolTable:
         table: TransmuterSymbolTable | None = self
 
         if name not in self.symbols and (
-            shadow or not self.parent or not (table := self.parent.table(name))
+            shadow
+            or self.parent is None
+            or (table := self.parent.table(name)) is None
         ):
             symbol = type_()
             self.symbols[name] = symbol
             return symbol
 
-        assert table
+        assert table is not None
         return table.symbols[name]
 
     def table(self, name: str) -> "TransmuterSymbolTable | None":
         if name in self.symbols:
             return self
 
-        if not self.parent:
+        if self.parent is None:
             return None
 
         return self.parent.table(name)
