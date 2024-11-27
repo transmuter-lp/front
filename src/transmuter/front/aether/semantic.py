@@ -37,12 +37,14 @@ from .lexical import (
     VerticalLine,
     PlusSign,
     HyphenMinus,
+    Ignore,
     Asterisk,
     QuestionMark,
     ExpressionRange,
     OrdChar,
     QuotedChar,
     FullStop,
+    BracketExpression,
 )
 from .syntactic import (
     Production,
@@ -50,6 +52,7 @@ from .syntactic import (
     Condition,
     ProductionSpecifiers,
     SelectionExpression,
+    SequenceExpression,
     ProductionSpecifier,
     IterationExpression,
     PrimaryExpression,
@@ -164,7 +167,7 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
         if node.type_ == SelectionExpression:
             return self.fold_selection(children)
 
-        # SequenceExpression
+        assert node.type_ == SequenceExpression
         return self.fold_sequence(children)
 
     def fold_external(
@@ -198,7 +201,8 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
                 return self.fold_sequence(fragments)
         elif node.type_ == FullStop:
             pattern = LexicalWildcardPattern()
-        else:  # BracketExpression
+        else:
+            assert node.type_ == BracketExpression
             pattern = self.process_bracket(chars)
 
         return self.fold_pattern(pattern)
@@ -505,7 +509,9 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                     )
                 else:
                     symbol.static_negatives.append(negative)
-            else:  # Ignore
+            else:
+                assert specifier.children[0].type_ == Ignore
+
                 if len(specifier.children) > 1:
                     assert isinstance(
                         specifier.children[1], TransmuterNonterminalTreeNode

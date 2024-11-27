@@ -413,7 +413,7 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
             )
             self.fold_queue = self.fold_queue[: -len(node.children)]
             fold = self.fold_internal(node, fold_children)
-        else:  # TransmuterTerminalTreeNode
+        else:
             assert isinstance(node, TransmuterTerminalTreeNode)
             fold = self.fold_external(node)
 
@@ -435,7 +435,8 @@ class TransmuterTreePositionFixer(TransmuterTreeVisitor):
     def ascend(self, node: TransmuterTreeNode, _) -> None:
         if isinstance(node, TransmuterNonterminalTreeNode):
             node.start_position = node.children[0].start_position
-        else:  # TransmuterTerminalTreeNode
+        else:
+            assert isinstance(node, TransmuterTerminalTreeNode)
             node.start_position = node.end_terminal.start_position
 
 

@@ -254,7 +254,9 @@ class TransmuterParser:
 
                 if next_state is not None:
                     next_states.add(next_state)
-        else:  # TransmuterNonterminalType
+        else:
+            assert issubclass(cls, TransmuterNonterminalType)
+
             for current_state in current_states:
                 next_states |= self.call_single_nonterminal_type(
                     cls, current_state, ascend
