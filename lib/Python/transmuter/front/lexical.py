@@ -240,6 +240,7 @@ class TransmuterLexer:
             next_positive_terminal_tags = set()
 
             for terminal_tag in current_positive_terminal_tags:
+                assert terminal_tag in self.terminal_tags_positives
                 next_positive_terminal_tags |= self.terminal_tags_positives[
                     terminal_tag
                 ]
@@ -255,6 +256,7 @@ class TransmuterLexer:
         negative_terminal_tags = set()
 
         for terminal_tag in positive_terminal_tags:
+            assert terminal_tag in self.terminal_tags_negatives
             negative_terminal_tags |= self.terminal_tags_negatives[
                 terminal_tag
             ]
@@ -265,6 +267,7 @@ class TransmuterLexer:
             next_negative_terminal_tags = set()
 
             for terminal_tag in current_negative_terminal_tags:
+                assert terminal_tag in self.terminal_tags_negatives
                 next_negative_terminal_tags |= self.terminal_tags_negatives[
                     terminal_tag
                 ]

@@ -54,6 +54,7 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         current_state: "TransmuterParsingState",
     ) -> None:
         current_states = {current_state}
+        assert cls in parser.nonterminal_types_ascend_parents
 
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
             try:
@@ -144,6 +145,7 @@ class TransmuterBSR:
         if parent.state.end_terminal is None:
             return set()
 
+        assert len(parent.state.string) > 0
         key = (
             parent.state.string[-1],
             parent.state.split_position,
