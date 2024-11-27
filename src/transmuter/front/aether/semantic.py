@@ -148,7 +148,7 @@ class LexicalFragment:
 
 class LexicalFold(TransmuterTreeFold[LexicalFragment]):
     def top_after(self) -> None:
-        assert len(self.fold_queue) == 1
+        assert len(self.fold_queue) > 0
 
         if self.fold_queue[0] is not None:
             for state in self.fold_queue[0].last:
@@ -587,6 +587,13 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
 
 
 @dataclass
+class SyntacticSymbol(TransmuterSymbol[TransmuterNonterminalTreeNode]):
+    start: TransmuterNonterminalTreeNode | bool = field(
+        default=False, init=False
+    )
+
+
+@dataclass
 class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
     condition_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode]
     terminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode]
@@ -611,7 +618,9 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
                 )
                 assert len(node.children[0].children) > 0
                 name = node.children[0].children[0].end_terminal.value
-                symbol = self.nonterminal_table.add_get(name)
+                symbol = self.nonterminal_table.add_get(
+                    name, type_=SyntacticSymbol
+                )
 
                 if symbol.definition is not None:
                     raise TransmuterDuplicateSymbolDefinitionError(
@@ -626,7 +635,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
                 and node.children[0].type_ == Identifier
             ):
                 symbol = self.nonterminal_table.add_get(
-                    node.children[0].end_terminal.value
+                    node.children[0].end_terminal.value, type_=SyntacticSymbol
                 )
                 symbol.references.append(node)
             elif (
@@ -642,6 +651,8 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
 
     def bottom(self) -> bool:
         for name, symbol in self.nonterminal_table:
+            assert isinstance(symbol, SyntacticSymbol)
+
             if symbol.definition is None:
                 assert len(symbol.references) > 0
                 raise TransmuterUndefinedSymbolError(
@@ -650,4 +661,35 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
                     symbol.references[0].start_position,
                 )
 
+            self.process_start(symbol)
+
         return False
+
+    def process_start(self, symbol: SyntacticSymbol) -> None:
+        assert symbol.definition is not None
+        assert len(symbol.definition.children) > 0
+        header = symbol.definition.children[0]
+        assert isinstance(header, TransmuterNonterminalTreeNode)
+        assert len(header.children) > 1
+
+        if header.children[1].type_ != ProductionSpecifiers:
+            return
+
+        specifiers = header.children[1]
+        assert isinstance(specifiers, TransmuterNonterminalTreeNode)
+        assert len(specifiers.children) > 1
+        assert isinstance(
+            specifiers.children[1], TransmuterNonterminalTreeNode
+        )
+
+        for i in range(0, len(specifiers.children[1].children), 2):
+            specifier = specifiers.children[1].children[i]
+            assert isinstance(specifier, TransmuterNonterminalTreeNode)
+
+            if len(specifier.children) > 1:
+                assert isinstance(
+                    specifier.children[1], TransmuterNonterminalTreeNode
+                )
+                symbol.start = specifier.children[1]
+            else:
+                symbol.start = True
