@@ -17,6 +17,7 @@
 
 from dataclasses import dataclass, field
 
+from ..lexical import TransmuterTerminal
 from ..semantic.common import (
     TransmuterTreeNode,
     TransmuterTerminalTreeNode,
@@ -52,10 +53,14 @@ from .syntactic import (
     Condition,
     ProductionSpecifiers,
     SelectionExpression,
+    DisjunctionCondition,
     SequenceExpression,
+    ConjunctionCondition,
     ProductionSpecifier,
     IterationExpression,
     PrimaryExpression,
+    NegationCondition,
+    OptionalExpression,
     PrimitiveCondition,
 )
 
@@ -587,10 +592,81 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
 
 
 @dataclass
+class SyntacticFragment:
+    references: dict[TransmuterTerminal, list[TransmuterNonterminalTreeNode]]
+    bypass: bool = False
+
+
+@dataclass
+class SyntacticFold(TransmuterTreeFold[SyntacticFragment]):
+    def fold_internal(
+        self,
+        node: TransmuterNonterminalTreeNode,
+        children: list[SyntacticFragment],
+    ) -> SyntacticFragment | None:
+        if len(children) == 0 or node.type_ in (
+            Condition,
+            DisjunctionCondition,
+            ConjunctionCondition,
+            NegationCondition,
+            PrimitiveCondition,
+        ):
+            return None
+
+        if len(children) == 1:
+            if (
+                node.type_ == PrimaryExpression
+                and node.children[-1].type_ == Condition
+            ):
+                assert isinstance(
+                    node.children[-1], TransmuterNonterminalTreeNode
+                )
+
+                for reference in children[0].references:
+                    children[0].references[reference].insert(
+                        0, node.children[-1]
+                    )
+            elif node.type_ in (OptionalExpression, IterationExpression):
+                children[0].bypass = True
+        elif node.type_ == SelectionExpression:
+            for i in range(1, len(children)):
+                children[0].references |= children[i].references
+                children[0].bypass = children[0].bypass or children[i].bypass
+        else:
+            assert node.type_ == SequenceExpression
+
+            if children[0].bypass:
+                for i in range(1, len(children)):
+                    children[0].references |= children[i].references
+                    children[0].bypass = (
+                        children[0].bypass and children[i].bypass
+                    )
+
+                    if not children[0].bypass:
+                        break
+
+        return children[0]
+
+    def fold_external(
+        self, node: TransmuterTerminalTreeNode
+    ) -> SyntacticFragment | None:
+        if node.type_ == Identifier:
+            return SyntacticFragment({node.end_terminal: []})
+
+        return None
+
+
+@dataclass
 class SyntacticSymbol(TransmuterSymbol[TransmuterNonterminalTreeNode]):
     start: TransmuterNonterminalTreeNode | bool = field(
         default=False, init=False
     )
+    static_first: list[TransmuterTerminal] = field(
+        default_factory=list, init=False
+    )
+    conditional_first: dict[
+        TransmuterTerminal, list[TransmuterNonterminalTreeNode]
+    ] = field(default_factory=dict, init=False)
 
 
 @dataclass
@@ -600,6 +676,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
     nonterminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode] = (
         field(init=False, repr=False)
     )
+    fold: SyntacticFold | None = field(default=None, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.nonterminal_table = TransmuterSymbolTable[
@@ -662,6 +739,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
                 )
 
             self.process_start(symbol)
+            self.process_first(symbol)
 
         return False
 
@@ -693,3 +771,37 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
                 symbol.start = specifier.children[1]
             else:
                 symbol.start = True
+
+    def process_first(self, symbol: SyntacticSymbol) -> None:
+        assert symbol.definition is not None
+        assert len(symbol.definition.children) > 1
+        assert isinstance(
+            symbol.definition.children[1], TransmuterNonterminalTreeNode
+        )
+        assert len(symbol.definition.children[1].children) > 0
+        assert isinstance(
+            symbol.definition.children[1].children[0],
+            TransmuterNonterminalTreeNode,
+        )
+
+        if self.fold is None:
+            self.fold = SyntacticFold(
+                symbol.definition.children[1].children[0]
+            )
+        else:
+            self.fold.tree = symbol.definition.children[1].children[0]
+            self.fold.fold_queue.clear()
+
+        self.fold.visit()
+        assert len(self.fold.fold_queue) > 0
+        fragment = self.fold.fold_queue[0]
+
+        if fragment is not None:
+            for reference in fragment.references:
+                if reference.value in self.nonterminal_table.symbols:
+                    if len(fragment.references[reference]) > 0:
+                        symbol.conditional_first[reference] = (
+                            fragment.references[reference]
+                        )
+                    else:
+                        symbol.static_first.append(reference)

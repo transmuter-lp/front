@@ -36,16 +36,10 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         return False
 
     @staticmethod
-    def ascend_parents(
+    def first(
         conditions: TransmuterConditions,
     ) -> set[type["TransmuterNonterminalType"]]:
         return set()
-
-    @staticmethod
-    def descend(
-        parser: "TransmuterParser", current_state: "TransmuterParsingState"
-    ) -> set["TransmuterParsingState"]:
-        raise NotImplementedError()
 
     @classmethod
     def ascend(
@@ -61,6 +55,14 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
                 parser.call(ascend_parent, current_states, True)
             except TransmuterInternalError:
                 pass
+
+    @classmethod
+    def descend(
+        cls,
+        parser: "TransmuterParser",
+        current_state: "TransmuterParsingState",
+    ) -> set["TransmuterParsingState"]:
+        raise NotImplementedError()
 
 
 class TransmuterParsingState(NamedTuple):
@@ -171,6 +173,9 @@ class TransmuterParser:
     nonterminal_types_start: type[TransmuterNonterminalType] = field(
         init=False, repr=False
     )
+    nonterminal_types_first: dict[
+        type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]
+    ] = field(init=False, repr=False)
     nonterminal_types_ascend_parents: dict[
         type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]
     ] = field(init=False, repr=False)
@@ -183,9 +188,70 @@ class TransmuterParser:
         set[TransmuterTerminal],
     ] = field(default_factory=dict, init=False, repr=False)
 
+    @staticmethod
+    def compute_sccs[
+        T
+    ](graph: dict[T, set[T]]) -> tuple[dict[T, set[T]], dict[T, set[T]]]:
+        # Tarjan's strongly connected components algorithm
+        visited: list[T] = []
+        stack = []
+        lowlinks = {}
+        sccs = []
+
+        def strongconnect(v: T) -> None:
+            index = len(visited)
+            lowlinks[v] = index
+            visited.append(v)
+            stack.append(v)
+            assert v in graph
+
+            for w in graph[v]:
+                if w not in visited:
+                    strongconnect(w)
+                    assert w in lowlinks
+                    lowlinks[v] = min(lowlinks[v], lowlinks[w])
+                elif w in stack:
+                    lowlinks[v] = min(lowlinks[v], visited.index(w))
+
+            if lowlinks[v] == index:
+                scc = set()
+                assert len(stack) > 0
+                w = stack.pop()
+                scc.add(w)
+
+                while w != v:
+                    assert len(stack) > 0
+                    w = stack.pop()
+                    scc.add(w)
+
+                sccs.append(scc)
+
+        for v in graph:
+            if v not in visited:
+                strongconnect(v)
+
+        direct_sccs = {}
+        reverse_sccs = {}
+
+        for scc in sccs:
+            assert scc <= graph.keys()
+
+            if len(scc) == 1:
+                v = scc.pop()
+                scc.add(v)
+
+                if v not in graph[v]:
+                    continue
+
+            for v in scc:
+                direct_sccs[v] = scc & graph[v]
+                reverse_sccs[v] = {w for w in scc if v in graph[w]}
+
+        return direct_sccs, reverse_sccs
+
     def __post_init__(self) -> None:
         nonterminal_types_start = None
-        self.nonterminal_types_ascend_parents = {}
+        nonterminal_types_first = {}
         self.bsr = TransmuterBSR()
 
         for nonterminal_type in self.NONTERMINAL_TYPES:
@@ -198,14 +264,17 @@ class TransmuterParser:
 
                 nonterminal_types_start = nonterminal_type
 
-            self.nonterminal_types_ascend_parents[nonterminal_type] = (
-                nonterminal_type.ascend_parents(self.lexer.conditions)
+            nonterminal_types_first[nonterminal_type] = nonterminal_type.first(
+                self.lexer.conditions
             )
 
         if nonterminal_types_start is None:
             raise TransmuterNoStartError()
 
         self.nonterminal_types_start = nonterminal_types_start
+        self.nonterminal_types_first, self.nonterminal_types_ascend_parents = (
+            self.compute_sccs(nonterminal_types_first)
+        )
 
     def parse(self) -> None:
         try:
@@ -219,7 +288,6 @@ class TransmuterParser:
                         None,
                     )
                 },
-                True,
             )
         except TransmuterInternalError:
             pass
@@ -246,7 +314,7 @@ class TransmuterParser:
         self,
         cls: type[TransmuterTerminalTag | TransmuterNonterminalType],
         current_states: set[TransmuterParsingState],
-        ascend: bool = False,
+        ascend: type[TransmuterNonterminalType] | bool | None = None,
     ) -> set[TransmuterParsingState]:
         next_states = set()
 
@@ -258,6 +326,13 @@ class TransmuterParser:
                     next_states.add(next_state)
         else:
             assert issubclass(cls, TransmuterNonterminalType)
+
+            if not isinstance(ascend, bool):
+                ascend = (
+                    ascend is None
+                    or ascend not in self.nonterminal_types_first
+                    or cls not in self.nonterminal_types_first[ascend]
+                ) and cls in self.nonterminal_types_first
 
             for current_state in current_states:
                 next_states |= self.call_single_nonterminal_type(
