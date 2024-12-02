@@ -40,6 +40,9 @@ class TransmuterPosition:
     def __repr__(self) -> str:
         return repr((self.filename, self.index_, self.line, self.column))
 
+    def __str__(self) -> str:
+        return f"{self.filename}:{self.line}:{self.column}"
+
     def copy(self) -> "TransmuterPosition":
         return TransmuterPosition(
             self.filename, self.index_, self.line, self.column
@@ -50,9 +53,7 @@ class TransmuterException(Exception):
     def __init__(
         self, position: TransmuterPosition, type_: str, description: str
     ) -> None:
-        super().__init__(
-            f"{position.filename}:{position.line}:{position.column}: {type_}: {description}"
-        )
+        super().__init__(f"{position}: {type_}: {description}")
 
 
 class TransmuterExceptionHandler:

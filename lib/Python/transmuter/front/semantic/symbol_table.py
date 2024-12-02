@@ -81,7 +81,7 @@ class TransmuterDuplicateSymbolDefinitionError(TransmuterSemanticError):
     ) -> None:
         super().__init__(
             position,
-            f"Duplicate definition of symbol '{name}', first defined at {first_position.filename}:{first_position.line}:{first_position.column}.",
+            f"Duplicate definition of symbol '{name}', first defined at {first_position}.",
         )
 
 
@@ -94,5 +94,5 @@ class TransmuterUndefinedSymbolError(TransmuterSemanticError):
     ) -> None:
         super().__init__(
             position,
-            f"Undefined symbol '{name}', first referenced at {first_position.filename}:{first_position.line}:{first_position.column}.",
+            f"Undefined symbol '{name}', first referenced at {first_position}.",
         )
