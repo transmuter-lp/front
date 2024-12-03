@@ -733,4 +733,4 @@ class PrimitiveCondition(TransmuterNonterminalType):
 
 
 class Parser(TransmuterParser):
-    NONTERMINAL_TYPES = {Grammar, Production, ProductionHeader, ProductionBody, Condition, ProductionSpecifiers, SelectionExpression, DisjunctionCondition, ProductionSpecifierList, SequenceExpression, ConjunctionCondition, ProductionSpecifier, IterationExpression, PrimaryExpression, NegationCondition, OptionalExpression, PrimitiveCondition}
+    NONTERMINAL_TYPES = [Grammar, Production, ProductionHeader, ProductionBody, Condition, ProductionSpecifiers, SelectionExpression, DisjunctionCondition, ProductionSpecifierList, SequenceExpression, ConjunctionCondition, ProductionSpecifier, IterationExpression, PrimaryExpression, NegationCondition, OptionalExpression, PrimitiveCondition]

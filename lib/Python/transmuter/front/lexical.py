@@ -76,7 +76,7 @@ class TransmuterTerminal:
 
 @dataclass
 class TransmuterLexer:
-    TERMINAL_TAGS: ClassVar[set[type[TransmuterTerminalTag]]]
+    TERMINAL_TAGS: ClassVar[list[type[TransmuterTerminalTag]]]
 
     filename: str
     input: str

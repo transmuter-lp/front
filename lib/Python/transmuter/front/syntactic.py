@@ -167,11 +167,11 @@ class TransmuterBSR:
 
 @dataclass
 class TransmuterParser:
-    NONTERMINAL_TYPES: ClassVar[set[type[TransmuterNonterminalType]]]
+    NONTERMINAL_TYPES: ClassVar[list[type[TransmuterNonterminalType]]]
 
     lexer: TransmuterLexer
     nonterminal_types_ascend_parents: dict[
-        type[TransmuterNonterminalType], set[type[TransmuterNonterminalType]]
+        type[TransmuterNonterminalType], list[type[TransmuterNonterminalType]]
     ] = field(init=False, repr=False)
     bsr: TransmuterBSR = field(init=False, repr=False)
     _nonterminal_type_start: type[TransmuterNonterminalType] = field(
@@ -191,9 +191,9 @@ class TransmuterParser:
     @staticmethod
     def compute_sccs[
         T
-    ](graph: dict[T, set[T]]) -> tuple[dict[T, set[T]], dict[T, set[T]]]:
+    ](graph: dict[T, set[T]]) -> tuple[dict[T, set[T]], dict[T, list[T]]]:
         # Tarjan's strongly connected components algorithm
-        visited: list[T] = []
+        visited: dict[T, int] = {}
         stack = []
         lowlinks = {}
         sccs = []
@@ -201,7 +201,7 @@ class TransmuterParser:
         def strongconnect(v: T) -> None:
             index = len(visited)
             lowlinks[v] = index
-            visited.append(v)
+            visited[v] = index
             stack.append(v)
             assert v in graph
 
@@ -211,7 +211,7 @@ class TransmuterParser:
                     assert w in lowlinks
                     lowlinks[v] = min(lowlinks[v], lowlinks[w])
                 elif w in stack:
-                    lowlinks[v] = min(lowlinks[v], visited.index(w))
+                    lowlinks[v] = min(lowlinks[v], visited[w])
 
             if lowlinks[v] == index:
                 scc = set()
@@ -245,7 +245,7 @@ class TransmuterParser:
 
             for v in scc:
                 direct_sccs[v] = scc & graph[v]
-                reverse_sccs[v] = {w for w in scc if v in graph[w]}
+                reverse_sccs[v] = [w for w in scc if v in graph[w]]
 
         return direct_sccs, reverse_sccs
 

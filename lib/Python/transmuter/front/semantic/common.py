@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+from collections import deque
 from dataclasses import dataclass, field
 from typing import TypeGuard
 
@@ -40,14 +41,14 @@ class TransmuterBSRVisitor:
         ):
             return
 
-        descend_queue = [list(self.bsr.epns[self.bsr.start])]
+        descend_queue = deque([list(self.bsr.epns[self.bsr.start])])
         ascend_stack = []
         descend_queue_levels = [1, 0]
         ascend_stack_levels = [1]
         self.top_before()
 
         while len(descend_queue) > 0:
-            epns = descend_queue.pop(0)
+            epns = descend_queue.popleft()
             level_changed = False
 
             if descend_queue_levels[0] == 0:
@@ -157,8 +158,8 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 
 @dataclass
 class TransmuterBSRFold[T](TransmuterBSRVisitor):
-    fold_queue: list[list[T | None]] = field(
-        default_factory=list, init=False, repr=False
+    fold_queue: deque[list[T | None]] = field(
+        default_factory=deque, init=False, repr=False
     )
 
     @staticmethod
@@ -191,7 +192,7 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
             else:
                 fold.append(self.fold_external(epn))
 
-        self.fold_queue.insert(0, fold)
+        self.fold_queue.appendleft(fold)
 
     def fold_internal(
         self,
@@ -213,18 +214,18 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
     _tree_fixer: "TransmuterTreePositionFixer | None" = field(
         default=None, init=False, repr=False
     )
-    _parents: list["TransmuterNonterminalTreeNode"] = field(
-        default_factory=list, init=False, repr=False
+    _parents: deque["TransmuterNonterminalTreeNode"] = field(
+        default_factory=deque, init=False, repr=False
     )
 
     def top_before(self) -> None:
         if len(self._parents) > 0:
-            self._parents = []
+            self._parents = deque()
 
         self.tree = None
 
     def descend(self, epns: list[TransmuterEPN], _) -> list[TransmuterEPN]:
-        parent = self._parents.pop(0) if len(self._parents) > 0 else None
+        parent = self._parents.popleft() if len(self._parents) > 0 else None
         assert len(epns) > 0
         assert epns[0].state.end_terminal is not None
 
@@ -318,14 +319,14 @@ class TransmuterTreeVisitor:
     tree: TransmuterNonterminalTreeNode
 
     def visit(self) -> None:
-        descend_queue: list[TransmuterTreeNode] = [self.tree]
+        descend_queue: deque[TransmuterTreeNode] = deque([self.tree])
         ascend_stack = []
         descend_queue_levels = [1, 0]
         ascend_stack_levels = [1]
         self.top_before()
 
         while len(descend_queue) > 0:
-            node = descend_queue.pop(0)
+            node = descend_queue.popleft()
             level_changed = False
 
             if descend_queue_levels[0] == 0:
