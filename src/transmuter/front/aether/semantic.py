@@ -115,13 +115,13 @@ class LexicalState:
 
 
 @dataclass
-class LexicalFragment:
+class _LexicalFragment:
     states: dict[LexicalState, None]
     first: set[LexicalState]
     last: set[LexicalState]
     bypass: bool = False
 
-    def copy(self, bypass: bool) -> "LexicalFragment":
+    def copy(self, bypass: bool) -> "_LexicalFragment":
         new_states = {}
 
         for state in self.states:
@@ -129,7 +129,7 @@ class LexicalFragment:
 
         assert self.first <= self.states.keys()
         assert self.last <= self.states.keys()
-        fragment = LexicalFragment(
+        fragment = _LexicalFragment(
             {s: None for s in new_states.values()},
             {new_states[s] for s in self.first},
             {new_states[s] for s in self.last},
@@ -143,7 +143,7 @@ class LexicalFragment:
 
         return fragment
 
-    def connect(self, fragment: "LexicalFragment") -> None:
+    def connect(self, fragment: "_LexicalFragment") -> None:
         for state in self.last:
             if state.next_states is None:
                 state.next_states = set()
@@ -151,9 +151,9 @@ class LexicalFragment:
             state.next_states |= fragment.first
 
 
-class LexicalFold(TransmuterTreeFold[LexicalFragment]):
+class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
     @staticmethod
-    def fold_selection(children: list[LexicalFragment]) -> LexicalFragment:
+    def fold_selection(children: list[_LexicalFragment]) -> _LexicalFragment:
         assert len(children) > 0
         fragment = children[0]
 
@@ -166,7 +166,7 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
         return fragment
 
     @staticmethod
-    def fold_sequence(children: list[LexicalFragment]) -> LexicalFragment:
+    def fold_sequence(children: list[_LexicalFragment]) -> _LexicalFragment:
         assert len(children) > 0
         fragment = children[0]
 
@@ -194,9 +194,9 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
             | LexicalWildcardPattern
             | LexicalBracketPattern
         ),
-    ) -> LexicalFragment:
+    ) -> _LexicalFragment:
         state = LexicalState(pattern)
-        return LexicalFragment({state: None}, {state}, {state})
+        return _LexicalFragment({state: None}, {state}, {state})
 
     @staticmethod
     def process_bracket(chars: str) -> LexicalBracketPattern:
@@ -238,8 +238,8 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
 
     @classmethod
     def fold_iteration(
-        cls, iterator: TransmuterTerminalTreeNode, child: LexicalFragment
-    ) -> LexicalFragment | None:
+        cls, iterator: TransmuterTerminalTreeNode, child: _LexicalFragment
+    ) -> _LexicalFragment | None:
         iterator_type = iterator.type_
 
         if iterator_type == ExpressionRange:
@@ -267,8 +267,8 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
 
     @classmethod
     def fold_range(
-        cls, range_str: str, child: LexicalFragment
-    ) -> LexicalFragment:
+        cls, range_str: str, child: _LexicalFragment
+    ) -> _LexicalFragment:
         range_split = range_str[1:-1].split(",")
         assert len(range_split) > 0
         range_ = [
@@ -315,8 +315,8 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
     def fold_internal(
         self,
         node: TransmuterNonterminalTreeNode,
-        children: list[LexicalFragment],
-    ) -> LexicalFragment | None:
+        children: list[_LexicalFragment],
+    ) -> _LexicalFragment | None:
         if len(children) == 0:
             return None
 
@@ -335,7 +335,7 @@ class LexicalFold(TransmuterTreeFold[LexicalFragment]):
 
     def fold_external(
         self, node: TransmuterTerminalTreeNode
-    ) -> LexicalFragment | None:
+    ) -> _LexicalFragment | None:
         if node.type_ in (
             VerticalLine,
             Asterisk,
@@ -411,10 +411,10 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             repr=False,
         )
     )
-    fold: LexicalFold | None = field(default=None, init=False, repr=False)
+    _fold: _LexicalFold | None = field(default=None, init=False, repr=False)
 
     @staticmethod
-    def process_conditionals(symbol: LexicalSymbol) -> None:
+    def _process_conditionals(symbol: LexicalSymbol) -> None:
         assert symbol.definition is not None
         assert len(symbol.definition.children) > 0
         header = symbol.definition.children[0]
@@ -545,12 +545,12 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                     symbol.references[0].start_position,
                 )
 
-            self.process_conditionals(symbol)
-            self.process_states(symbol)
+            self._process_conditionals(symbol)
+            self._process_states(symbol)
 
         return False
 
-    def process_states(self, symbol: LexicalSymbol) -> None:
+    def _process_states(self, symbol: LexicalSymbol) -> None:
         assert symbol.definition is not None
         assert len(symbol.definition.children) > 1
         assert isinstance(
@@ -562,15 +562,17 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             TransmuterNonterminalTreeNode,
         )
 
-        if self.fold is None:
-            self.fold = LexicalFold(symbol.definition.children[1].children[0])
+        if self._fold is None:
+            self._fold = _LexicalFold(
+                symbol.definition.children[1].children[0]
+            )
         else:
-            self.fold.tree = symbol.definition.children[1].children[0]
-            self.fold.fold_queue.clear()
+            self._fold.tree = symbol.definition.children[1].children[0]
+            self._fold.fold_queue.clear()
 
-        self.fold.visit()
-        assert len(self.fold.fold_queue) > 0
-        fragment = self.fold.fold_queue[0]
+        self._fold.visit()
+        assert len(self._fold.fold_queue) > 0
+        fragment = self._fold.fold_queue[0]
 
         if fragment is not None:
             states_indexes = {}
@@ -594,18 +596,18 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
 
 
 @dataclass
-class SyntacticFragment:
+class _SyntacticFragment:
     references: dict[TransmuterTerminal, list[TransmuterNonterminalTreeNode]]
     bypass: bool = False
 
 
 @dataclass
-class SyntacticFold(TransmuterTreeFold[SyntacticFragment]):
+class _SyntacticFold(TransmuterTreeFold[_SyntacticFragment]):
     def fold_internal(
         self,
         node: TransmuterNonterminalTreeNode,
-        children: list[SyntacticFragment],
-    ) -> SyntacticFragment | None:
+        children: list[_SyntacticFragment],
+    ) -> _SyntacticFragment | None:
         if len(children) == 0 or node.type_ in (
             Condition,
             DisjunctionCondition,
@@ -651,9 +653,9 @@ class SyntacticFold(TransmuterTreeFold[SyntacticFragment]):
 
     def fold_external(
         self, node: TransmuterTerminalTreeNode
-    ) -> SyntacticFragment | None:
+    ) -> _SyntacticFragment | None:
         if node.type_ == Identifier:
-            return SyntacticFragment({node.end_terminal: []})
+            return _SyntacticFragment({node.end_terminal: []})
 
         return None
 
@@ -678,10 +680,10 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
     nonterminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode] = (
         field(init=False, repr=False)
     )
-    fold: SyntacticFold | None = field(default=None, init=False, repr=False)
+    _fold: _SyntacticFold | None = field(default=None, init=False, repr=False)
 
     @staticmethod
-    def process_start(symbol: SyntacticSymbol) -> None:
+    def _process_start(symbol: SyntacticSymbol) -> None:
         assert symbol.definition is not None
         assert len(symbol.definition.children) > 0
         header = symbol.definition.children[0]
@@ -770,12 +772,12 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
                     symbol.references[0].start_position,
                 )
 
-            self.process_start(symbol)
-            self.process_first(symbol)
+            self._process_start(symbol)
+            self._process_first(symbol)
 
         return False
 
-    def process_first(self, symbol: SyntacticSymbol) -> None:
+    def _process_first(self, symbol: SyntacticSymbol) -> None:
         assert symbol.definition is not None
         assert len(symbol.definition.children) > 1
         assert isinstance(
@@ -787,17 +789,17 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
             TransmuterNonterminalTreeNode,
         )
 
-        if self.fold is None:
-            self.fold = SyntacticFold(
+        if self._fold is None:
+            self._fold = _SyntacticFold(
                 symbol.definition.children[1].children[0]
             )
         else:
-            self.fold.tree = symbol.definition.children[1].children[0]
-            self.fold.fold_queue.clear()
+            self._fold.tree = symbol.definition.children[1].children[0]
+            self._fold.fold_queue.clear()
 
-        self.fold.visit()
-        assert len(self.fold.fold_queue) > 0
-        fragment = self.fold.fold_queue[0]
+        self._fold.visit()
+        assert len(self._fold.fold_queue) > 0
+        fragment = self._fold.fold_queue[0]
 
         if fragment is not None:
             for reference in fragment.references:

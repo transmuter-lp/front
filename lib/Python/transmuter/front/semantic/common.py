@@ -162,7 +162,7 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
     )
 
     @staticmethod
-    def fold_filter(item: T | None) -> TypeGuard[T]:
+    def _fold_filter(item: T | None) -> TypeGuard[T]:
         return item is not None
 
     def bottom(self) -> bool:
@@ -178,12 +178,12 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
             if left_children or right_children:
                 assert len(self.fold_queue) > 0
                 fold_right = (
-                    list(filter(self.fold_filter, self.fold_queue.pop()))
+                    list(filter(self._fold_filter, self.fold_queue.pop()))
                     if right_children
                     else []
                 )
                 fold_left = (
-                    list(filter(self.fold_filter, self.fold_queue.pop()))
+                    list(filter(self._fold_filter, self.fold_queue.pop()))
                     if left_children
                     else []
                 )
@@ -207,24 +207,24 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
 
 @dataclass
 class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
-    tree_fixer: "TransmuterTreePositionFixer | None" = field(
-        default=None, init=False, repr=False
-    )
-    parents: list["TransmuterNonterminalTreeNode"] = field(
-        default_factory=list, init=False, repr=False
-    )
     tree: "TransmuterNonterminalTreeNode | None" = field(
         default=None, init=False, repr=False
     )
+    _tree_fixer: "TransmuterTreePositionFixer | None" = field(
+        default=None, init=False, repr=False
+    )
+    _parents: list["TransmuterNonterminalTreeNode"] = field(
+        default_factory=list, init=False, repr=False
+    )
 
     def top_before(self) -> None:
-        if len(self.parents) > 0:
-            self.parents = []
+        if len(self._parents) > 0:
+            self._parents = []
 
         self.tree = None
 
     def descend(self, epns: list[TransmuterEPN], _) -> list[TransmuterEPN]:
-        parent = self.parents.pop(0) if len(self.parents) > 0 else None
+        parent = self._parents.pop(0) if len(self._parents) > 0 else None
         assert len(epns) > 0
         assert epns[0].state.end_terminal is not None
 
@@ -252,10 +252,10 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
         assert parent is not None
 
         if len(self.bsr.left_children(epns[0])) > 0:
-            self.parents.append(parent)
+            self._parents.append(parent)
 
         if len(self.bsr.right_children(epns[0])) > 0:
-            self.parents.append(parent)
+            self._parents.append(parent)
         elif (
             epns[0].state.split_position
             != epns[0].state.end_terminal.end_position
@@ -275,12 +275,12 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
 
     def bottom(self) -> bool:
         if self.tree is not None:
-            if self.tree_fixer is None:
-                self.tree_fixer = TransmuterTreePositionFixer(self.tree)
+            if self._tree_fixer is None:
+                self._tree_fixer = TransmuterTreePositionFixer(self.tree)
             else:
-                self.tree_fixer.tree = self.tree
+                self._tree_fixer.tree = self.tree
 
-            self.tree_fixer.visit()
+            self._tree_fixer.visit()
 
         return False
 
@@ -413,7 +413,7 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
     )
 
     @staticmethod
-    def fold_filter(item: T | None) -> TypeGuard[T]:
+    def _fold_filter(item: T | None) -> TypeGuard[T]:
         return item is not None
 
     def bottom(self) -> bool:
@@ -423,7 +423,7 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
         if isinstance(node, TransmuterNonterminalTreeNode):
             fold_children = list(
                 filter(
-                    self.fold_filter, self.fold_queue[-len(node.children) :]
+                    self._fold_filter, self.fold_queue[-len(node.children) :]
                 )
             )
             self.fold_queue = self.fold_queue[: -len(node.children)]
@@ -474,14 +474,16 @@ class TransmuterTreePositionUnfixer(TransmuterTreeVisitor):
 
 @dataclass
 class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
-    tree_fixer: TransmuterTreePositionFixer = field(init=False, repr=False)
-    tree_unfixer: TransmuterTreePositionUnfixer = field(init=False, repr=False)
     bsr: TransmuterBSR = field(init=False, repr=False)
+    _tree_fixer: TransmuterTreePositionFixer = field(init=False, repr=False)
+    _tree_unfixer: TransmuterTreePositionUnfixer = field(
+        init=False, repr=False
+    )
 
     def __post_init__(self) -> None:
-        self.tree_fixer = TransmuterTreePositionFixer(self.tree)
-        self.tree_unfixer = TransmuterTreePositionUnfixer(self.tree)
         self.bsr = TransmuterBSR()
+        self._tree_fixer = TransmuterTreePositionFixer(self.tree)
+        self._tree_unfixer = TransmuterTreePositionUnfixer(self.tree)
 
     def top_before(self) -> None:
         if self.bsr.start is not None or len(self.bsr.epns) > 0:
@@ -493,9 +495,9 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
             self.tree.end_terminal.end_position,
         )
 
-        self.tree_fixer.tree = self.tree
-        self.tree_unfixer.tree = self.tree
-        self.tree_unfixer.visit()
+        self._tree_fixer.tree = self.tree
+        self._tree_unfixer.tree = self.tree
+        self._tree_unfixer.visit()
 
     def descend(
         self, node: TransmuterTreeNode, _
@@ -532,7 +534,7 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
         return node
 
     def bottom(self) -> bool:
-        self.tree_fixer.visit()
+        self._tree_fixer.visit()
         return False
 
 
