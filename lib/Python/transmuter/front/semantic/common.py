@@ -166,6 +166,9 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
     def _fold_filter(item: T | None) -> TypeGuard[T]:
         return item is not None
 
+    def top_before(self) -> None:
+        self.fold_queue.clear()
+
     def bottom(self) -> bool:
         return True
 
@@ -219,10 +222,8 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
     )
 
     def top_before(self) -> None:
-        if len(self._parents) > 0:
-            self._parents = deque()
-
         self.tree = None
+        self._parents.clear()
 
     def descend(self, epns: list[TransmuterEPN], _) -> list[TransmuterEPN]:
         parent = self._parents.popleft() if len(self._parents) > 0 else None
@@ -404,7 +405,11 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
 
     def apply(self) -> None:
         if self.new_tree is not None:
-            self.tree = self.new_tree
+            self.tree.type_ = self.new_tree.type_
+            self.tree.start_position = self.new_tree.start_position
+            self.tree.end_terminal = self.new_tree.end_terminal
+            self.tree.children = self.new_tree.children
+            self.new_tree = self.tree
 
 
 @dataclass
@@ -416,6 +421,9 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
     @staticmethod
     def _fold_filter(item: T | None) -> TypeGuard[T]:
         return item is not None
+
+    def top_before(self) -> None:
+        self.fold_queue.clear()
 
     def bottom(self) -> bool:
         return True
