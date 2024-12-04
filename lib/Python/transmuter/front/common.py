@@ -48,6 +48,12 @@ class TransmuterPosition:
             self.filename, self.index_, self.line, self.column
         )
 
+    def update(self, position: "TransmuterPosition") -> None:
+        self.filename = position.filename
+        self.index_ = position.index_
+        self.line = position.line
+        self.column = position.column
+
 
 class TransmuterException(Exception):
     def __init__(
