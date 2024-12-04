@@ -21,6 +21,7 @@ from typing import ClassVar, NamedTuple
 
 from .common import (
     TransmuterConditions,
+    transmuter_compute_sccs,
     TransmuterMeta,
     TransmuterPosition,
     TransmuterException,
@@ -188,69 +189,10 @@ class TransmuterParser:
         set[TransmuterTerminal],
     ] = field(default_factory=dict, init=False, repr=False)
 
-    @staticmethod
-    def compute_sccs[
-        T
-    ](graph: dict[T, set[T]]) -> tuple[dict[T, set[T]], dict[T, list[T]]]:
-        # Tarjan's strongly connected components algorithm
-        visited: dict[T, int] = {}
-        stack = []
-        lowlinks = {}
-        sccs = []
-
-        def strongconnect(v: T) -> None:
-            index = len(visited)
-            lowlinks[v] = index
-            visited[v] = index
-            stack.append(v)
-            assert v in graph
-
-            for w in graph[v]:
-                if w not in visited:
-                    strongconnect(w)
-                    assert w in lowlinks
-                    lowlinks[v] = min(lowlinks[v], lowlinks[w])
-                elif w in stack:
-                    lowlinks[v] = min(lowlinks[v], visited[w])
-
-            if lowlinks[v] == index:
-                scc = set()
-                assert len(stack) > 0
-                w = stack.pop()
-                scc.add(w)
-
-                while w != v:
-                    assert len(stack) > 0
-                    w = stack.pop()
-                    scc.add(w)
-
-                sccs.append(scc)
-
-        for v in graph:
-            if v not in visited:
-                strongconnect(v)
-
-        direct_sccs = {}
-        reverse_sccs = {}
-
-        for scc in sccs:
-            assert scc <= graph.keys()
-
-            if len(scc) == 1:
-                v = scc.pop()
-                scc.add(v)
-
-                if v not in graph[v]:
-                    continue
-
-            for v in scc:
-                direct_sccs[v] = scc & graph[v]
-                reverse_sccs[v] = [w for w in scc if v in graph[w]]
-
-        return direct_sccs, reverse_sccs
-
     def __post_init__(self) -> None:
+        self.nonterminal_types_ascend_parents = {}
         self.bsr = TransmuterBSR()
+        self._nonterminal_types_first = {}
         nonterminal_type_start = None
         nonterminal_types_first = {}
 
@@ -272,10 +214,25 @@ class TransmuterParser:
             raise TransmuterNoStartError()
 
         self._nonterminal_type_start = nonterminal_type_start
-        (
-            self._nonterminal_types_first,
-            self.nonterminal_types_ascend_parents,
-        ) = self.compute_sccs(nonterminal_types_first)
+        sccs = transmuter_compute_sccs(nonterminal_types_first)
+
+        for scc in sccs:
+            assert scc <= nonterminal_types_first.keys()
+
+            if len(scc) == 1:
+                v = scc.pop()
+                scc.add(v)
+
+                if v not in nonterminal_types_first[v]:
+                    continue
+
+            for v in scc:
+                self._nonterminal_types_first[v] = (
+                    scc & nonterminal_types_first[v]
+                )
+                self.nonterminal_types_ascend_parents[v] = [
+                    w for w in scc if v in nonterminal_types_first[w]
+                ]
 
     def parse(self) -> None:
         try:

@@ -25,6 +25,48 @@ TransmuterConditions = IntFlag
 TransmuterCondition = auto
 
 
+def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
+    # Tarjan's strongly connected components algorithm
+    visited: dict[T, int] = {}
+    stack = []
+    lowlinks = {}
+    sccs = []
+
+    def strongconnect(v: T) -> None:
+        index = len(visited)
+        lowlinks[v] = index
+        visited[v] = index
+        stack.append(v)
+        assert v in graph
+
+        for w in graph[v]:
+            if w not in visited:
+                strongconnect(w)
+                assert w in lowlinks
+                lowlinks[v] = min(lowlinks[v], lowlinks[w])
+            elif w in stack:
+                lowlinks[v] = min(lowlinks[v], visited[w])
+
+        if lowlinks[v] == index:
+            scc = set()
+            assert len(stack) > 0
+            w = stack.pop()
+            scc.add(w)
+
+            while w != v:
+                assert len(stack) > 0
+                w = stack.pop()
+                scc.add(w)
+
+            sccs.append(scc)
+
+    for v in graph:
+        if v not in visited:
+            strongconnect(v)
+
+    return sccs
+
+
 class TransmuterMeta(type):
     def __repr__(cls) -> str:
         return repr(cls.__name__)

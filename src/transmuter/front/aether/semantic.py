@@ -17,6 +17,7 @@
 
 from dataclasses import dataclass, field
 
+from ..common import transmuter_compute_sccs
 from ..lexical import TransmuterTerminal
 from ..semantic.common import (
     TransmuterTreeNode,
@@ -767,6 +768,8 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
         return node
 
     def bottom(self) -> bool:
+        first = {}
+
         for name, symbol in self.nonterminal_table:
             assert isinstance(symbol, SyntacticSymbol)
 
@@ -780,6 +783,41 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
 
             self._process_start(symbol)
             self._process_first(symbol)
+            first[name] = set(s.value for s in symbol.static_first)
+            first[name].update(s.value for s in symbol.conditional_first)
+
+        sccs = transmuter_compute_sccs(first)
+        first2 = {}
+
+        for scc in sccs:
+            assert scc <= first.keys()
+
+            if len(scc) == 1:
+                v = scc.pop()
+                scc.add(v)
+
+                if v not in first[v]:
+                    continue
+
+            for v in scc:
+                first2[v] = scc & first[v]
+
+        for name, symbol in self.nonterminal_table:
+            assert isinstance(symbol, SyntacticSymbol)
+
+            if name not in first2:
+                symbol.static_first.clear()
+                symbol.conditional_first.clear()
+                continue
+
+            symbol.static_first = [
+                f for f in symbol.static_first if f.value in first2[name]
+            ]
+            symbol.conditional_first = {
+                f: symbol.conditional_first[f]
+                for f in symbol.conditional_first
+                if f.value in first2[name]
+            }
 
         return False
 
