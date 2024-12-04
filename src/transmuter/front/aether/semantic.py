@@ -490,6 +490,10 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                 else:
                     symbol.ignore = True
 
+    def top_before(self) -> None:
+        self.condition_table.symbols.clear()
+        self.terminal_table.symbols.clear()
+
     def descend(
         self, node: TransmuterTreeNode, _
     ) -> TransmuterTreeNode | None:
@@ -568,7 +572,6 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             )
         else:
             self._fold.tree = symbol.definition.children[1].children[0]
-            self._fold.fold_queue.clear()
 
         self._fold.visit()
         assert len(self._fold.fold_queue) > 0
@@ -717,6 +720,9 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
             TransmuterNonterminalTreeNode
         ](self.terminal_table)
 
+    def top_before(self) -> None:
+        self.nonterminal_table.symbols.clear()
+
     def descend(
         self, node: TransmuterTreeNode, _
     ) -> TransmuterTreeNode | None:
@@ -795,7 +801,6 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
             )
         else:
             self._fold.tree = symbol.definition.children[1].children[0]
-            self._fold.fold_queue.clear()
 
         self._fold.visit()
         assert len(self._fold.fold_queue) > 0
