@@ -15,7 +15,72 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+import builtins
+
 from .common import AetherCommonFileFold
+
+
+def _escape_identifier(value: str) -> str:
+    if (
+        value
+        in (
+            "and",
+            "as",
+            "assert",
+            "async",
+            "await",
+            "break",
+            "case",
+            "class",
+            "Conditions",
+            "continue",
+            "def",
+            "del",
+            "elif",
+            "else",
+            "except",
+            "False",
+            "finally",
+            "for",
+            "from",
+            "global",
+            "if",
+            "in",
+            "import",
+            "is",
+            "lambda",
+            "Lexer",
+            "match",
+            "None",
+            "nonlocal",
+            "not",
+            "or",
+            "Parser",
+            "pass",
+            "raise",
+            "return",
+            "TransmuterCondition",
+            "TransmuterConditions",
+            "TransmuterInternalError",
+            "TransmuterLexer",
+            "TransmuterLexingState",
+            "TransmuterNonterminalType",
+            "TransmuterParser",
+            "TransmuterParsingState",
+            "transmuter_selection",
+            "TransmuterTerminalTag",
+            "True",
+            "try",
+            "type",
+            "while",
+            "with",
+            "yield",
+        )
+        or value in builtins.__dict__
+    ):
+        return f"{value}_"
+
+    return value
 
 
 class CommonFileFold(AetherCommonFileFold):
@@ -27,4 +92,4 @@ class Conditions(TransmuterConditions):
     {'\n    '.join(conditions)}"""
 
     def fold_condition(self, name: str) -> str:
-        return f"{name} = TransmuterCondition()"
+        return f"{_escape_identifier(name)} = TransmuterCondition()"
