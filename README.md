@@ -7,7 +7,7 @@ Front-end libraries and utilities for the Transmuter language processing infrast
 - Aether -- a self-declared language declaration language
 - Conditional declaration of language features
 
-### Lexical Analyzer
+### Lexical Analysis
 
 - POSIX ERE-based language
 - NFA-based implementation
@@ -19,7 +19,7 @@ Front-end libraries and utilities for the Transmuter language processing infrast
 - Ambiguous tokenization
     - Precedence-based disambiguation
 
-### Syntactic Analyzer
+### Syntactic Analysis
 
 - Generalized CFG-based language (including ambiguities and left-recursion)
 - Recursive Descent-based implementation (using backtracking instead of lookahead)
@@ -31,7 +31,7 @@ Front-end libraries and utilities for the Transmuter language processing infrast
     - Ordered choice and longest match-based disambiguation
 - Syntax sugar for optionals and expression grouping
 
-### Semantic Analyzer
+### Semantic Analysis
 
 - Dual BSR / Syntax Tree APIs
     - Visitors, transformers and folds
