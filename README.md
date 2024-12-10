@@ -43,6 +43,7 @@ This codebase is licensed under the [GNU GPL version 3](LICENSE) or any later ve
 
 ## References
 
+- TARJAN, R. Depth-first search and linear graph algorithms. **SIAM journal on computing**, v. 1, n. 2, p. 146–160, 1972. Available at: https://doi.org/10.1137/0201010.
 - FROST, R. A.; HAFIZ, R.; CALLAGHAN, P. C. **Modular and efficient top-down parsing for ambiguous left-recursive grammars**. Proceedings of the 10th International Conference on Parsing Technologies - IWPT ’07. Morristown, NJ, USA: Association for Computational Linguistics, 2007. Available at: https://doi.org/10.3115/1621410.1621425.
 - COX, R. **Regular expression matching can be simple and fast**, 2007. Available at: https://swtch.com/~rsc/regexp/regexp1.html.
 - SCOTT, E.; JOHNSTONE, A. GLL Parsing. **Electronic Notes in Theoretical Computer Science**, v. 253, n. 7, p. 177–189, 2010. Available at: https://doi.org/10.1016/j.entcs.2010.08.041.
