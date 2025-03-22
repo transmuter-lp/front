@@ -1,6 +1,6 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
-# Copyright (C) 2024  The Transmuter Project
+# Copyright (C) 2024, 2025  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -412,7 +412,6 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             repr=False,
         )
     )
-    _fold: _LexicalFold | None = field(default=None, init=False, repr=False)
 
     @staticmethod
     def _process_conditionals(symbol: LexicalSymbol) -> None:
@@ -566,17 +565,11 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             symbol.definition.children[1].children[0],
             TransmuterNonterminalTreeNode,
         )
-
-        if self._fold is None:
-            self._fold = _LexicalFold(
-                symbol.definition.children[1].children[0]
-            )
-        else:
-            self._fold.tree = symbol.definition.children[1].children[0]
-
-        self._fold.visit()
-        assert len(self._fold.fold_queue) > 0
-        fragment = self._fold.fold_queue[0]
+        fold = _LexicalFold.get(symbol.definition.children[1].children[0])
+        assert isinstance(fold, _LexicalFold)
+        fold.visit()
+        assert len(fold.fold_queue) > 0
+        fragment = fold.fold_queue[0]
 
         if fragment is not None:
             states_indexes = {}
@@ -605,7 +598,6 @@ class _SyntacticFragment:
     bypass: bool = False
 
 
-@dataclass
 class _SyntacticFold(TransmuterTreeFold[_SyntacticFragment]):
     def fold_internal(
         self,
@@ -684,7 +676,6 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
     nonterminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode] = (
         field(init=False, repr=False)
     )
-    _fold: _SyntacticFold | None = field(default=None, init=False, repr=False)
 
     @staticmethod
     def _process_start(symbol: SyntacticSymbol) -> None:
@@ -832,17 +823,11 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
             symbol.definition.children[1].children[0],
             TransmuterNonterminalTreeNode,
         )
-
-        if self._fold is None:
-            self._fold = _SyntacticFold(
-                symbol.definition.children[1].children[0]
-            )
-        else:
-            self._fold.tree = symbol.definition.children[1].children[0]
-
-        self._fold.visit()
-        assert len(self._fold.fold_queue) > 0
-        fragment = self._fold.fold_queue[0]
+        fold = _SyntacticFold.get(symbol.definition.children[1].children[0])
+        assert isinstance(fold, _SyntacticFold)
+        fold.visit()
+        assert len(fold.fold_queue) > 0
+        fragment = fold.fold_queue[0]
 
         if fragment is not None:
             for reference in fragment.references:

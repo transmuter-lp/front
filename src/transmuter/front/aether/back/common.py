@@ -1,6 +1,6 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
-# Copyright (C) 2024  The Transmuter Project
+# Copyright (C) 2024, 2025  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from ...semantic.common import (
     TransmuterTerminalTreeNode,
@@ -129,9 +129,6 @@ class AetherConditionFold(TransmuterTreeFold[str]):
 @dataclass
 class AetherLexicalFileFold(AetherFileFold):
     condition_fold_type: type[AetherConditionFold]
-    _condition_fold: AetherConditionFold | None = field(
-        default=None, init=False, repr=False
-    )
 
     def fold(self) -> str:
         terminal_tag_names = []
@@ -218,15 +215,12 @@ class AetherLexicalFileFold(AetherFileFold):
         return self.fold_file(terminal_tag_names, terminal_tags)
 
     def fold_condition(self, value: TransmuterNonterminalTreeNode) -> str:
-        if self._condition_fold is None:
-            self._condition_fold = self.condition_fold_type(value)
-        else:
-            self._condition_fold.tree = value
-
-        self._condition_fold.visit()
-        assert len(self._condition_fold.fold_queue) > 0
-        assert self._condition_fold.fold_queue[0] is not None
-        return self._condition_fold.fold_queue[0]
+        condition_fold = self.condition_fold_type.get(value)
+        assert isinstance(condition_fold, AetherConditionFold)
+        condition_fold.visit()
+        assert len(condition_fold.fold_queue) > 0
+        assert condition_fold.fold_queue[0] is not None
+        return condition_fold.fold_queue[0]
 
     def fold_file(
         self, terminal_tag_names: list[str], terminal_tags: list[str]

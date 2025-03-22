@@ -1,6 +1,6 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
-# Copyright (C) 2024  The Transmuter Project
+# Copyright (C) 2024, 2025  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,7 @@
 
 from collections import deque
 from dataclasses import dataclass, field
-from typing import TypeGuard
+from typing import ClassVar, TypeGuard
 
 from ..common import TransmuterPosition, TransmuterException, TransmuterWarning
 from ..lexical import TransmuterTerminalTag, TransmuterTerminal
@@ -31,7 +31,17 @@ from ..syntactic import (
 
 @dataclass
 class TransmuterBSRVisitor:
+    _instance: ClassVar["TransmuterBSRVisitor | None"] = None
     bsr: TransmuterBSR
+
+    @classmethod
+    def get(cls, bsr: TransmuterBSR) -> "TransmuterBSRVisitor":
+        if cls._instance is None:
+            cls._instance = cls(bsr)
+        else:
+            cls._instance.bsr = bsr
+
+        return cls._instance
 
     def visit(self) -> None:
         if (
@@ -214,9 +224,6 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
     tree: "TransmuterNonterminalTreeNode | None" = field(
         default=None, init=False, repr=False
     )
-    _tree_fixer: "TransmuterTreePositionFixer | None" = field(
-        default=None, init=False, repr=False
-    )
     _parents: deque["TransmuterNonterminalTreeNode"] = field(
         default_factory=deque, init=False, repr=False
     )
@@ -277,12 +284,7 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
 
     def bottom(self) -> bool:
         if self.tree is not None:
-            if self._tree_fixer is None:
-                self._tree_fixer = TransmuterTreePositionFixer(self.tree)
-            else:
-                self._tree_fixer.tree = self.tree
-
-            self._tree_fixer.visit()
+            TransmuterTreePositionFixer.get(self.tree).visit()
 
         return False
 
@@ -317,7 +319,19 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
 
 @dataclass
 class TransmuterTreeVisitor:
+    _instance: ClassVar["TransmuterTreeVisitor | None"] = None
     tree: TransmuterNonterminalTreeNode
+
+    @classmethod
+    def get(
+        cls, tree: TransmuterNonterminalTreeNode
+    ) -> "TransmuterTreeVisitor":
+        if cls._instance is None:
+            cls._instance = cls(tree)
+        else:
+            cls._instance.tree = tree
+
+        return cls._instance
 
     def visit(self) -> None:
         descend_queue: deque[TransmuterTreeNode] = deque([self.tree])
@@ -484,15 +498,9 @@ class TransmuterTreePositionUnfixer(TransmuterTreeVisitor):
 @dataclass
 class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
     bsr: TransmuterBSR = field(init=False, repr=False)
-    _tree_fixer: TransmuterTreePositionFixer = field(init=False, repr=False)
-    _tree_unfixer: TransmuterTreePositionUnfixer = field(
-        init=False, repr=False
-    )
 
     def __post_init__(self) -> None:
         self.bsr = TransmuterBSR()
-        self._tree_fixer = TransmuterTreePositionFixer(self.tree)
-        self._tree_unfixer = TransmuterTreePositionUnfixer(self.tree)
 
     def top_before(self) -> None:
         if self.bsr.start is not None or len(self.bsr.epns) > 0:
@@ -504,9 +512,7 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
             self.tree.end_terminal.end_position,
         )
 
-        self._tree_fixer.tree = self.tree
-        self._tree_unfixer.tree = self.tree
-        self._tree_unfixer.visit()
+        TransmuterTreePositionUnfixer.get(self.tree).visit()
 
     def descend(
         self, node: TransmuterTreeNode, _
@@ -543,7 +549,7 @@ class TransmuterTreeToBSRConverter(TransmuterTreeVisitor):
         return node
 
     def bottom(self) -> bool:
-        self._tree_fixer.visit()
+        TransmuterTreePositionFixer.get(self.tree).visit()
         return False
 
 
