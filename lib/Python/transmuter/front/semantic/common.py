@@ -71,7 +71,6 @@ class TransmuterBSRVisitor:
             epns = self.descend(epns, level_changed)
 
             if len(epns) == 0:
-                assert len(ascend_stack_levels) > 0
                 ascend_stack_levels[-1] -= 1
 
                 if ascend_stack_levels[-1] == 0:
@@ -99,13 +98,11 @@ class TransmuterBSRVisitor:
         while len(ascend_stack) > 0:
             epns = ascend_stack.pop()
             level_changed = False
-            assert len(ascend_stack_levels) > 0
 
             if ascend_stack_levels[-1] == 0:
                 level_changed = True
                 ascend_stack_levels.pop()
 
-            assert len(ascend_stack_levels) > 0
             ascend_stack_levels[-1] -= 1
             self.ascend(epns, level_changed)
 
@@ -156,13 +153,11 @@ class TransmuterBSRPruner(TransmuterBSRTransformer):
 
 class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
     def descend(self, epns: list[TransmuterEPN], _) -> list[TransmuterEPN]:
-        assert len(epns) > 0
         epn = self.disambiguate(epns) if len(epns) > 1 else epns[0]
         self.new_bsr.add(epn)
         return [epn]
 
     def disambiguate(self, epns: list[TransmuterEPN]) -> TransmuterEPN:
-        assert len(epns) > 0
         raise TransmuterAmbiguousGrammarError(epns[0].state.start_position)
 
 
@@ -190,7 +185,6 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
             right_children = len(self.bsr.right_children(epn)) > 0
 
             if left_children or right_children:
-                assert len(self.fold_queue) > 0
                 fold_right = (
                     list(filter(self._fold_filter, self.fold_queue.pop()))
                     if right_children
@@ -234,7 +228,6 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
 
     def descend(self, epns: list[TransmuterEPN], _) -> list[TransmuterEPN]:
         parent = self._parents.popleft() if len(self._parents) > 0 else None
-        assert len(epns) > 0
         assert epns[0].state.end_terminal is not None
 
         if epns[0].type_ is not None:
@@ -269,7 +262,6 @@ class TransmuterBSRToTreeConverter(TransmuterBSRVisitor):
             epns[0].state.split_position
             != epns[0].state.end_terminal.end_position
         ):
-            assert len(epns[0].state.string) > 0
             assert issubclass(epns[0].state.string[-1], TransmuterTerminalTag)
             parent.children.insert(
                 0,
@@ -316,6 +308,16 @@ class TransmuterNonterminalTreeNode(TransmuterTreeNode):
             (self.type_, self.start_position, self.end_terminal, self.children)
         )
 
+    def t(self, index: int) -> TransmuterTerminalTreeNode:
+        t = self.children[index]
+        assert isinstance(t, TransmuterTerminalTreeNode)
+        return t
+
+    def n(self, index: int) -> "TransmuterNonterminalTreeNode":
+        n = self.children[index]
+        assert isinstance(n, TransmuterNonterminalTreeNode)
+        return n
+
 
 @dataclass
 class TransmuterTreeVisitor:
@@ -354,7 +356,6 @@ class TransmuterTreeVisitor:
             node_opt = self.descend(node, level_changed)
 
             if node_opt is None:
-                assert len(ascend_stack_levels) > 0
                 ascend_stack_levels[-1] -= 1
 
                 if ascend_stack_levels[-1] == 0:
@@ -375,13 +376,11 @@ class TransmuterTreeVisitor:
         while len(ascend_stack) > 0:
             node = ascend_stack.pop()
             level_changed = False
-            assert len(ascend_stack_levels) > 0
 
             if ascend_stack_levels[-1] == 0:
                 level_changed = True
                 ascend_stack_levels.pop()
 
-            assert len(ascend_stack_levels) > 0
             ascend_stack_levels[-1] -= 1
             self.ascend(node, level_changed)
 
@@ -472,7 +471,6 @@ class TransmuterTreePositionFixer(TransmuterTreeVisitor):
 
     def ascend(self, node: TransmuterTreeNode, _) -> None:
         if isinstance(node, TransmuterNonterminalTreeNode):
-            assert len(node.children) > 0
             node.start_position = node.children[0].start_position
         else:
             assert isinstance(node, TransmuterTerminalTreeNode)
@@ -484,7 +482,6 @@ class TransmuterTreePositionUnfixer(TransmuterTreeVisitor):
         self, node: TransmuterTreeNode, _
     ) -> TransmuterTreeNode | None:
         if isinstance(node, TransmuterNonterminalTreeNode):
-            assert len(node.children) > 0
             node.children[0].start_position = node.start_position
 
             for i in range(1, len(node.children)):

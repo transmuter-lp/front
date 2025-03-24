@@ -1,7 +1,7 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
 # Copyright (C) 2021, 2023, 2024  Natan Junges <natanajunges@gmail.com>
-# Copyright (C) 2024  The Transmuter Project
+# Copyright (C) 2024, 2025  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,7 +49,6 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         current_state: "TransmuterParsingState",
     ) -> None:
         current_states = {current_state}
-        assert cls in parser.nonterminal_types_ascend_parents
 
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
             try:
@@ -148,7 +147,6 @@ class TransmuterBSR:
         if parent.state.end_terminal is None:
             return set()
 
-        assert len(parent.state.string) > 0
         key = (
             parent.state.string[-1],
             parent.state.split_position,
@@ -217,8 +215,6 @@ class TransmuterParser:
         sccs = transmuter_compute_sccs(nonterminal_types_first)
 
         for scc in sccs:
-            assert scc <= nonterminal_types_first.keys()
-
             if len(scc) == 1:
                 v = scc.pop()
                 scc.add(v)

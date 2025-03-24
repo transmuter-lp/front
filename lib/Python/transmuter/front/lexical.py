@@ -1,7 +1,7 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
 # Copyright (C) 2021, 2023, 2024  Natan Junges <natanajunges@gmail.com>
-# Copyright (C) 2024  The Transmuter Project
+# Copyright (C) 2024, 2025  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -245,7 +245,6 @@ class TransmuterLexer:
 
         while True:
             for terminal_tag in current_positive_terminal_tags:
-                assert terminal_tag in self._terminal_tags_positives
                 next_positive_terminal_tags |= self._terminal_tags_positives[
                     terminal_tag
                 ]
@@ -266,7 +265,6 @@ class TransmuterLexer:
         negative_terminal_tags.clear()
 
         for terminal_tag in positive_terminal_tags:
-            assert terminal_tag in self._terminal_tags_negatives
             negative_terminal_tags |= self._terminal_tags_negatives[
                 terminal_tag
             ]
@@ -277,7 +275,6 @@ class TransmuterLexer:
 
         while True:
             for terminal_tag in current_negative_terminal_tags:
-                assert terminal_tag in self._terminal_tags_negatives
                 next_negative_terminal_tags |= self._terminal_tags_negatives[
                     terminal_tag
                 ]

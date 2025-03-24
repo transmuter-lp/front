@@ -1,6 +1,6 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
-# Copyright (C) 2024  The Transmuter Project
+# Copyright (C) 2024, 2025  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -127,10 +127,7 @@ class ConditionFold(AetherConditionFold):
     def fold_negation(
         self, node: TransmuterNonterminalTreeNode, child: str
     ) -> str:
-        assert len(node.children) > 0
-        assert isinstance(node.children[-1], TransmuterNonterminalTreeNode)
-
-        if len(node.children[-1].children) == 1:
+        if len(node.n(-1).children) == 1:
             return child.replace(" in ", " not in ", 1)
 
         return f"not {child}"

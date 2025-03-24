@@ -1,7 +1,7 @@
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
 # Copyright (C) 2021, 2023, 2024  Natan Junges <natanajunges@gmail.com>
-# Copyright (C) 2024  The Transmuter Project
+# Copyright (C) 2024, 2025  The Transmuter Project
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -37,24 +37,20 @@ def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
         lowlinks[v] = index
         visited[v] = index
         stack.append(v)
-        assert v in graph
 
         for w in graph[v]:
             if w not in visited:
                 strongconnect(w)
-                assert w in lowlinks
                 lowlinks[v] = min(lowlinks[v], lowlinks[w])
             elif w in stack:
                 lowlinks[v] = min(lowlinks[v], visited[w])
 
         if lowlinks[v] == index:
             scc = set()
-            assert len(stack) > 0
             w = stack.pop()
             scc.add(w)
 
             while w != v:
-                assert len(stack) > 0
                 w = stack.pop()
                 scc.add(w)
 

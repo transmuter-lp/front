@@ -128,8 +128,6 @@ class _LexicalFragment:
         for state in self.states:
             new_states[state] = state.copy()
 
-        assert self.first <= self.states.keys()
-        assert self.last <= self.states.keys()
         fragment = _LexicalFragment(
             {s: None for s in new_states.values()},
             {new_states[s] for s in self.first},
@@ -139,7 +137,6 @@ class _LexicalFragment:
 
         for state in fragment.states:
             if state.next_states is not None:
-                assert state.next_states <= self.states.keys()
                 state.next_states = {new_states[s] for s in state.next_states}
 
         return fragment
@@ -155,7 +152,6 @@ class _LexicalFragment:
 class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
     @staticmethod
     def fold_selection(children: list[_LexicalFragment]) -> _LexicalFragment:
-        assert len(children) > 0
         fragment = children[0]
 
         for i in range(1, len(children)):
@@ -168,7 +164,6 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
 
     @staticmethod
     def fold_sequence(children: list[_LexicalFragment]) -> _LexicalFragment:
-        assert len(children) > 0
         fragment = children[0]
 
         for i in range(1, len(children)):
@@ -204,7 +199,6 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
         chars = chars[1:-1]
         negative_match = False
         patterns: list[LexicalSimplePattern | LexicalRangePattern] = []
-        assert len(chars) > 0
 
         if chars[0] == "^":
             negative_match = True
@@ -217,7 +211,6 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
             j = i + 1
 
             if chars[i] == "\\":
-                assert j < len(chars)
                 j += 3 if chars[j] in "01" else 1
 
             if j >= len(chars) - 1 or chars[j] != "-":
@@ -228,7 +221,6 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
                 j = i + 1
 
                 if chars[i] == "\\":
-                    assert j < len(chars)
                     j += 3 if chars[j] in "01" else 1
 
                 patterns.append(LexicalRangePattern(first_char, chars[i:j]))
@@ -271,7 +263,6 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
         cls, range_str: str, child: _LexicalFragment
     ) -> _LexicalFragment:
         range_split = range_str[1:-1].split(",")
-        assert len(range_split) > 0
         range_ = [
             int(range_split[0]),
             (
@@ -297,7 +288,6 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
 
         if range_[1] is not None:
             if range_[1] == -1:
-                assert len(fragments) > 0
                 fragments[-1].connect(fragments[-1])
             else:
                 fragments.extend(
@@ -307,8 +297,6 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
         return cls.fold_sequence(fragments)
 
     def top_after(self) -> None:
-        assert len(self.fold_queue) > 0
-
         if self.fold_queue[0] is not None:
             for state in self.fold_queue[0].last:
                 state.state_accept = True
@@ -323,8 +311,7 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
 
         if len(children) == 1:
             if node.type_ == IterationExpression and len(node.children) == 2:
-                assert isinstance(node.children[1], TransmuterTerminalTreeNode)
-                return self.fold_iteration(node.children[1], children[0])
+                return self.fold_iteration(node.t(1), children[0])
 
             return children[0]
 
@@ -416,77 +403,43 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
     @staticmethod
     def _process_conditionals(symbol: LexicalSymbol) -> None:
         assert symbol.definition is not None
-        assert len(symbol.definition.children) > 0
-        header = symbol.definition.children[0]
-        assert isinstance(header, TransmuterNonterminalTreeNode)
-        assert len(header.children) > 1
+        header = symbol.definition.n(0)
 
         if header.children[1].type_ == Condition:
-            assert isinstance(
-                header.children[1], TransmuterNonterminalTreeNode
-            )
-            symbol.start = header.children[1]
+            symbol.start = header.n(1)
 
         if header.children[1].type_ == ProductionSpecifiers:
-            assert isinstance(
-                header.children[1], TransmuterNonterminalTreeNode
-            )
-            specifiers = header.children[1]
+            specifiers = header.n(1)
         elif (
             len(header.children) > 2
             and header.children[2].type_ == ProductionSpecifiers
         ):
-            assert isinstance(
-                header.children[2], TransmuterNonterminalTreeNode
-            )
-            specifiers = header.children[2]
+            specifiers = header.n(2)
         else:
             return
 
-        assert len(specifiers.children) > 1
-        assert isinstance(
-            specifiers.children[1], TransmuterNonterminalTreeNode
-        )
-
-        for i in range(0, len(specifiers.children[1].children), 2):
-            specifier = specifiers.children[1].children[i]
-            assert isinstance(specifier, TransmuterNonterminalTreeNode)
-            assert len(specifier.children) > 0
+        for i in range(0, len(specifiers.n(1).children), 2):
+            specifier = specifiers.n(1).n(i)
 
             if specifier.children[0].type_ == PlusSign:
-                assert len(specifier.children) > 1
                 positive = specifier.children[1].end_terminal.value
 
                 if len(specifier.children) > 2:
-                    assert isinstance(
-                        specifier.children[2], TransmuterNonterminalTreeNode
-                    )
-                    symbol.conditional_positives[positive] = (
-                        specifier.children[2]
-                    )
+                    symbol.conditional_positives[positive] = specifier.n(2)
                 else:
                     symbol.static_positives.append(positive)
             elif specifier.children[0].type_ == HyphenMinus:
-                assert len(specifier.children) > 1
                 negative = specifier.children[1].end_terminal.value
 
                 if len(specifier.children) > 2:
-                    assert isinstance(
-                        specifier.children[2], TransmuterNonterminalTreeNode
-                    )
-                    symbol.conditional_negatives[negative] = (
-                        specifier.children[2]
-                    )
+                    symbol.conditional_negatives[negative] = specifier.n(2)
                 else:
                     symbol.static_negatives.append(negative)
             else:
                 assert specifier.children[0].type_ == Ignore
 
                 if len(specifier.children) > 1:
-                    assert isinstance(
-                        specifier.children[1], TransmuterNonterminalTreeNode
-                    )
-                    symbol.ignore = specifier.children[1]
+                    symbol.ignore = specifier.n(1)
                 else:
                     symbol.ignore = True
 
@@ -498,14 +451,8 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
         self, node: TransmuterTreeNode, _
     ) -> TransmuterTreeNode | None:
         if isinstance(node, TransmuterNonterminalTreeNode):
-            assert len(node.children) > 0
-
             if node.type_ == Production:
-                assert isinstance(
-                    node.children[0], TransmuterNonterminalTreeNode
-                )
-                assert len(node.children[0].children) > 0
-                name = node.children[0].children[0].end_terminal.value
+                name = node.n(0).children[0].end_terminal.value
                 symbol = self.terminal_table.add_get(name, type_=LexicalSymbol)
 
                 if symbol.definition is not None:
@@ -521,7 +468,6 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             elif node.type_ == ProductionSpecifier and node.children[
                 0
             ].type_ in (PlusSign, HyphenMinus):
-                assert len(node.children) > 1
                 symbol = self.terminal_table.add_get(
                     node.children[1].end_terminal.value, type_=LexicalSymbol
                 )
@@ -542,7 +488,6 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
             assert isinstance(symbol, LexicalSymbol)
 
             if symbol.definition is None:
-                assert len(symbol.references) > 0
                 raise TransmuterUndefinedSymbolError(
                     self.tree.end_terminal.end_position,
                     name,
@@ -556,19 +501,9 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
 
     def _process_states(self, symbol: LexicalSymbol) -> None:
         assert symbol.definition is not None
-        assert len(symbol.definition.children) > 1
-        assert isinstance(
-            symbol.definition.children[1], TransmuterNonterminalTreeNode
-        )
-        assert len(symbol.definition.children[1].children) > 0
-        assert isinstance(
-            symbol.definition.children[1].children[0],
-            TransmuterNonterminalTreeNode,
-        )
-        fold = _LexicalFold.get(symbol.definition.children[1].children[0])
+        fold = _LexicalFold.get(symbol.definition.n(1).n(0))
         assert isinstance(fold, _LexicalFold)
         fold.visit()
-        assert len(fold.fold_queue) > 0
         fragment = fold.fold_queue[0]
 
         if fragment is not None:
@@ -578,14 +513,12 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                 symbol.states.append(s)
                 states_indexes[s] = i
 
-            assert fragment.first <= fragment.states.keys()
             symbol.states_start = sorted(
                 states_indexes[s] for s in fragment.first
             )
 
             for state in symbol.states:
                 if state.next_states is not None:
-                    assert state.next_states <= fragment.states.keys()
                     state.next_states_indexes = sorted(
                         states_indexes[s] for s in state.next_states
                     )
@@ -618,14 +551,8 @@ class _SyntacticFold(TransmuterTreeFold[_SyntacticFragment]):
                 node.type_ == PrimaryExpression
                 and node.children[-1].type_ == Condition
             ):
-                assert isinstance(
-                    node.children[-1], TransmuterNonterminalTreeNode
-                )
-
                 for reference in children[0].references:
-                    children[0].references[reference].insert(
-                        0, node.children[-1]
-                    )
+                    children[0].references[reference].insert(0, node.n(-1))
             elif node.type_ in (OptionalExpression, IterationExpression):
                 children[0].bypass = True
         elif node.type_ == SelectionExpression:
@@ -680,30 +607,18 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
     @staticmethod
     def _process_start(symbol: SyntacticSymbol) -> None:
         assert symbol.definition is not None
-        assert len(symbol.definition.children) > 0
-        header = symbol.definition.children[0]
-        assert isinstance(header, TransmuterNonterminalTreeNode)
-        assert len(header.children) > 1
+        header = symbol.definition.n(0)
 
         if header.children[1].type_ != ProductionSpecifiers:
             return
 
-        specifiers = header.children[1]
-        assert isinstance(specifiers, TransmuterNonterminalTreeNode)
-        assert len(specifiers.children) > 1
-        assert isinstance(
-            specifiers.children[1], TransmuterNonterminalTreeNode
-        )
+        specifiers = header.n(1)
 
-        for i in range(0, len(specifiers.children[1].children), 2):
-            specifier = specifiers.children[1].children[i]
-            assert isinstance(specifier, TransmuterNonterminalTreeNode)
+        for i in range(0, len(specifiers.n(1).children), 2):
+            specifier = specifiers.n(1).n(i)
 
             if len(specifier.children) > 1:
-                assert isinstance(
-                    specifier.children[1], TransmuterNonterminalTreeNode
-                )
-                symbol.start = specifier.children[1]
+                symbol.start = specifier.n(1)
             else:
                 symbol.start = True
 
@@ -719,14 +634,8 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
         self, node: TransmuterTreeNode, _
     ) -> TransmuterTreeNode | None:
         if isinstance(node, TransmuterNonterminalTreeNode):
-            assert len(node.children) > 0
-
             if node.type_ == Production:
-                assert isinstance(
-                    node.children[0], TransmuterNonterminalTreeNode
-                )
-                assert len(node.children[0].children) > 0
-                name = node.children[0].children[0].end_terminal.value
+                name = node.n(0).children[0].end_terminal.value
                 symbol = self.nonterminal_table.add_get(
                     name, type_=SyntacticSymbol
                 )
@@ -765,7 +674,6 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
             assert isinstance(symbol, SyntacticSymbol)
 
             if symbol.definition is None:
-                assert len(symbol.references) > 0
                 raise TransmuterUndefinedSymbolError(
                     self.tree.end_terminal.end_position,
                     name,
@@ -781,8 +689,6 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
         first2 = {}
 
         for scc in sccs:
-            assert scc <= first.keys()
-
             if len(scc) == 1:
                 v = scc.pop()
                 scc.add(v)
@@ -814,19 +720,9 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
 
     def _process_first(self, symbol: SyntacticSymbol) -> None:
         assert symbol.definition is not None
-        assert len(symbol.definition.children) > 1
-        assert isinstance(
-            symbol.definition.children[1], TransmuterNonterminalTreeNode
-        )
-        assert len(symbol.definition.children[1].children) > 0
-        assert isinstance(
-            symbol.definition.children[1].children[0],
-            TransmuterNonterminalTreeNode,
-        )
-        fold = _SyntacticFold.get(symbol.definition.children[1].children[0])
+        fold = _SyntacticFold.get(symbol.definition.n(1).n(0))
         assert isinstance(fold, _SyntacticFold)
         fold.visit()
-        assert len(fold.fold_queue) > 0
         fragment = fold.fold_queue[0]
 
         if fragment is not None:

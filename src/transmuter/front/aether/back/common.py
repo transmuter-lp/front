@@ -218,7 +218,6 @@ class AetherLexicalFileFold(AetherFileFold):
         condition_fold = self.condition_fold_type.get(value)
         assert isinstance(condition_fold, AetherConditionFold)
         condition_fold.visit()
-        assert len(condition_fold.fold_queue) > 0
         assert condition_fold.fold_queue[0] is not None
         return condition_fold.fold_queue[0]
 
