@@ -622,6 +622,24 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
             else:
                 symbol.start = True
 
+    @classmethod
+    def get(
+        cls,
+        tree: TransmuterNonterminalTreeNode,
+        condition_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode],
+        terminal_table: TransmuterSymbolTable[TransmuterNonterminalTreeNode],
+    ) -> "SyntacticSymbolTableBuilder":
+        if cls._instance is None:
+            cls._instance = cls(tree, condition_table, terminal_table)
+        else:
+            assert isinstance(cls._instance, SyntacticSymbolTableBuilder)
+            cls._instance.tree = tree
+            cls._instance.condition_table = condition_table
+            cls._instance.terminal_table = terminal_table
+            cls._instance.nonterminal_table.parent = terminal_table
+
+        return cls._instance
+
     def __post_init__(self) -> None:
         self.nonterminal_table = TransmuterSymbolTable[
             TransmuterNonterminalTreeNode
