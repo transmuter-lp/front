@@ -297,8 +297,8 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
         return cls.fold_sequence(fragments)
 
     def top_after(self) -> None:
-        if self.fold_queue[0] is not None:
-            for state in self.fold_queue[0].last:
+        if self._fold_queue[0] is not None:
+            for state in self._fold_queue[0].last:
                 state.state_accept = True
 
     def fold_internal(
@@ -503,8 +503,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
         assert symbol.definition is not None
         fold = _LexicalFold.get(symbol.definition.n(1).n(0))
         assert isinstance(fold, _LexicalFold)
-        fold.visit()
-        fragment = fold.fold_queue[0]
+        fragment = fold.fold()
 
         if fragment is not None:
             states_indexes = {}
@@ -740,8 +739,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
         assert symbol.definition is not None
         fold = _SyntacticFold.get(symbol.definition.n(1).n(0))
         assert isinstance(fold, _SyntacticFold)
-        fold.visit()
-        fragment = fold.fold_queue[0]
+        fragment = fold.fold()
 
         if fragment is not None:
             for reference in fragment.references:

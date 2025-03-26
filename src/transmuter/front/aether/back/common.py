@@ -217,9 +217,7 @@ class AetherLexicalFileFold(AetherFileFold):
     def fold_condition(self, value: TransmuterNonterminalTreeNode) -> str:
         condition_fold = self.condition_fold_type.get(value)
         assert isinstance(condition_fold, AetherConditionFold)
-        condition_fold.visit()
-        assert condition_fold.fold_queue[0] is not None
-        return condition_fold.fold_queue[0]
+        return condition_fold.fold_s()
 
     def fold_file(
         self, terminal_tag_names: list[str], terminal_tags: list[str]

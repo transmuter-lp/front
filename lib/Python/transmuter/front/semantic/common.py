@@ -163,7 +163,7 @@ class TransmuterBSRDisambiguator(TransmuterBSRTransformer):
 
 @dataclass
 class TransmuterBSRFold[T](TransmuterBSRVisitor):
-    fold_queue: deque[list[T | None]] = field(
+    _fold_queue: deque[list[T | None]] = field(
         default_factory=deque, init=False, repr=False
     )
 
@@ -172,7 +172,7 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
         return item is not None
 
     def top_before(self) -> None:
-        self.fold_queue.clear()
+        self._fold_queue.clear()
 
     def bottom(self) -> bool:
         return True
@@ -186,12 +186,12 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
 
             if left_children or right_children:
                 fold_right = (
-                    list(filter(self._fold_filter, self.fold_queue.pop()))
+                    list(filter(self._fold_filter, self._fold_queue.pop()))
                     if right_children
                     else []
                 )
                 fold_left = (
-                    list(filter(self._fold_filter, self.fold_queue.pop()))
+                    list(filter(self._fold_filter, self._fold_queue.pop()))
                     if left_children
                     else []
                 )
@@ -199,7 +199,16 @@ class TransmuterBSRFold[T](TransmuterBSRVisitor):
             else:
                 fold.append(self.fold_external(epn))
 
-        self.fold_queue.appendleft(fold)
+        self._fold_queue.appendleft(fold)
+
+    def fold(self) -> list[T | None]:
+        self.visit()
+        return self._fold_queue[0]
+
+    def fold_s(self) -> list[T]:
+        fold = self.fold()
+        assert all(f is not None for f in fold)
+        return fold
 
     def fold_internal(
         self,
@@ -427,7 +436,7 @@ class TransmuterTreeTransformer(TransmuterTreeVisitor):
 
 @dataclass
 class TransmuterTreeFold[T](TransmuterTreeVisitor):
-    fold_queue: list[T | None] = field(
+    _fold_queue: list[T | None] = field(
         default_factory=list, init=False, repr=False
     )
 
@@ -436,7 +445,7 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
         return item is not None
 
     def top_before(self) -> None:
-        self.fold_queue.clear()
+        self._fold_queue.clear()
 
     def bottom(self) -> bool:
         return True
@@ -445,16 +454,25 @@ class TransmuterTreeFold[T](TransmuterTreeVisitor):
         if isinstance(node, TransmuterNonterminalTreeNode):
             fold_children = list(
                 filter(
-                    self._fold_filter, self.fold_queue[-len(node.children) :]
+                    self._fold_filter, self._fold_queue[-len(node.children) :]
                 )
             )
-            self.fold_queue = self.fold_queue[: -len(node.children)]
+            self._fold_queue = self._fold_queue[: -len(node.children)]
             fold = self.fold_internal(node, fold_children)
         else:
             assert isinstance(node, TransmuterTerminalTreeNode)
             fold = self.fold_external(node)
 
-        self.fold_queue.insert(0, fold)
+        self._fold_queue.insert(0, fold)
+
+    def fold(self) -> T | None:
+        self.visit()
+        return self._fold_queue[0]
+
+    def fold_s(self) -> T:
+        fold = self.fold()
+        assert fold is not None
+        return fold
 
     def fold_internal(
         self, node: TransmuterNonterminalTreeNode, children: list[T]
