@@ -112,7 +112,7 @@ def _escape_char(value: str) -> str:
 
 class CommonFileFold(AetherCommonFileFold):
     def fold_file(self, conditions: list[str]) -> str:
-        return f"from transmuter.front.common import TransmuterConditions, TransmuterCondition\n\n\nclass Conditions(TransmuterConditions):\n    {'\n    '.join(conditions)}"
+        return f"from transmuter.front.common import TransmuterConditions, TransmuterCondition\n\n\nclass Conditions(TransmuterConditions):\n    {'\n    '.join(conditions) if len(conditions) > 0 else 'pass'}"
 
     def fold_condition(self, name: str) -> str:
         return f"{_escape_identifier(name)} = TransmuterCondition()"
