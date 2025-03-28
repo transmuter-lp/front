@@ -18,6 +18,8 @@
 import builtins
 
 from ...semantic.common import TransmuterNonterminalTreeNode
+from ..lexical import Identifier
+from ..syntactic import Condition
 from ..semantic import (
     LexicalSimplePattern,
     LexicalWildcardPattern,
@@ -26,9 +28,12 @@ from ..semantic import (
     LexicalState,
 )
 from .common import (
+    AetherFileFold,
     AetherCommonFileFold,
     AetherConditionFold,
     AetherLexicalFileFold,
+    AetherExpressionFold,
+    AetherSyntacticFileFold,
 )
 
 
@@ -310,3 +315,143 @@ class LexicalFileFold(AetherLexicalFileFold):
             state += f"\n    next_states |= {' | '.join(f'1 << {n}' for n in value.next_states_indexes)}"
 
         return state
+
+
+class ExpressionFold(AetherExpressionFold):
+    def fold_selection(
+        self,
+        node: TransmuterNonterminalTreeNode,
+        children: list[str],
+        ordered: bool,
+    ) -> str:
+        if ordered:
+            selection = "\nfor _ in transmuter_selection:  # begin selection"
+        else:
+            selection = "next_states.append(set())  # begin selection\n"
+
+        for i, option in zip(range(len(children)), children):
+            condition = None
+
+            if (
+                len(node.n(i * 2).children) == 1
+                and node.n(i * 2).n(0).children[-1].type_ == Condition
+            ):
+                _, condition, option = option.split("\n", 2)
+                option_start = f"\n{condition}\n    next_states.append(next_states[-2])  # begin option\n\n    try:\n"
+            else:
+                option_start = "\ntry:  # begin option\n    next_states.append(next_states[-2])\n"
+
+            if ordered:
+                selection += AetherFileFold.indent(option_start).replace(
+                    "-2", "-1"
+                )
+            else:
+                selection += option_start
+
+            selection += AetherFileFold.indent(
+                option, 2 if ordered else 1
+            ).rstrip("\n")
+
+            if ordered:
+                option_end = "\n    except TransmuterInternalError:\n        next_states.pop()\n    else:\n        break  # end option\n"
+            else:
+                option_end = "\nexcept TransmuterInternalError:\n    next_states.pop()\nelse:\n    next_states[-1] |= next_states.pop()  # end option\n"
+
+            if condition is not None:
+                selection += AetherFileFold.indent(option_end)
+            else:
+                selection += option_end
+
+        if not ordered:
+            selection += (
+                "\nif len(next_states[-1]) == 0:\n    next_states.pop()"
+            )
+
+        selection += "\n    raise TransmuterInternalError()\n\nnext_states[-1] = next_states.pop()  # end selection"
+        return selection
+
+    def fold_sequence(
+        self, node: TransmuterNonterminalTreeNode, children: list[str]
+    ) -> str:
+        return "\n".join(children)
+
+    def fold_iteration(
+        self, node: TransmuterNonterminalTreeNode, child: str, ordered: bool
+    ) -> str:
+        return f"next_states.append(next_states[-1])  # begin iteration\n\nwhile True:\n    try:\n{AetherFileFold.indent(child, 2).strip('\n')}\n    except TransmuterInternalError:\n        next_states.pop()\n        break\n\n    next_states[-2] {'|' if not ordered else ''}= next_states[-1]  # end iteration\n"
+
+    def fold_primary(
+        self,
+        node: TransmuterNonterminalTreeNode,
+        child: str,
+        first: bool,
+        condition: str | None,
+    ) -> str:
+        primary = child
+
+        if node.children[0].type_ == Identifier:
+            primary = f"next_states[-1] = parser.call({_escape_identifier(primary)}, next_states[-1]{', cls' if first else ''})"
+
+        if condition is not None:
+            primary = f"\nif {condition.replace(' in conditions', ' in parser.lexer.conditions')}:\n{AetherFileFold.indent(primary).strip('\n')}\n"
+
+        return primary
+
+    def fold_optional(
+        self, node: TransmuterNonterminalTreeNode, child: str, ordered: bool
+    ) -> str:
+        return f"\ntry:  # begin optional\n    next_states.append(next_states[-1])\n{AetherFileFold.indent(child).rstrip('\n')}\nexcept TransmuterInternalError:\n    next_states.pop()\nelse:\n    next_states[-1] {'|' if not ordered else ''}= next_states.pop()  # end optional\n"
+
+
+class SyntacticFileFold(AetherSyntacticFileFold):
+    def fold_file(
+        self, nonterminal_type_names: list[str], nonterminal_types: list[str]
+    ) -> str:
+        return f"from transmuter.front.syntactic import transmuter_selection, TransmuterNonterminalType, TransmuterParser, TransmuterInternalError\nfrom .common import Conditions\nfrom .lexical import *\n\n\n{'\n\n\n'.join(nonterminal_types)}\n\n\nclass Parser(TransmuterParser):\n    NONTERMINAL_TYPES = [{', '.join(_escape_identifier(n) for n in nonterminal_type_names)}]"
+
+    def fold_nonterminal_type(
+        self, name: str, start: str | None, first: str | None, descend: str
+    ) -> str:
+        nonterminal_type = (
+            f"class {_escape_identifier(name)}(TransmuterNonterminalType):\n"
+        )
+
+        if start is not None:
+            nonterminal_type += f"{self.indent(start)}\n\n"
+
+        if first is not None:
+            nonterminal_type += f"{self.indent(first)}\n\n"
+
+        nonterminal_type += f"{self.indent(descend)}"
+        return nonterminal_type
+
+    def fold_start(self, value: str | None) -> str:
+        return f"@staticmethod\ndef start(conditions):\n    return {value if value is not None else 'True'}"
+
+    def fold_first(
+        self, static_first: str, conditional_first: list[str]
+    ) -> str:
+        first = f"@staticmethod\ndef first(conditions):\n    {static_first}\n"
+
+        if len(conditional_first) > 0:
+            first += f"\n{self.indent('\n\n'.join(conditional_first))}\n\n"
+
+        first += "    return first"
+        return first
+
+    def fold_descend(self, value: str) -> str:
+        return f"@classmethod\ndef descend(cls, parser, current_state):\n    next_states = [{{current_state}}]\n{self.indent(value).replace('\n\n\n', '\n\n')}\n    return next_states[0]"
+
+    def fold_static_first(self, value: list[str]) -> str:
+        if len(value) == 0:
+            return "first = set()"
+
+        return f"first = {{{', '.join(_escape_identifier(f) for f in value)}}}"
+
+    def fold_conditional_first(self, value: str, conditions: list[str]) -> str:
+        condition = (
+            f"({') and ('.join(conditions)})"
+            if len(conditions) > 1
+            else conditions[0]
+        )
+        return f"if {condition}:\n    first.add({_escape_identifier(value)})"
