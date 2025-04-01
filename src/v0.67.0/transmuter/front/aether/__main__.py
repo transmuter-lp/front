@@ -35,6 +35,12 @@ def main():
         description="The front-end generator for the Transmuter language processing infrastructure.",
     )
     arg_parser.add_argument(
+        "-v",
+        "--version",
+        action="version",
+        version="%(prog)s 0.67.0 (spec v1.0.0 / lib v1.0.0)",
+    )
+    arg_parser.add_argument(
         "-L",
         "--language",
         default="python",
