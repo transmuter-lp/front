@@ -1,0 +1,56 @@
+Grammar(start):
+    Production {/Production} ;
+
+Production:
+    ProductionHeader ProductionBody ;
+
+ProductionHeader:
+    Identifier [/Condition]@lexical [/ProductionSpecifiers] Colon ;
+
+ProductionBody:
+    SelectionExpression Semicolon ;
+
+Condition:
+    CommercialAt DisjunctionCondition ;
+
+ProductionSpecifiers:
+    LeftParenthesis ProductionSpecifierList RightParenthesis ;
+
+SelectionExpression:
+    SequenceExpression {/(VerticalLine / Solidus@syntactic) SequenceExpression} ;
+
+DisjunctionCondition:
+    ConjunctionCondition {/DoubleVerticalLine ConjunctionCondition} ;
+
+ProductionSpecifierList:
+    ProductionSpecifier {/Comma ProductionSpecifier} ;
+
+SequenceExpression:
+    (IterationExpression {/IterationExpression})@lexical /
+    (PrimaryExpression {/PrimaryExpression})@syntactic ;
+
+ConjunctionCondition:
+    NegationCondition {/DoubleAmpersand NegationCondition} ;
+
+ProductionSpecifier:
+    (((PlusSign / HyphenMinus) Identifier / Ignore)@lexical / Start@syntactic) [/Condition] ;
+
+IterationExpression:
+    (PrimaryExpression [/Asterisk / PlusSign / QuestionMark / ExpressionRange])@lexical /
+    ((LeftCurlyBracket / LeftCurlyBracketSolidus) SelectionExpression RightCurlyBracket)@syntactic ;
+
+PrimaryExpression:
+    (OrdChar / QuotedChar / FullStop / BracketExpression)@lexical /
+    (Identifier [/Condition])@syntactic /
+    LeftParenthesis SelectionExpression RightParenthesis [/Condition]@syntactic /
+    ((OptionalExpression / IterationExpression) [/Condition])@syntactic ;
+
+NegationCondition:
+    {/ExclamationMark} PrimitiveCondition ;
+
+OptionalExpression:
+    (LeftSquareBracket / LeftSquareBracketSolidus) SelectionExpression RightSquareBracket ;
+
+PrimitiveCondition:
+    Identifier /
+    LeftParenthesis DisjunctionCondition RightParenthesis ;

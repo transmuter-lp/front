@@ -1,0 +1,59 @@
+Whitespace(ignore): ([\t ] | \r? \n)+ ;
+
+Identifier(+OrdChar): [A-Z_a-z] [0-9A-Z_a-z]* ;
+
+Colon(+OrdChar): : ;
+
+Semicolon: \; ;
+
+CommercialAt(+OrdChar): @ ;
+
+LeftParenthesis: \( ;
+
+RightParenthesis: \) ;
+
+VerticalLine: \| ;
+
+Solidus@syntactic: / ;
+
+DoubleVerticalLine: \| \| ;
+
+Comma(+OrdChar): , ;
+
+DoubleAmpersand(+OrdChar): && ;
+
+PlusSign@lexical: \+ ;
+
+HyphenMinus@lexical(+OrdChar): - ;
+
+Ignore@lexical(+OrdChar, -Identifier): ignore ;
+
+Start@syntactic(-Identifier): start ;
+
+Asterisk@lexical: \* ;
+
+QuestionMark@lexical: \? ;
+
+ExpressionRange@lexical: \{ (0 | [1-9] [0-9]*) (, (0 | [1-9] [0-9]*)?)? } ;
+
+LeftCurlyBracket@syntactic: \{ ;
+
+LeftCurlyBracketSolidus@syntactic: \{ / ;
+
+RightCurlyBracket@syntactic: } ;
+
+OrdChar@lexical: [^\000-\037 $()*+.;?[\\^{|\177] ;
+
+QuotedChar@lexical: \\ ([ $()*+.;?[\\^abfnrtv{|] | [01] [0-7]{2}) ;
+
+FullStop@lexical: \. ;
+
+BracketExpression@lexical: \[ (\^? ([^\000-\037\\^\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})) | \^ \^) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})))? (([^]\000-\037\\\177-] | \\ ([\\abfnrtv] | [01] [0-7]{2})) (- ([^]\000-\037\\\177] | \\ ([\\abfnrtv] | [01] [0-7]{2})))?)* -? ] ;
+
+ExclamationMark(+OrdChar): ! ;
+
+LeftSquareBracket@syntactic: \[ ;
+
+LeftSquareBracketSolidus@syntactic: \[ / ;
+
+RightSquareBracket@syntactic: ] ;
