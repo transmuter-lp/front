@@ -27,25 +27,30 @@ TransmuterCondition = auto
 
 def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
     # Tarjan's strongly connected components algorithm
-    visited: dict[T, int] = {}
+    # Index of visited nodes
+    visited_index: dict[T, int] = {}
+    # Smallest index in stack reachable from nodes
+    min_index = {}
     stack = []
-    lowlinks = {}
     sccs = []
 
-    def strongconnect(v: T) -> None:
-        index = len(visited)
-        lowlinks[v] = index
-        visited[v] = index
+    def compute_scc(v: T) -> None:
+        index = len(visited_index)
+        min_index[v] = index
+        visited_index[v] = index
         stack.append(v)
 
         for w in graph[v]:
-            if w not in visited:
-                strongconnect(w)
-                lowlinks[v] = min(lowlinks[v], lowlinks[w])
+            if w not in visited_index:
+                compute_scc(w)
+                min_index[v] = min(min_index[v], min_index[w])
             elif w in stack:
-                lowlinks[v] = min(lowlinks[v], visited[w])
+                min_index[v] = min(min_index[v], visited_index[w])
+            # If w is not in stack, (v, w) points to an SCC already
+            # found
 
-        if lowlinks[v] == index:
+        # If v is a root node
+        if min_index[v] == index:
             scc = set()
             w = stack.pop()
             scc.add(w)
@@ -57,8 +62,8 @@ def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
             sccs.append(scc)
 
     for v in graph:
-        if v not in visited:
-            strongconnect(v)
+        if v not in visited_index:
+            compute_scc(v)
 
     return sccs
 

@@ -30,7 +30,6 @@ TransmuterLexingState = int
 
 
 class TransmuterTerminalTag(metaclass=TransmuterMeta):
-    # S0
     STATES_START: TransmuterLexingState = 1
 
     @staticmethod
@@ -137,6 +136,9 @@ class TransmuterLexer:
                 if self._start is None:
                     return None
 
+                # Since in _get_terminal the start position object is
+                # copied instead of being used directly, we need to
+                # update the original one
                 self.start_position.update(self._start.start_position)
                 self._start.start_position = self.start_position
 
@@ -156,11 +158,11 @@ class TransmuterLexer:
             return None
 
         start_position = start_position.copy()
-        current_terminal_tags = set()
         current_position = start_position.copy()
         current_states = self._states_start.copy()
-        accepted_terminal_tags: set[type[TransmuterTerminalTag]] = set()
         accepted_position = start_position.copy()
+        accepted_terminal_tags: set[type[TransmuterTerminalTag]] = set()
+        next_terminal_tags = set()
         next_states = {}
 
         while True:
@@ -175,7 +177,7 @@ class TransmuterLexer:
                     )
 
                     if state_accept:
-                        current_terminal_tags.add(terminal_tag)
+                        next_terminal_tags.add(terminal_tag)
 
                     if states != 0:
                         next_states[terminal_tag] = states
@@ -188,12 +190,12 @@ class TransmuterLexer:
                     current_position.line += 1
                     current_position.column = 1
 
-                if len(current_terminal_tags) > 0:
+                if len(next_terminal_tags) > 0:
                     accepted_terminal_tags.clear()
-                    accepted_terminal_tags.update(current_terminal_tags)
+                    accepted_terminal_tags.update(next_terminal_tags)
+                    next_terminal_tags.clear()
                     accepted_position.update(current_position)
 
-                current_terminal_tags.clear()
                 current_states, next_states = next_states, current_states
                 next_states.clear()
 
@@ -232,14 +234,15 @@ class TransmuterLexer:
             if current_position.index_ == len(self.input):
                 return None
 
+            # Skip ignored terminal and restart
             start_position.update(accepted_position)
             current_position.update(accepted_position)
+            assert len(current_states) == 0
             current_states.update(self._states_start)
 
     def _process_positives_negatives(
-        self, accepted_terminal_tags: set[type[TransmuterTerminalTag]]
+        self, positive_terminal_tags: set[type[TransmuterTerminalTag]]
     ) -> None:
-        positive_terminal_tags = accepted_terminal_tags
         current_positive_terminal_tags = positive_terminal_tags.copy()
         next_positive_terminal_tags = set()
 
@@ -261,6 +264,7 @@ class TransmuterLexer:
             )
             next_positive_terminal_tags.clear()
 
+        # Reuse set for efficiency
         negative_terminal_tags = current_positive_terminal_tags
         negative_terminal_tags.clear()
 
@@ -270,8 +274,8 @@ class TransmuterLexer:
             ]
 
         current_negative_terminal_tags = negative_terminal_tags.copy()
+        # Reuse set for efficiency
         next_negative_terminal_tags = next_positive_terminal_tags
-        next_negative_terminal_tags.clear()
 
         while True:
             for terminal_tag in current_negative_terminal_tags:

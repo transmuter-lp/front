@@ -52,6 +52,7 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
 
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
             try:
+                # Ascend recursively
                 parser.call(ascend_parent, current_states, True)
             except TransmuterInternalError:
                 pass
@@ -195,10 +196,7 @@ class TransmuterParser:
         nonterminal_types_first = {}
 
         for nonterminal_type in self.NONTERMINAL_TYPES:
-            if (
-                nonterminal_type.start(self.lexer.conditions)
-                and nonterminal_type_start != nonterminal_type
-            ):
+            if nonterminal_type.start(self.lexer.conditions):
                 if nonterminal_type_start is not None:
                     raise TransmuterMultipleStartsError()
 
@@ -216,9 +214,11 @@ class TransmuterParser:
 
         for scc in sccs:
             if len(scc) == 1:
+                # Pop node and add it back so we have it's reference
                 v = scc.pop()
                 scc.add(v)
 
+                # If not left-recursion
                 if v not in nonterminal_types_first[v]:
                     continue
 
@@ -246,6 +246,7 @@ class TransmuterParser:
         except TransmuterInternalError:
             pass
 
+        # If input is empty or only has ignored terminals
         if self._eoi is None:
             return
 
@@ -258,6 +259,7 @@ class TransmuterParser:
         if key not in self.bsr.epns:
             raise TransmuterNoDerivationError(self._eoi.start_position)
 
+        # If input continues after what was parsed
         if self.lexer.next_terminal(self._eoi) is not None:
             assert self._eoi.next is not None
             raise TransmuterNoDerivationError(self._eoi.next.start_position)
@@ -282,6 +284,9 @@ class TransmuterParser:
             assert issubclass(cls, TransmuterNonterminalType)
 
             if not isinstance(ascend, bool):
+                # Determine at runtime if should ascend, preventing
+                # infinite recursion when both caller and callee
+                # belong to same SCC
                 ascend = (
                     ascend is None
                     or ascend not in self._nonterminal_types_first
@@ -366,6 +371,7 @@ class TransmuterParser:
                         next_state.end_terminal
                     )
 
+                # Only ascend if descent added states
                 if ascend and initial_memo_len != len(
                     self._memo[cls, current_state_end_position]
                 ):
