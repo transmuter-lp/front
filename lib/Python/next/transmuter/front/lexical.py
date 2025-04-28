@@ -100,6 +100,10 @@ class TransmuterLexer:
         frozenset[type[TransmuterTerminalTag]],
         set[type[TransmuterTerminalTag]],
     ] = field(default_factory=dict, init=False, repr=False)
+    _nfas: dict[
+        tuple[type[TransmuterTerminalTag], TransmuterLexingState, str],
+        tuple[bool, TransmuterLexingState],
+    ] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
         self.start_position = TransmuterPosition(self.filename, 0, 1, 1)
@@ -162,26 +166,19 @@ class TransmuterLexer:
         current_states = self._states_start.copy()
         accepted_position = start_position.copy()
         accepted_terminal_tags: set[type[TransmuterTerminalTag]] = set()
-        next_terminal_tags = set()
-        next_states = {}
+        next_terminal_tags: set[type[TransmuterTerminalTag]] = set()
+        next_states: dict[
+            type[TransmuterTerminalTag], TransmuterLexingState
+        ] = {}
 
         while True:
             while len(current_states) > 0 and current_position.index_ < len(
                 self.input
             ):
                 char = self.input[current_position.index_]
-
-                for terminal_tag in current_states:
-                    state_accept, states = terminal_tag.nfa(
-                        current_states[terminal_tag], char
-                    )
-
-                    if state_accept:
-                        next_terminal_tags.add(terminal_tag)
-
-                    if states != 0:
-                        next_states[terminal_tag] = states
-
+                self._process_nfas(
+                    current_states, char, next_terminal_tags, next_states
+                )
                 current_position.index_ += 1
 
                 if char != "\n":
@@ -239,6 +236,38 @@ class TransmuterLexer:
             current_position.update(accepted_position)
             assert len(current_states) == 0
             current_states.update(self._states_start)
+
+    def _process_nfas(
+        self,
+        current_states: dict[
+            type[TransmuterTerminalTag], TransmuterLexingState
+        ],
+        char: str,
+        next_terminal_tags: set[type[TransmuterTerminalTag]],
+        next_states: dict[type[TransmuterTerminalTag], TransmuterLexingState],
+    ) -> None:
+        for terminal_tag in current_states:
+            if (
+                terminal_tag,
+                current_states[terminal_tag],
+                char,
+            ) not in self._nfas:
+                state_accept, states = terminal_tag.nfa(
+                    current_states[terminal_tag], char
+                )
+                self._nfas[
+                    terminal_tag, current_states[terminal_tag], char
+                ] = (state_accept, states)
+            else:
+                state_accept, states = self._nfas[
+                    terminal_tag, current_states[terminal_tag], char
+                ]
+
+            if state_accept:
+                next_terminal_tags.add(terminal_tag)
+
+            if states != 0:
+                next_states[terminal_tag] = states
 
     def _process_positives_negatives(
         self, positive_terminal_tags: set[type[TransmuterTerminalTag]]
