@@ -98,6 +98,29 @@ class _TransmuterLexerCache:
 
 
 @dataclass
+class _TransmuterLexerStore:
+    current_position: TransmuterPosition = field(init=False, repr=False)
+    current_states: dict[
+        type[TransmuterTerminalTag], TransmuterLexingState
+    ] = field(default_factory=dict, init=False, repr=False)
+    current_positive_terminal_tags: set[type[TransmuterTerminalTag]] = field(
+        default_factory=set, init=False, repr=False
+    )
+    current_negative_terminal_tags: set[type[TransmuterTerminalTag]] = field(
+        default_factory=set, init=False, repr=False
+    )
+    next_states: dict[type[TransmuterTerminalTag], TransmuterLexingState] = (
+        field(default_factory=dict, init=False, repr=False)
+    )
+    next_terminal_tags: set[type[TransmuterTerminalTag]] = field(
+        default_factory=set, init=False, repr=False
+    )
+
+    def __post_init__(self) -> None:
+        self.current_position = TransmuterPosition("", 0, 1, 1)
+
+
+@dataclass
 class TransmuterLexer:
     TERMINAL_TAGS: ClassVar[list[type[TransmuterTerminalTag]]]
 
@@ -110,6 +133,9 @@ class TransmuterLexer:
     )
     _cache: _TransmuterLexerCache = field(
         default_factory=_TransmuterLexerCache, init=False, repr=False
+    )
+    _store: _TransmuterLexerStore = field(
+        default_factory=_TransmuterLexerStore, init=False, repr=False
     )
 
     def __post_init__(self) -> None:
@@ -167,41 +193,41 @@ class TransmuterLexer:
             return None
 
         start_position = start_position.copy()
-        current_position = start_position.copy()
-        current_states = self._cache.states_start.copy()
+        self._store.current_position.update(start_position)
+        self._store.current_states.clear()
+        self._store.current_states.update(self._cache.states_start)
         accepted_position = start_position.copy()
         accepted_terminal_tags: set[type[TransmuterTerminalTag]] = set()
-        next_terminal_tags: set[type[TransmuterTerminalTag]] = set()
-        next_states: dict[
-            type[TransmuterTerminalTag], TransmuterLexingState
-        ] = {}
 
         while True:
-            while len(current_states) > 0 and current_position.index_ < len(
-                self.input
-            ):
-                char = self.input[current_position.index_]
-                self._process_nfas(
-                    current_states, char, next_terminal_tags, next_states
-                )
-                current_position.index_ += 1
+            while len(
+                self._store.current_states
+            ) > 0 and self._store.current_position.index_ < len(self.input):
+                char = self.input[self._store.current_position.index_]
+                self._process_nfas(char)
+                self._store.current_position.index_ += 1
 
                 if char != "\n":
-                    current_position.column += 1
+                    self._store.current_position.column += 1
                 else:
-                    current_position.line += 1
-                    current_position.column = 1
+                    self._store.current_position.line += 1
+                    self._store.current_position.column = 1
 
-                if len(next_terminal_tags) > 0:
-                    accepted_terminal_tags, next_terminal_tags = (
-                        next_terminal_tags,
+                if len(self._store.next_terminal_tags) > 0:
+                    accepted_terminal_tags, self._store.next_terminal_tags = (
+                        self._store.next_terminal_tags,
                         accepted_terminal_tags,
                     )
-                    next_terminal_tags.clear()
-                    accepted_position.update(current_position)
+                    # next_terminal_tags is always empty after use
+                    self._store.next_terminal_tags.clear()
+                    accepted_position.update(self._store.current_position)
 
-                current_states, next_states = next_states, current_states
-                next_states.clear()
+                self._store.current_states, self._store.next_states = (
+                    self._store.next_states,
+                    self._store.current_states,
+                )
+                # next_states is always empty after use
+                self._store.next_states.clear()
 
             if len(accepted_terminal_tags) == 0:
                 raise TransmuterNoTerminalError(start_position)
@@ -235,73 +261,66 @@ class TransmuterLexer:
                     accepted_position,
                 )
 
-            if current_position.index_ == len(self.input):
+            if self._store.current_position.index_ == len(self.input):
                 return None
 
             # Skip ignored terminal and restart
             start_position.update(accepted_position)
-            current_position.update(accepted_position)
-            assert len(current_states) == 0
-            current_states.update(self._cache.states_start)
+            self._store.current_position.update(accepted_position)
+            assert len(self._store.current_states) == 0
+            self._store.current_states.update(self._cache.states_start)
 
-    def _process_nfas(
-        self,
-        current_states: dict[
-            type[TransmuterTerminalTag], TransmuterLexingState
-        ],
-        char: str,
-        next_terminal_tags: set[type[TransmuterTerminalTag]],
-        next_states: dict[type[TransmuterTerminalTag], TransmuterLexingState],
-    ) -> None:
-        for terminal_tag in current_states:
-            if (
-                terminal_tag,
-                current_states[terminal_tag],
-                char,
-            ) not in self._cache.nfas:
-                state_accept, states = terminal_tag.nfa(
-                    current_states[terminal_tag], char
+    def _process_nfas(self, char: str) -> None:
+        for terminal_tag, current_states in self._store.current_states.items():
+            if (terminal_tag, current_states, char) not in self._cache.nfas:
+                state_accept, states = terminal_tag.nfa(current_states, char)
+                self._cache.nfas[terminal_tag, current_states, char] = (
+                    state_accept,
+                    states,
                 )
-                self._cache.nfas[
-                    terminal_tag, current_states[terminal_tag], char
-                ] = (state_accept, states)
             else:
                 state_accept, states = self._cache.nfas[
-                    terminal_tag, current_states[terminal_tag], char
+                    terminal_tag, current_states, char
                 ]
 
             if state_accept:
-                next_terminal_tags.add(terminal_tag)
+                self._store.next_terminal_tags.add(terminal_tag)
 
             if states != 0:
-                next_states[terminal_tag] = states
+                self._store.next_states[terminal_tag] = states
 
     def _process_positives_negatives(
         self, positive_terminal_tags: set[type[TransmuterTerminalTag]]
     ) -> None:
-        current_positive_terminal_tags = positive_terminal_tags.copy()
-        next_positive_terminal_tags = set()
+        self._store.current_positive_terminal_tags.clear()
+        self._store.current_positive_terminal_tags.update(
+            positive_terminal_tags
+        )
 
         while True:
-            for terminal_tag in current_positive_terminal_tags:
-                next_positive_terminal_tags |= (
+            for terminal_tag in self._store.current_positive_terminal_tags:
+                self._store.next_terminal_tags |= (
                     self._cache.terminal_tags_positives[terminal_tag]
                 )
 
-            next_positive_terminal_tags -= positive_terminal_tags
+            self._store.next_terminal_tags -= positive_terminal_tags
 
-            if len(next_positive_terminal_tags) == 0:
+            if len(self._store.next_terminal_tags) == 0:
+                # next_terminal_tags is always empty after use
                 break
 
-            positive_terminal_tags |= next_positive_terminal_tags
-            current_positive_terminal_tags, next_positive_terminal_tags = (
-                next_positive_terminal_tags,
-                current_positive_terminal_tags,
+            positive_terminal_tags |= self._store.next_terminal_tags
+            (
+                self._store.current_positive_terminal_tags,
+                self._store.next_terminal_tags,
+            ) = (
+                self._store.next_terminal_tags,
+                self._store.current_positive_terminal_tags,
             )
-            next_positive_terminal_tags.clear()
+            self._store.next_terminal_tags.clear()
 
         # Reuse set for efficiency
-        negative_terminal_tags = current_positive_terminal_tags
+        negative_terminal_tags = self._store.current_positive_terminal_tags
         negative_terminal_tags.clear()
 
         for terminal_tag in positive_terminal_tags:
@@ -309,27 +328,32 @@ class TransmuterLexer:
                 terminal_tag
             ]
 
-        current_negative_terminal_tags = negative_terminal_tags.copy()
-        # Reuse set for efficiency
-        next_negative_terminal_tags = next_positive_terminal_tags
+        self._store.current_negative_terminal_tags.clear()
+        self._store.current_negative_terminal_tags.update(
+            negative_terminal_tags
+        )
 
         while True:
-            for terminal_tag in current_negative_terminal_tags:
-                next_negative_terminal_tags |= (
+            for terminal_tag in self._store.current_negative_terminal_tags:
+                self._store.next_terminal_tags |= (
                     self._cache.terminal_tags_negatives[terminal_tag]
                 )
 
-            next_negative_terminal_tags -= negative_terminal_tags
+            self._store.next_terminal_tags -= negative_terminal_tags
 
-            if len(next_negative_terminal_tags) == 0:
+            if len(self._store.next_terminal_tags) == 0:
+                # next_terminal_tags is always empty after use
                 break
 
-            negative_terminal_tags |= next_negative_terminal_tags
-            current_negative_terminal_tags, next_negative_terminal_tags = (
-                next_negative_terminal_tags,
-                current_negative_terminal_tags,
+            negative_terminal_tags |= self._store.next_terminal_tags
+            (
+                self._store.current_negative_terminal_tags,
+                self._store.next_terminal_tags,
+            ) = (
+                self._store.next_terminal_tags,
+                self._store.current_negative_terminal_tags,
             )
-            next_negative_terminal_tags.clear()
+            self._store.next_terminal_tags.clear()
 
         positive_terminal_tags -= negative_terminal_tags
 
