@@ -416,6 +416,5 @@ class TransmuterNoDerivationError(TransmuterSyntacticError):
         )
 
 
-class TransmuterInternalError(TransmuterNoDerivationError):
-    def __init__(self) -> None:
-        super().__init__(TransmuterPosition("<internal>", 0, 0, 0))
+class TransmuterInternalError(Exception):
+    pass
