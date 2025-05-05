@@ -17,8 +17,8 @@
 
 from dataclasses import dataclass, field
 
-from ..common import transmuter_compute_sccs
 from ..lexical import TransmuterTerminal
+from ..syntactic import transmuter_compute_sccs
 from ..semantic.common import (
     TransmuterTreeNode,
     TransmuterTerminalTreeNode,
