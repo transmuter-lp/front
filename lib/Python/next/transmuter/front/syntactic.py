@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
+"""Syntactic analysis library for the Transmuter front-end."""
+
 from dataclasses import dataclass, field
 from typing import ClassVar, NamedTuple
 
@@ -31,7 +33,18 @@ transmuter_selection: range = range(1)
 
 
 def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
-    # Tarjan's strongly connected components algorithm
+    """
+    Tarjan's strongly connected components algorithm.
+
+    This algorithm is used to detect left-recursions in a CFG and
+    separate recursion cycles as SCCs.
+
+    Args:
+        graph: Mapping from a node to the nodes it points to.
+
+    Returns: Strongly connected components.
+    """
+
     # Index of visited nodes
     visited_index: dict[T, int] = {}
     # Smallest index in stack reachable from nodes
@@ -40,6 +53,13 @@ def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
     sccs = []
 
     def compute_scc(v: T) -> None:
+        """
+        Single recursive step of Tarjan's SCC algorithm visiting a node.
+
+        Args:
+            v: Node to visit.
+        """
+
         index = len(visited_index)
         min_index[v] = index
         visited_index[v] = index
@@ -74,14 +94,46 @@ def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
 
 
 class TransmuterNonterminalType(metaclass=TransmuterMeta):
+    """
+    Definition and implementation of a nonterminal type.
+
+    This class is not meant to be instanciated, but rather just
+    aggregate everything required to define and implement a
+    nonterminal type. It specifically includes the implementation of a
+    recursive descent that recognizes the production rules associated
+    with this nonterminal type.
+    """
+
     @staticmethod
     def start(conditions: TransmuterConditions) -> bool:
+        """
+        Returns whether this nonterminal type is the starting symbol.
+
+        It depends on runtime condition flags. The default value is
+        False.
+
+        Args:
+            conditions: Runtime condition flags.
+        """
+
         return False
 
     @staticmethod
     def first(
         conditions: TransmuterConditions,
     ) -> set[type["TransmuterNonterminalType"]]:
+        """
+        Returns nonterminal types appearing first in the production rules.
+
+        It depends on runtime condition flags. The defaul value is no
+        nonterminal types.
+
+        This is used to detect left-recursions.
+
+        Args:
+            conditions: Runtime condition flags.
+        """
+
         return set()
 
     @classmethod
@@ -90,6 +142,21 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         parser: "TransmuterParser",
         current_state: "TransmuterParsingState",
     ) -> None:
+        """
+        Recursively ascends the production rules to handle left-recursion.
+
+        This will use this nonterminal type's ascend parents to
+        perform node reparenting.
+
+        Args:
+            parser: Parser performing syntactic analysis.
+            current_state: Current parsing state.
+
+        Raises:
+            TransmuterNoTerminalTagError:
+                Could not derive any terminal tag.
+        """
+
         current_states = {current_state}
 
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
@@ -105,16 +172,53 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         parser: "TransmuterParser",
         current_state: "TransmuterParsingState",
     ) -> set["TransmuterParsingState"]:
+        """
+        Recursively descends the production rules.
+
+        Args:
+            parser: Parser performing syntactic analysis.
+            current_state: Current parsing state.
+
+        Returns: Next parsing states.
+
+        Raises:
+            TransmuterNoTerminalTagError:
+                Could not derive any terminal tag.
+            TransmuterInternalError:
+                Could not derive any production rule.
+        """
+
         raise NotImplementedError()
 
 
 class TransmuterParsingState(NamedTuple):
+    """
+    BSR parsing state.
+
+    This represents a node in an indexed binary derivation tree,
+    binarized from the left.
+
+    Attributes:
+        string:
+            Terminal tags and nonterminal types derived from
+            production rule.
+        start_position:
+            Ending position of previous state, or starting position if
+            starting state.
+        split_position: Ending position of left children.
+        end_terminal:
+            Ending terminal symbol of right children, or None if
+            starting state.
+    """
+
     string: tuple[type[TransmuterTerminalTag | TransmuterNonterminalType], ...]
     start_position: TransmuterPosition
     split_position: TransmuterPosition
     end_terminal: TransmuterTerminal | None
 
     def __repr__(self) -> str:
+        """Returns the representation of the parsing state as a tuple."""
+
         return repr(
             (
                 self.string,
@@ -126,15 +230,41 @@ class TransmuterParsingState(NamedTuple):
 
 
 class TransmuterEPN(NamedTuple):
+    """
+    BSR Extended Packed Node.
+
+    Attributes:
+        type_:
+            Nonterminal type whose derivation produced the current
+            parsing state, or None if intermediate node.
+        state: Current parsing state.
+    """
+
     type_: type[TransmuterNonterminalType] | None
     state: TransmuterParsingState
 
     def __repr__(self) -> str:
+        """Returns the representation of the EPN as a tuple."""
+
         return repr((self.type_, self.state))
 
 
 @dataclass
 class TransmuterBSR:
+    """
+    Binary Subtree Representation.
+
+    This can be used as a parser oracle.
+
+    Attributes:
+        start:
+            Index of starting symbol's EPN set, or None if could not
+            derive input from any production rule.
+        epns:
+            EPN sets indexed by nonterminal type or derivation string,
+            starting and ending positions.
+    """
+
     start: (
         tuple[
             type[TransmuterNonterminalType],
@@ -156,6 +286,13 @@ class TransmuterBSR:
     ] = field(default_factory=dict, init=False, repr=False)
 
     def add(self, epn: TransmuterEPN) -> None:
+        """
+        Adds EPN to its respective set.
+
+        Args:
+            epn: EPN to be added.
+        """
+
         key = (
             epn.type_ if epn.type_ is not None else epn.state.string,
             epn.state.start_position,
@@ -172,6 +309,13 @@ class TransmuterBSR:
         self.epns[key].add(epn)
 
     def left_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
+        """
+        Returns left children of parent EPN.
+
+        Args:
+            parent: Parent EPN.
+        """
+
         key = (
             parent.state.string[:-1],
             parent.state.start_position,
@@ -187,6 +331,13 @@ class TransmuterBSR:
         return self.epns[key]
 
     def right_children(self, parent: TransmuterEPN) -> set[TransmuterEPN]:
+        """
+        Returns right children of parent EPN.
+
+        Args:
+            parent: Parent EPN.
+        """
+
         if parent.state.end_terminal is None:
             return set()
 
@@ -209,6 +360,36 @@ class TransmuterBSR:
 
 @dataclass
 class TransmuterParser:
+    """
+    Main syntactic analysis implementation.
+
+    This also performs lexical analysis on demand using the provided
+    `lexer`.
+
+    Attributes:
+        NONTERMINAL_TYPES:
+            Nonterminal types to be included in syntactic analysis.
+        lexer: Lexer performing lexical analysis.
+        nonterminal_types_ascend_parents:
+            Ascend parents for all nonterminal types included in
+            syntactic analysis. This represents the inverse relation
+            of `_nonterminal_types_first`.
+        bsr:
+            Binary subtree representation of resulting parsing forest.
+        _nonterminal_type_start:
+            Result of `TransmuterNonterminalType.start` for all
+            nonterminal types included in syntactic analysis. Only one
+            nonterminal type can be the starting symbol.
+        _nonterminal_types_first:
+            Result of `TransmuterNonterminalType.first` for all
+            nonterminal types included in syntactic analysis, filtered
+            by membership in same left-recursion SCC.
+        _eoi: Last terminal symbol derived from production rules.
+        _memo:
+            Memoization of `TransmuterNonterminalType.descend` for all
+            nonterminal types included in syntactic analysis.
+    """
+
     NONTERMINAL_TYPES: ClassVar[list[type[TransmuterNonterminalType]]]
 
     lexer: TransmuterLexer
@@ -231,6 +412,20 @@ class TransmuterParser:
     ] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
+        """
+        Initializes attributes
+
+        Initializes `nonterminal_types_ascend_parents`, `bsr`,
+        `_nonterminal_types_first` and `_nonterminal_type_start`.
+
+        Raises:
+            TransmuterMultipleStartsError:
+                Multiple starting symbols from given conditions.
+            TransmuterNoStartError:
+                Could not determine starting symbol from given
+                conditions.
+        """
+
         self.nonterminal_types_ascend_parents = {}
         self.bsr = TransmuterBSR()
         self._nonterminal_types_first = {}
@@ -273,6 +468,16 @@ class TransmuterParser:
                 ]
 
     def parse(self) -> None:
+        """
+        Performs syntactic analysis on input.
+
+        Raises:
+            TransmuterNoTerminalTagError:
+                Could not derive any terminal tag.
+            TransmuterNoDerivationError:
+                Could not derive input from any production rule.
+        """
+
         try:
             self.call(
                 self._nonterminal_type_start,
@@ -314,11 +519,35 @@ class TransmuterParser:
         current_states: set[TransmuterParsingState],
         ascend: type[TransmuterNonterminalType] | bool | None = None,
     ) -> set[TransmuterParsingState]:
+        """
+        Tries to derive terminal tag or nonterminal type from current states.
+
+        Args:
+            cls: Terminal tag or nonterminal type to derive.
+            current_states: Current parsing states.
+            ascend:
+                Whether to recursively ascend, or the caller's
+                nonterminal type or None to determine it at runtime.
+                The caller's nonterminal type is only required when
+                both caller and callee might belong to same
+                left-recursion SCC.
+
+        Returns: Next parsing states.
+
+        Raises:
+            TransmuterNoTerminalTagError:
+                Could not derive any terminal tag.
+            TransmuterInternalError:
+                Could not derive any production rule.
+        """
+
         next_states = set()
 
         if issubclass(cls, TransmuterTerminalTag):
             for current_state in current_states:
-                next_state = self._call_single_terminal_tag(cls, current_state)
+                next_state = self._derive_single_terminal_tag(
+                    cls, current_state
+                )
 
                 if next_state is not None:
                     next_states.add(next_state)
@@ -328,7 +557,7 @@ class TransmuterParser:
             if not isinstance(ascend, bool):
                 # Determine at runtime if should ascend, preventing
                 # infinite recursion when both caller and callee
-                # belong to same SCC
+                # belong to same left-recursion SCC
                 ascend = (
                     ascend is None
                     or ascend not in self._nonterminal_types_first
@@ -336,7 +565,7 @@ class TransmuterParser:
                 ) and cls in self._nonterminal_types_first
 
             for current_state in current_states:
-                next_states |= self._call_single_nonterminal_type(
+                next_states |= self._derive_single_nonterminal_type(
                     cls, current_state, ascend
                 )
 
@@ -345,11 +574,27 @@ class TransmuterParser:
 
         return next_states
 
-    def _call_single_terminal_tag(
+    def _derive_single_terminal_tag(
         self,
         cls: type[TransmuterTerminalTag],
         current_state: TransmuterParsingState,
     ) -> TransmuterParsingState | None:
+        """
+        Tries to derive terminal tag from single current state.
+
+        Args:
+            cls: Terminal tag to derive.
+            current_state: Current parsing state.
+
+        Returns:
+            Next parsing state, or None if cannot derive the terminal
+            tag.
+
+        Raises:
+            TransmuterNoTerminalTagError:
+                Could not derive any terminal tag.
+        """
+
         self.bsr.add(TransmuterEPN(None, current_state))
         next_terminal = self.lexer.next_terminal(current_state.end_terminal)
 
@@ -374,12 +619,29 @@ class TransmuterParser:
             next_terminal,
         )
 
-    def _call_single_nonterminal_type(
+    def _derive_single_nonterminal_type(
         self,
         cls: type[TransmuterNonterminalType],
         current_state: TransmuterParsingState,
         ascend: bool,
     ) -> set[TransmuterParsingState]:
+        """
+        Tries to derive nonterminal type from single current state.
+
+        This performs recursive descent and ascent.
+
+        Args:
+            cls: Nonterminal type to derive.
+            current_state: Current parsing state.
+            ascend: Whether to recursively ascend.
+
+        Returns: Next parsing states.
+
+        Raises:
+            TransmuterNoTerminalTagError:
+                Could not derive any terminal tag.
+        """
+
         self.bsr.add(TransmuterEPN(None, current_state))
         current_state_end_position = (
             current_state.end_terminal.end_position
@@ -431,32 +693,64 @@ class TransmuterParser:
 
 
 class TransmuterSyntacticError(TransmuterException):
+    """Syntactic error processing an input file."""
+
     def __init__(self, position: TransmuterPosition, description: str) -> None:
+        """
+        Initializes the error with the required information.
+
+        Args:
+            position: File and position where the error happened.
+            description: Description of the error.
+        """
+
         super().__init__(position, "Syntactic Error", description)
 
 
 class TransmuterNoStartError(TransmuterSyntacticError):
+    """Could not determine starting symbol from given conditions."""
+
     def __init__(self) -> None:
+        """Initializes the error with the required information."""
+
         super().__init__(
             TransmuterPosition("<conditions>", 0, 0, 0),
-            "Could not match any starting symbol from given conditions.",
+            "Could not determine starting symbol from given conditions.",
         )
 
 
 class TransmuterMultipleStartsError(TransmuterSyntacticError):
+    """Multiple starting symbols from given conditions."""
+
     def __init__(self) -> None:
+        """Initializes the error with the required information."""
+
         super().__init__(
             TransmuterPosition("<conditions>", 0, 0, 0),
-            "Matched multiple starting symbols from given conditions.",
+            "Multiple starting symbols from given conditions.",
         )
 
 
 class TransmuterNoDerivationError(TransmuterSyntacticError):
+    """Could not derive input from any production rule."""
+
     def __init__(self, position: TransmuterPosition) -> None:
+        """
+        Initializes the error with the required information.
+
+        Args:
+            position: File and position where the error happened.
+        """
+
         super().__init__(
             position, "Could not derive input from any production rule."
         )
 
 
 class TransmuterInternalError(Exception):
-    pass
+    """
+    Could not derive any production rule.
+
+    **This exception must never leak through the public API and reach
+    user code.**
+    """
