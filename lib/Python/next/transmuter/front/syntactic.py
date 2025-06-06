@@ -125,7 +125,7 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         """
         Returns nonterminal types appearing first in the production rules.
 
-        It depends on runtime condition flags. The defaul value is no
+        It depends on runtime condition flags. The default value is no
         nonterminal types.
 
         This is used to detect left-recursions.

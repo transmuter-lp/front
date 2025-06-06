@@ -1,6 +1,6 @@
 ## Bootstrapping
 
-To ensure this project is and remains bootstrappable, it is essential to limit the types of modifications allowed in each release cycle.
+To ensure this project is and remains [bootstrappable](https://bootstrappable.org/), it is essential to limit the types of modifications allowed in each release cycle.
 
 These are the main components of this project, along with the types of modifications each can go through:
 
