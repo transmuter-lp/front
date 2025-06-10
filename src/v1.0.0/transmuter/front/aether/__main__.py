@@ -23,6 +23,7 @@ from ..semantic.common import (
     TransmuterBSRDisambiguator,
     TransmuterBSRToTreeConverter,
 )
+from . import __version__
 from .common import Conditions
 from .lexical import Lexer
 from .syntactic import Parser
@@ -38,7 +39,7 @@ def main():
         "-v",
         "--version",
         action="version",
-        version="%(prog)s 1.0.0 (spec v1.0.0 / lib v1.0.0)",
+        version=f"%(prog)s {__version__.src_version} (spec {__version__.spec_version} / lib {__version__.lib_version})",
     )
     arg_parser.add_argument(
         "-L",
