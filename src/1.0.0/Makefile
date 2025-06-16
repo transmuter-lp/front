@@ -1,5 +1,3 @@
-#!/bin/sh
-
 # Transmuter front-end, front-end libraries and utilities for the
 # Transmuter language processing infrastructure
 # Copyright (C) 2025  The Transmuter Project
@@ -17,38 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-set -e
+PREVIOUS_SPEC_VERSION=1.0.0
+PREVIOUS_LIB_VERSION=1.0.0
+PREVIOUS_SRC_VERSION=0.67.0
+RELEASE_TYPE=5 2
 
-PYTHON_VERSION='Python 3.12.3'
-ROOT=../../..
-LIB_VERSION=v1.0.0
-SPEC_VERSION=v1.0.0
-
-case "$1" in
-    previous)
-        SRC_VERSION=v0.67.0
-        ;;
-    current)
-        SRC_VERSION=v1.0.0
-        ;;
-    *)
-        exit 1
-        ;;
-esac
-
-if [ "$PYTHON_VERSION" != "$(python3 --version)" ]; then
-    exit 1
-fi
-
-mkdir tmp/
-PYTHONPATH=$ROOT/lib/Python/$LIB_VERSION/:$ROOT/src/$SRC_VERSION/ python3 -m transmuter.front.aether -o tmp/ $ROOT/spec/Aether/$SPEC_VERSION/
-python3 -m venv venv/
-. venv/bin/activate
-pip install -r requirements.txt
-black -l 79 tmp/
-deactivate
-rm -r venv/
-patch -p 0 < licenses.patch
-mv tmp/* ../transmuter/front/aether/
-rm -d tmp/
-git diff --shortstat ../
+include ../../tools/bootstrap/Makefile-common

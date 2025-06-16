@@ -1,0 +1,67 @@
+# Transmuter front-end, front-end libraries and utilities for the
+# Transmuter language processing infrastructure
+# Copyright (C) 2025  The Transmuter Project
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+ROOT=transmuter/front/aether
+PYTHON_VERSION=3.12.3
+BLACK_VERSION=25.1.0
+
+include $(ROOT)/__version__.py
+
+PREVIOUS_SPEC=../../spec/Aether/$(PREVIOUS_SPEC_VERSION)/
+PREVIOUS_LIB=../../lib/Python/$(PREVIOUS_LIB_VERSION)/
+PREVIOUS_SRC=../$(PREVIOUS_SRC_VERSION)/
+CURRENT_SPEC=../../spec/Aether/$(spec_version)/
+CURRENT_LIB=../../lib/Python/$(lib_version)/
+
+.PHONY: generate init-licenses diff-licenses patch-licenses verify clean
+
+generate: $(ROOT)/common.py $(ROOT)/lexical.py $(ROOT)/syntactic.py
+
+$(ROOT)/common.py $(ROOT)/lexical.py $(ROOT)/syntactic.py: $(PREVIOUS_SPEC) $(PREVIOUS_LIB) $(PREVIOUS_SRC) venv/
+	[ "$$(python3 --version)" = 'Python $(PYTHON_VERSION)' ]
+	PYTHONPATH='$(PREVIOUS_LIB)':'$(PREVIOUS_SRC)' python3 -m transmuter.front.aether -L python -o $(ROOT)/ '$(PREVIOUS_SPEC)'
+	. venv/bin/activate && cd $(ROOT)/ && black -l 79 common.py lexical.py syntactic.py
+
+venv/:
+	[ "$$(python3 --version)" = 'Python $(PYTHON_VERSION)' ]
+	python3 -m venv venv/
+	. venv/bin/activate && pip install -U pip
+	. venv/bin/activate && pip install black==$(BLACK_VERSION)
+
+init-licenses:
+	cd $(ROOT)/ && cp common.py common.py.new
+	cd $(ROOT)/ && cp lexical.py lexical.py.new
+	cd $(ROOT)/ && cp syntactic.py syntactic.py.new
+
+diff-licenses: $(ROOT)/common.py $(ROOT)/lexical.py $(ROOT)/syntactic.py $(ROOT)/common.py.new $(ROOT)/lexical.py.new $(ROOT)/syntactic.py.new
+	echo diff -u common.py common.py.new > licenses.patch
+	cd $(ROOT)/ && diff -u common.py common.py.new >> ../../../licenses.patch; [ $$? = 1 ]
+	echo diff -u lexical.py lexical.py.new >> licenses.patch
+	cd $(ROOT)/ && diff -u lexical.py lexical.py.new >> ../../../licenses.patch; [ $$? = 1 ]
+	echo diff -u syntactic.py syntactic.py.new >> licenses.patch
+	cd $(ROOT)/ && diff -u syntactic.py syntactic.py.new >> ../../../licenses.patch; [ $$? = 1 ]
+	sed -i -E 's/(\+\+\+|---)([^\t]+).+/\1\2/' licenses.patch
+
+patch-licenses:
+	cd $(ROOT)/ && patch -N -r - -p 0 < ../../../licenses.patch || [ $$? = 1 ]
+
+verify:
+	../../tools/bootstrap/verify '$(PREVIOUS_SPEC)' '$(PREVIOUS_LIB)' '$(PREVIOUS_SRC)' $(CURRENT_SPEC) $(CURRENT_LIB) . $(RELEASE_TYPE)
+
+clean:
+	rm -rf venv/
+	cd $(ROOT)/ && rm -f common.py.new lexical.py.new syntactic.py.new
