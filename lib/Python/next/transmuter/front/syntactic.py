@@ -23,74 +23,29 @@ from typing import ClassVar, NamedTuple
 
 from .common import (
     TransmuterConditions,
+    transmuter_compute_sccs,
     TransmuterMeta,
     TransmuterPosition,
     TransmuterException,
 )
 from .lexical import TransmuterTerminalTag, TransmuterTerminal, TransmuterLexer
 
+__all__ = [
+    "transmuter_selection",
+    "transmuter_compute_sccs",
+    "TransmuterNonterminalType",
+    "TransmuterParsingState",
+    "TransmuterEPN",
+    "TransmuterBSR",
+    "TransmuterParser",
+    "TransmuterSyntacticError",
+    "TransmuterNoStartError",
+    "TransmuterMultipleStartsError",
+    "TransmuterNoDerivationError",
+    "TransmuterDerivationException",
+    "TransmuterInternalError",
+]
 transmuter_selection: range = range(1)
-
-
-def transmuter_compute_sccs[T](graph: dict[T, set[T]]) -> list[set[T]]:
-    """
-    Tarjan's strongly connected components algorithm.
-
-    This algorithm is used to detect left-recursions in a CFG and
-    separate recursion cycles as SCCs.
-
-    Args:
-        graph: Mapping from a node to the nodes it points to.
-
-    Returns: Strongly connected components.
-    """
-
-    # Index of visited nodes
-    visited_index: dict[T, int] = {}
-    # Smallest index in stack reachable from nodes
-    min_index = {}
-    stack = []
-    sccs = []
-
-    def compute_scc(v: T) -> None:
-        """
-        Single recursive step of Tarjan's SCC algorithm visiting a node.
-
-        Args:
-            v: Node to visit.
-        """
-
-        index = len(visited_index)
-        min_index[v] = index
-        visited_index[v] = index
-        stack.append(v)
-
-        for w in graph[v]:
-            if w not in visited_index:
-                compute_scc(w)
-                min_index[v] = min(min_index[v], min_index[w])
-            elif w in stack:
-                min_index[v] = min(min_index[v], visited_index[w])
-            # If w is not in stack, (v, w) points to an SCC already
-            # found
-
-        # If v is a root node
-        if min_index[v] == index:
-            scc = set()
-            w = stack.pop()
-            scc.add(w)
-
-            while w != v:
-                w = stack.pop()
-                scc.add(w)
-
-            sccs.append(scc)
-
-    for v in graph:
-        if v not in visited_index:
-            compute_scc(v)
-
-    return sccs
 
 
 class TransmuterNonterminalType(metaclass=TransmuterMeta):
@@ -162,8 +117,8 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         for ascend_parent in parser.nonterminal_types_ascend_parents[cls]:
             try:
                 # Ascend recursively
-                parser.call(ascend_parent, current_states, True)
-            except TransmuterInternalError:
+                parser.derive(ascend_parent, current_states, True)
+            except TransmuterDerivationException:
                 pass
 
     @classmethod
@@ -184,7 +139,7 @@ class TransmuterNonterminalType(metaclass=TransmuterMeta):
         Raises:
             TransmuterNoTerminalTagError:
                 Could not derive any terminal tag.
-            TransmuterInternalError:
+            TransmuterDerivationException:
                 Could not derive any production rule.
         """
 
@@ -479,7 +434,7 @@ class TransmuterParser:
         """
 
         try:
-            self.call(
+            self.derive(
                 self._nonterminal_type_start,
                 {
                     TransmuterParsingState(
@@ -490,7 +445,7 @@ class TransmuterParser:
                     )
                 },
             )
-        except TransmuterInternalError:
+        except TransmuterDerivationException:
             pass
 
         # If input is empty or only has ignored terminals
@@ -513,7 +468,7 @@ class TransmuterParser:
 
         self.bsr.start = key
 
-    def call(
+    def derive(
         self,
         cls: type[TransmuterTerminalTag | TransmuterNonterminalType],
         current_states: set[TransmuterParsingState],
@@ -537,7 +492,7 @@ class TransmuterParser:
         Raises:
             TransmuterNoTerminalTagError:
                 Could not derive any terminal tag.
-            TransmuterInternalError:
+            TransmuterDerivationException:
                 Could not derive any production rule.
         """
 
@@ -570,9 +525,11 @@ class TransmuterParser:
                 )
 
         if len(next_states) == 0:
-            raise TransmuterInternalError()
+            raise TransmuterDerivationException()
 
         return next_states
+
+    call = derive
 
     def _derive_single_terminal_tag(
         self,
@@ -665,7 +622,7 @@ class TransmuterParser:
                         current_state.end_terminal,
                     ),
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 pass
             else:
                 for next_state in next_states:
@@ -747,10 +704,13 @@ class TransmuterNoDerivationError(TransmuterSyntacticError):
         )
 
 
-class TransmuterInternalError(Exception):
+class TransmuterDerivationException(Exception):
     """
     Could not derive any production rule.
 
     **This exception must never leak through the public API and reach
     user code.**
     """
+
+
+TransmuterInternalError = TransmuterDerivationException
