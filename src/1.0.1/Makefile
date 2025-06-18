@@ -16,8 +16,8 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 PREVIOUS_SPEC_VERSION=1.0.0
-PREVIOUS_LIB_VERSION=1.1.0
-PREVIOUS_SRC_VERSION=1.0.1
+PREVIOUS_LIB_VERSION=1.0.0
+PREVIOUS_SRC_VERSION=1.0.0
 RELEASE_TYPE=4
 
 include ../../tools/bootstrap/Makefile-common
