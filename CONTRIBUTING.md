@@ -1,3 +1,5 @@
+# Contributing Guidelines
+
 ## Code Style
 
 All common, lexical and syntactic code in the library must follow this code style. Type hints, assertions, comments and documentation must be updated whenever the related code changes.
