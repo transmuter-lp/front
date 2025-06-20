@@ -108,6 +108,48 @@ case "$1" in
     6)
         shift
         modify_spec=0
+        modify_lib=0
+
+        case "$1" in
+            1)
+                shift
+                modify_src_gen=0
+                modify_src_hand=2
+                ;;
+            2)
+                shift
+                modify_src_gen=2
+                modify_src_hand=0
+                ;;
+            *)
+                invalid_subtype 6 "$1"
+                ;;
+        esac
+        ;;
+    7)
+        shift
+        modify_spec=0
+        modify_lib=0
+
+        case "$1" in
+            1)
+                shift
+                modify_src_gen=0
+                modify_src_hand=2
+                ;;
+            2)
+                shift
+                modify_src_gen=2
+                modify_src_hand=1
+                ;;
+            *)
+                invalid_subtype 7 "$1"
+                ;;
+        esac
+        ;;
+    8)
+        shift
+        modify_spec=0
 
         case "$1" in
             1)
@@ -123,11 +165,11 @@ case "$1" in
                 modify_src_hand=0
                 ;;
             *)
-                invalid_subtype 6 "$1"
+                invalid_subtype 8 "$1"
                 ;;
         esac
         ;;
-    7)
+    9)
         shift
         modify_spec=0
 
@@ -145,11 +187,11 @@ case "$1" in
                 modify_src_hand=1
                 ;;
             *)
-                invalid_subtype 7 "$1"
+                invalid_subtype 9 "$1"
                 ;;
         esac
         ;;
-    8)
+    10)
         shift
         modify_lib=0
         modify_src_hand=0
@@ -166,11 +208,11 @@ case "$1" in
                 modify_src_gen=2
                 ;;
             *)
-                invalid_subtype 8 "$1"
+                invalid_subtype 10 "$1"
                 ;;
         esac
         ;;
-    9)
+    11)
         shift
         modify_lib=0
 
@@ -188,11 +230,11 @@ case "$1" in
                 modify_src_hand=1
                 ;;
             *)
-                invalid_subtype 9 "$1"
+                invalid_subtype 11 "$1"
                 ;;
         esac
         ;;
-    10)
+    12)
         shift
 
         case "$1" in
@@ -211,11 +253,11 @@ case "$1" in
                 modify_src_hand=0
                 ;;
             *)
-                invalid_subtype 10 "$1"
+                invalid_subtype 12 "$1"
                 ;;
         esac
         ;;
-    11)
+    13)
         shift
 
         case "$1" in
@@ -234,7 +276,7 @@ case "$1" in
                 modify_src_hand=1
                 ;;
             *)
-                invalid_subtype 11 "$1"
+                invalid_subtype 13 "$1"
                 ;;
         esac
         ;;

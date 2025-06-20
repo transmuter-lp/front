@@ -87,11 +87,13 @@ The only modifications allowed in a two-step release cycle are:
 | #  | spec    | lib | src-gen | src-hand | -> | spec | lib | src-gen | src-hand |
 |----|---------|-----|---------|----------|----|------|-----|---------|----------|
 | 5  | no      | no  | no      | yes      | -> | no   | no  | no-api  | no       |
-| 6  | no      | no  | no      | yes      | -> | no   | yes | yes     | no       |
-| 7  | no      | no  | no      | yes      | -> | no   | yes | yes     | no-out   |
-| 8  | no-host | no  | no      | no       | -> | yes  | no  | yes     | no       |
-| 9  | no-host | no  | no      | no       | -> | yes  | no  | yes     | no-out   |
-| 10 | no-host | no  | no      | yes      | -> | yes  | yes | yes     | no       |
-| 11 | no-host | no  | no      | yes      | -> | yes  | yes | yes     | no-out   |
+| 6  | no      | no  | no      | yes      | -> | no   | no  | yes     | no       |
+| 7  | no      | no  | no      | yes      | -> | no   | no  | yes     | no-out   |
+| 8  | no      | no  | no      | yes      | -> | no   | yes | yes     | no       |
+| 9  | no      | no  | no      | yes      | -> | no   | yes | yes     | no-out   |
+| 10 | no-host | no  | no      | no       | -> | yes  | no  | yes     | no       |
+| 11 | no-host | no  | no      | no       | -> | yes  | no  | yes     | no-out   |
+| 12 | no-host | no  | no      | yes      | -> | yes  | yes | yes     | no       |
+| 13 | no-host | no  | no      | yes      | -> | yes  | yes | yes     | no-out   |
 
 The first step is a pre-release and the last step is a stable release.
