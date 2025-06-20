@@ -41,6 +41,7 @@ def _escape_identifier(value: str) -> str:
     if (
         value
         in (
+            "_",
             "and",
             "as",
             "assert",
@@ -49,7 +50,6 @@ def _escape_identifier(value: str) -> str:
             "break",
             "case",
             "class",
-            "Conditions",
             "continue",
             "def",
             "del",
@@ -62,36 +62,35 @@ def _escape_identifier(value: str) -> str:
             "from",
             "global",
             "if",
-            "in",
             "import",
+            "in",
             "is",
             "lambda",
-            "Lexer",
             "match",
             "None",
             "nonlocal",
             "not",
             "or",
-            "Parser",
             "pass",
             "raise",
             "return",
-            "TransmuterCondition",
-            "TransmuterConditions",
-            "TransmuterInternalError",
-            "TransmuterLexer",
-            "TransmuterLexingState",
-            "TransmuterNonterminalType",
-            "TransmuterParser",
-            "TransmuterParsingState",
-            "transmuter_selection",
-            "TransmuterTerminalTag",
             "True",
             "try",
             "type",
             "while",
             "with",
             "yield",
+            "transmuter_selection",
+            "TransmuterCondition",
+            "TransmuterConditions",
+            "TransmuterDerivationException",
+            "TransmuterLexer",
+            "TransmuterNonterminalType",
+            "TransmuterParser",
+            "TransmuterTerminalTag",
+            "Conditions",
+            "Lexer",
+            "Parser",
         )
         or value in builtins.__dict__
     ):
@@ -356,9 +355,9 @@ class ExpressionFold(AetherExpressionFold):
             ).rstrip("\n")
 
             if ordered:
-                option_end = "\n    except TransmuterInternalError:\n        next_states.pop()\n    else:\n        break  # end option\n"
+                option_end = "\n    except TransmuterDerivationException:\n        next_states.pop()\n    else:\n        break  # end option\n"
             else:
-                option_end = "\nexcept TransmuterInternalError:\n    next_states.pop()\nelse:\n    next_states[-1] |= next_states.pop()  # end option\n"
+                option_end = "\nexcept TransmuterDerivationException:\n    next_states.pop()\nelse:\n    next_states[-1] |= next_states.pop()  # end option\n"
 
             if condition is not None:
                 selection += AetherFileFold.indent(option_end)
@@ -370,7 +369,7 @@ class ExpressionFold(AetherExpressionFold):
                 "\nif len(next_states[-1]) == 0:\n    next_states.pop()"
             )
 
-        selection += "\n    raise TransmuterInternalError()\n\nnext_states[-1] = next_states.pop()  # end selection"
+        selection += "\n    raise TransmuterDerivationException()\n\nnext_states[-1] = next_states.pop()  # end selection"
         return selection
 
     def fold_sequence(
@@ -381,7 +380,7 @@ class ExpressionFold(AetherExpressionFold):
     def fold_iteration(
         self, node: TransmuterNonterminalTreeNode, child: str, ordered: bool
     ) -> str:
-        return f"next_states.append(next_states[-1])  # begin iteration\n\nwhile True:\n    try:\n{AetherFileFold.indent(child, 2).strip('\n')}\n    except TransmuterInternalError:\n        next_states.pop()\n        break\n\n    next_states[-2] {'|' if not ordered else ''}= next_states[-1]  # end iteration\n"
+        return f"next_states.append(next_states[-1])  # begin iteration\n\nwhile True:\n    try:\n{AetherFileFold.indent(child, 2).strip('\n')}\n    except TransmuterDerivationException:\n        next_states.pop()\n        break\n\n    next_states[-2] {'|' if not ordered else ''}= next_states[-1]  # end iteration\n"
 
     def fold_primary(
         self,
@@ -393,7 +392,7 @@ class ExpressionFold(AetherExpressionFold):
         primary = child
 
         if node.children[0].type_ == Identifier:
-            primary = f"next_states[-1] = parser.call({_escape_identifier(primary)}, next_states[-1]{', cls' if first else ''})"
+            primary = f"next_states[-1] = parser.derive({_escape_identifier(primary)}, next_states[-1]{', cls' if first else ''})"
 
         if condition is not None:
             primary = f"\nif {condition.replace(' in conditions', ' in parser.lexer.conditions')}:\n{AetherFileFold.indent(primary).strip('\n')}\n"
@@ -403,14 +402,14 @@ class ExpressionFold(AetherExpressionFold):
     def fold_optional(
         self, node: TransmuterNonterminalTreeNode, child: str, ordered: bool
     ) -> str:
-        return f"\ntry:  # begin optional\n    next_states.append(next_states[-1])\n{AetherFileFold.indent(child).rstrip('\n')}\nexcept TransmuterInternalError:\n    next_states.pop()\nelse:\n    next_states[-1] {'|' if not ordered else ''}= next_states.pop()  # end optional\n"
+        return f"\ntry:  # begin optional\n    next_states.append(next_states[-1])\n{AetherFileFold.indent(child).rstrip('\n')}\nexcept TransmuterDerivationException:\n    next_states.pop()\nelse:\n    next_states[-1] {'|' if not ordered else ''}= next_states.pop()  # end optional\n"
 
 
 class SyntacticFileFold(AetherSyntacticFileFold):
     def fold_file(
         self, nonterminal_type_names: list[str], nonterminal_types: list[str]
     ) -> str:
-        return f"{GENERATED_MESSAGE}from transmuter.front.syntactic import transmuter_selection, TransmuterNonterminalType, TransmuterParser, TransmuterInternalError\nfrom .common import Conditions\nfrom .lexical import *\n\n\n{'\n\n\n'.join(nonterminal_types)}\n\n\nclass Parser(TransmuterParser):\n    NONTERMINAL_TYPES = [{', '.join(_escape_identifier(n) for n in nonterminal_type_names)}]"
+        return f"{GENERATED_MESSAGE}from transmuter.front.syntactic import transmuter_selection, TransmuterNonterminalType, TransmuterParser, TransmuterDerivationException\nfrom .common import Conditions\nfrom .lexical import *\n\n\n{'\n\n\n'.join(nonterminal_types)}\n\n\nclass Parser(TransmuterParser):\n    NONTERMINAL_TYPES = [{', '.join(_escape_identifier(n) for n in nonterminal_type_names)}]"
 
     def fold_nonterminal_type(
         self, name: str, start: str | None, first: str | None, descend: str
