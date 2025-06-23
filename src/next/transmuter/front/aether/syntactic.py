@@ -23,7 +23,7 @@ from transmuter.front.syntactic import (
     transmuter_selection,
     TransmuterNonterminalType,
     TransmuterParser,
-    TransmuterInternalError,
+    TransmuterDerivationException,
 )
 from .common import Conditions
 from .lexical import *
@@ -37,13 +37,13 @@ class Grammar(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(Production, next_states[-1])
+        next_states[-1] = parser.derive(Production, next_states[-1])
         next_states.append(next_states[-1])  # begin iteration
 
         while True:
             try:
-                next_states[-1] = parser.call(Production, next_states[-1])
-            except TransmuterInternalError:
+                next_states[-1] = parser.derive(Production, next_states[-1])
+            except TransmuterDerivationException:
                 next_states.pop()
                 break
 
@@ -56,8 +56,8 @@ class Production(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(ProductionHeader, next_states[-1])
-        next_states[-1] = parser.call(ProductionBody, next_states[-1])
+        next_states[-1] = parser.derive(ProductionHeader, next_states[-1])
+        next_states[-1] = parser.derive(ProductionBody, next_states[-1])
         return next_states[0]
 
 
@@ -65,28 +65,28 @@ class ProductionHeader(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(Identifier, next_states[-1])
+        next_states[-1] = parser.derive(Identifier, next_states[-1])
 
         if Conditions.lexical in parser.lexer.conditions:
             try:  # begin optional
                 next_states.append(next_states[-1])
-                next_states[-1] = parser.call(Condition, next_states[-1])
-            except TransmuterInternalError:
+                next_states[-1] = parser.derive(Condition, next_states[-1])
+            except TransmuterDerivationException:
                 next_states.pop()
             else:
                 next_states[-1] = next_states.pop()  # end optional
 
         try:  # begin optional
             next_states.append(next_states[-1])
-            next_states[-1] = parser.call(
+            next_states[-1] = parser.derive(
                 ProductionSpecifiers, next_states[-1]
             )
-        except TransmuterInternalError:
+        except TransmuterDerivationException:
             next_states.pop()
         else:
             next_states[-1] = next_states.pop()  # end optional
 
-        next_states[-1] = parser.call(Colon, next_states[-1])
+        next_states[-1] = parser.derive(Colon, next_states[-1])
         return next_states[0]
 
 
@@ -94,8 +94,8 @@ class ProductionBody(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(SelectionExpression, next_states[-1])
-        next_states[-1] = parser.call(Semicolon, next_states[-1])
+        next_states[-1] = parser.derive(SelectionExpression, next_states[-1])
+        next_states[-1] = parser.derive(Semicolon, next_states[-1])
         return next_states[0]
 
 
@@ -103,8 +103,8 @@ class Condition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(CommercialAt, next_states[-1])
-        next_states[-1] = parser.call(DisjunctionCondition, next_states[-1])
+        next_states[-1] = parser.derive(CommercialAt, next_states[-1])
+        next_states[-1] = parser.derive(DisjunctionCondition, next_states[-1])
         return next_states[0]
 
 
@@ -112,9 +112,11 @@ class ProductionSpecifiers(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(LeftParenthesis, next_states[-1])
-        next_states[-1] = parser.call(ProductionSpecifierList, next_states[-1])
-        next_states[-1] = parser.call(RightParenthesis, next_states[-1])
+        next_states[-1] = parser.derive(LeftParenthesis, next_states[-1])
+        next_states[-1] = parser.derive(
+            ProductionSpecifierList, next_states[-1]
+        )
+        next_states[-1] = parser.derive(RightParenthesis, next_states[-1])
         return next_states[0]
 
 
@@ -122,7 +124,7 @@ class SelectionExpression(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(SequenceExpression, next_states[-1])
+        next_states[-1] = parser.derive(SequenceExpression, next_states[-1])
         next_states.append(next_states[-1])  # begin iteration
 
         while True:
@@ -130,10 +132,10 @@ class SelectionExpression(TransmuterNonterminalType):
                 for _ in transmuter_selection:  # begin selection
                     try:  # begin option
                         next_states.append(next_states[-1])
-                        next_states[-1] = parser.call(
+                        next_states[-1] = parser.derive(
                             VerticalLine, next_states[-1]
                         )
-                    except TransmuterInternalError:
+                    except TransmuterDerivationException:
                         next_states.pop()
                     else:
                         break  # end option
@@ -142,21 +144,21 @@ class SelectionExpression(TransmuterNonterminalType):
                         next_states.append(next_states[-1])  # begin option
 
                         try:
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 Solidus, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
-                    raise TransmuterInternalError()
+                    raise TransmuterDerivationException()
 
                 next_states[-1] = next_states.pop()  # end selection
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
                     SequenceExpression, next_states[-1]
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
                 break
 
@@ -169,18 +171,18 @@ class DisjunctionCondition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(ConjunctionCondition, next_states[-1])
+        next_states[-1] = parser.derive(ConjunctionCondition, next_states[-1])
         next_states.append(next_states[-1])  # begin iteration
 
         while True:
             try:
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
                     DoubleVerticalLine, next_states[-1]
                 )
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
                     ConjunctionCondition, next_states[-1]
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
                 break
 
@@ -193,16 +195,16 @@ class ProductionSpecifierList(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(ProductionSpecifier, next_states[-1])
+        next_states[-1] = parser.derive(ProductionSpecifier, next_states[-1])
         next_states.append(next_states[-1])  # begin iteration
 
         while True:
             try:
-                next_states[-1] = parser.call(Comma, next_states[-1])
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(Comma, next_states[-1])
+                next_states[-1] = parser.derive(
                     ProductionSpecifier, next_states[-1]
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
                 break
 
@@ -221,22 +223,22 @@ class SequenceExpression(TransmuterNonterminalType):
                 next_states.append(next_states[-1])  # begin option
 
                 try:
-                    next_states[-1] = parser.call(
+                    next_states[-1] = parser.derive(
                         IterationExpression, next_states[-1]
                     )
                     next_states.append(next_states[-1])  # begin iteration
 
                     while True:
                         try:
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 IterationExpression, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                             break
 
                         next_states[-2] = next_states[-1]  # end iteration
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
@@ -245,27 +247,27 @@ class SequenceExpression(TransmuterNonterminalType):
                 next_states.append(next_states[-1])  # begin option
 
                 try:
-                    next_states[-1] = parser.call(
+                    next_states[-1] = parser.derive(
                         PrimaryExpression, next_states[-1]
                     )
                     next_states.append(next_states[-1])  # begin iteration
 
                     while True:
                         try:
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 PrimaryExpression, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                             break
 
                         next_states[-2] = next_states[-1]  # end iteration
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
 
-            raise TransmuterInternalError()
+            raise TransmuterDerivationException()
 
         next_states[-1] = next_states.pop()  # end selection
         return next_states[0]
@@ -275,16 +277,18 @@ class ConjunctionCondition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
-        next_states[-1] = parser.call(NegationCondition, next_states[-1])
+        next_states[-1] = parser.derive(NegationCondition, next_states[-1])
         next_states.append(next_states[-1])  # begin iteration
 
         while True:
             try:
-                next_states[-1] = parser.call(DoubleAmpersand, next_states[-1])
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
+                    DoubleAmpersand, next_states[-1]
+                )
+                next_states[-1] = parser.derive(
                     NegationCondition, next_states[-1]
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
                 break
 
@@ -310,51 +314,51 @@ class ProductionSpecifier(TransmuterNonterminalType):
                             for _ in transmuter_selection:  # begin selection
                                 try:  # begin option
                                     next_states.append(next_states[-1])
-                                    next_states[-1] = parser.call(
+                                    next_states[-1] = parser.derive(
                                         PlusSign, next_states[-1]
                                     )
-                                except TransmuterInternalError:
+                                except TransmuterDerivationException:
                                     next_states.pop()
                                 else:
                                     break  # end option
 
                                 try:  # begin option
                                     next_states.append(next_states[-1])
-                                    next_states[-1] = parser.call(
+                                    next_states[-1] = parser.derive(
                                         HyphenMinus, next_states[-1]
                                     )
-                                except TransmuterInternalError:
+                                except TransmuterDerivationException:
                                     next_states.pop()
                                 else:
                                     break  # end option
 
-                                raise TransmuterInternalError()
+                                raise TransmuterDerivationException()
 
                             next_states[-1] = (
                                 next_states.pop()
                             )  # end selection
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 Identifier, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 Ignore, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
-                        raise TransmuterInternalError()
+                        raise TransmuterDerivationException()
 
                     next_states[-1] = next_states.pop()  # end selection
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
@@ -363,20 +367,20 @@ class ProductionSpecifier(TransmuterNonterminalType):
                 next_states.append(next_states[-1])  # begin option
 
                 try:
-                    next_states[-1] = parser.call(Start, next_states[-1])
-                except TransmuterInternalError:
+                    next_states[-1] = parser.derive(Start, next_states[-1])
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
 
-            raise TransmuterInternalError()
+            raise TransmuterDerivationException()
 
         next_states[-1] = next_states.pop()  # end selection
 
         try:  # begin optional
             next_states.append(next_states[-1])
-            next_states[-1] = parser.call(Condition, next_states[-1])
-        except TransmuterInternalError:
+            next_states[-1] = parser.derive(Condition, next_states[-1])
+        except TransmuterDerivationException:
             next_states.pop()
         else:
             next_states[-1] = next_states.pop()  # end optional
@@ -403,7 +407,7 @@ class IterationExpression(TransmuterNonterminalType):
                 next_states.append(next_states[-1])  # begin option
 
                 try:
-                    next_states[-1] = parser.call(
+                    next_states[-1] = parser.derive(
                         PrimaryExpression, next_states[-1], cls
                     )
 
@@ -413,52 +417,52 @@ class IterationExpression(TransmuterNonterminalType):
                         for _ in transmuter_selection:  # begin selection
                             try:  # begin option
                                 next_states.append(next_states[-1])
-                                next_states[-1] = parser.call(
+                                next_states[-1] = parser.derive(
                                     Asterisk, next_states[-1]
                                 )
-                            except TransmuterInternalError:
+                            except TransmuterDerivationException:
                                 next_states.pop()
                             else:
                                 break  # end option
 
                             try:  # begin option
                                 next_states.append(next_states[-1])
-                                next_states[-1] = parser.call(
+                                next_states[-1] = parser.derive(
                                     PlusSign, next_states[-1]
                                 )
-                            except TransmuterInternalError:
+                            except TransmuterDerivationException:
                                 next_states.pop()
                             else:
                                 break  # end option
 
                             try:  # begin option
                                 next_states.append(next_states[-1])
-                                next_states[-1] = parser.call(
+                                next_states[-1] = parser.derive(
                                     QuestionMark, next_states[-1]
                                 )
-                            except TransmuterInternalError:
+                            except TransmuterDerivationException:
                                 next_states.pop()
                             else:
                                 break  # end option
 
                             try:  # begin option
                                 next_states.append(next_states[-1])
-                                next_states[-1] = parser.call(
+                                next_states[-1] = parser.derive(
                                     ExpressionRange, next_states[-1]
                                 )
-                            except TransmuterInternalError:
+                            except TransmuterDerivationException:
                                 next_states.pop()
                             else:
                                 break  # end option
 
-                            raise TransmuterInternalError()
+                            raise TransmuterDerivationException()
 
                         next_states[-1] = next_states.pop()  # end selection
-                    except TransmuterInternalError:
+                    except TransmuterDerivationException:
                         next_states.pop()
                     else:
                         next_states[-1] = next_states.pop()  # end optional
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
@@ -470,39 +474,39 @@ class IterationExpression(TransmuterNonterminalType):
                     for _ in transmuter_selection:  # begin selection
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 LeftCurlyBracket, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 LeftCurlyBracketSolidus, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
-                        raise TransmuterInternalError()
+                        raise TransmuterDerivationException()
 
                     next_states[-1] = next_states.pop()  # end selection
-                    next_states[-1] = parser.call(
+                    next_states[-1] = parser.derive(
                         SelectionExpression, next_states[-1]
                     )
-                    next_states[-1] = parser.call(
+                    next_states[-1] = parser.derive(
                         RightCurlyBracket, next_states[-1]
                     )
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
 
-            raise TransmuterInternalError()
+            raise TransmuterDerivationException()
 
         next_states[-1] = next_states.pop()  # end selection
         return next_states[0]
@@ -530,48 +534,48 @@ class PrimaryExpression(TransmuterNonterminalType):
                     for _ in transmuter_selection:  # begin selection
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 OrdChar, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 QuotedChar, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 FullStop, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 BracketExpression, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
-                        raise TransmuterInternalError()
+                        raise TransmuterDerivationException()
 
                     next_states[-1] = next_states.pop()  # end selection
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
@@ -580,43 +584,47 @@ class PrimaryExpression(TransmuterNonterminalType):
                 next_states.append(next_states[-1])  # begin option
 
                 try:
-                    next_states[-1] = parser.call(Identifier, next_states[-1])
+                    next_states[-1] = parser.derive(
+                        Identifier, next_states[-1]
+                    )
 
                     try:  # begin optional
                         next_states.append(next_states[-1])
-                        next_states[-1] = parser.call(
+                        next_states[-1] = parser.derive(
                             Condition, next_states[-1]
                         )
-                    except TransmuterInternalError:
+                    except TransmuterDerivationException:
                         next_states.pop()
                     else:
                         next_states[-1] = next_states.pop()  # end optional
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
 
             try:  # begin option
                 next_states.append(next_states[-1])
-                next_states[-1] = parser.call(LeftParenthesis, next_states[-1])
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
+                    LeftParenthesis, next_states[-1]
+                )
+                next_states[-1] = parser.derive(
                     SelectionExpression, next_states[-1]
                 )
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
                     RightParenthesis, next_states[-1]
                 )
 
                 if Conditions.syntactic in parser.lexer.conditions:
                     try:  # begin optional
                         next_states.append(next_states[-1])
-                        next_states[-1] = parser.call(
+                        next_states[-1] = parser.derive(
                             Condition, next_states[-1]
                         )
-                    except TransmuterInternalError:
+                    except TransmuterDerivationException:
                         next_states.pop()
                     else:
                         next_states[-1] = next_states.pop()  # end optional
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
             else:
                 break  # end option
@@ -628,43 +636,43 @@ class PrimaryExpression(TransmuterNonterminalType):
                     for _ in transmuter_selection:  # begin selection
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 OptionalExpression, next_states[-1]
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
                         try:  # begin option
                             next_states.append(next_states[-1])
-                            next_states[-1] = parser.call(
+                            next_states[-1] = parser.derive(
                                 IterationExpression, next_states[-1], cls
                             )
-                        except TransmuterInternalError:
+                        except TransmuterDerivationException:
                             next_states.pop()
                         else:
                             break  # end option
 
-                        raise TransmuterInternalError()
+                        raise TransmuterDerivationException()
 
                     next_states[-1] = next_states.pop()  # end selection
 
                     try:  # begin optional
                         next_states.append(next_states[-1])
-                        next_states[-1] = parser.call(
+                        next_states[-1] = parser.derive(
                             Condition, next_states[-1]
                         )
-                    except TransmuterInternalError:
+                    except TransmuterDerivationException:
                         next_states.pop()
                     else:
                         next_states[-1] = next_states.pop()  # end optional
-                except TransmuterInternalError:
+                except TransmuterDerivationException:
                     next_states.pop()
                 else:
                     break  # end option
 
-            raise TransmuterInternalError()
+            raise TransmuterDerivationException()
 
         next_states[-1] = next_states.pop()  # end selection
         return next_states[0]
@@ -678,14 +686,16 @@ class NegationCondition(TransmuterNonterminalType):
 
         while True:
             try:
-                next_states[-1] = parser.call(ExclamationMark, next_states[-1])
-            except TransmuterInternalError:
+                next_states[-1] = parser.derive(
+                    ExclamationMark, next_states[-1]
+                )
+            except TransmuterDerivationException:
                 next_states.pop()
                 break
 
             next_states[-2] = next_states[-1]  # end iteration
 
-        next_states[-1] = parser.call(PrimitiveCondition, next_states[-1])
+        next_states[-1] = parser.derive(PrimitiveCondition, next_states[-1])
         return next_states[0]
 
 
@@ -697,29 +707,29 @@ class OptionalExpression(TransmuterNonterminalType):
         for _ in transmuter_selection:  # begin selection
             try:  # begin option
                 next_states.append(next_states[-1])
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
                     LeftSquareBracket, next_states[-1]
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
             else:
                 break  # end option
 
             try:  # begin option
                 next_states.append(next_states[-1])
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
                     LeftSquareBracketSolidus, next_states[-1]
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
             else:
                 break  # end option
 
-            raise TransmuterInternalError()
+            raise TransmuterDerivationException()
 
         next_states[-1] = next_states.pop()  # end selection
-        next_states[-1] = parser.call(SelectionExpression, next_states[-1])
-        next_states[-1] = parser.call(RightSquareBracket, next_states[-1])
+        next_states[-1] = parser.derive(SelectionExpression, next_states[-1])
+        next_states[-1] = parser.derive(RightSquareBracket, next_states[-1])
         return next_states[0]
 
 
@@ -731,27 +741,29 @@ class PrimitiveCondition(TransmuterNonterminalType):
         for _ in transmuter_selection:  # begin selection
             try:  # begin option
                 next_states.append(next_states[-1])
-                next_states[-1] = parser.call(Identifier, next_states[-1])
-            except TransmuterInternalError:
+                next_states[-1] = parser.derive(Identifier, next_states[-1])
+            except TransmuterDerivationException:
                 next_states.pop()
             else:
                 break  # end option
 
             try:  # begin option
                 next_states.append(next_states[-1])
-                next_states[-1] = parser.call(LeftParenthesis, next_states[-1])
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
+                    LeftParenthesis, next_states[-1]
+                )
+                next_states[-1] = parser.derive(
                     DisjunctionCondition, next_states[-1]
                 )
-                next_states[-1] = parser.call(
+                next_states[-1] = parser.derive(
                     RightParenthesis, next_states[-1]
                 )
-            except TransmuterInternalError:
+            except TransmuterDerivationException:
                 next_states.pop()
             else:
                 break  # end option
 
-            raise TransmuterInternalError()
+            raise TransmuterDerivationException()
 
         next_states[-1] = next_states.pop()  # end selection
         return next_states[0]
