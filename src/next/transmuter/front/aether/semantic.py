@@ -62,7 +62,7 @@ from .syntactic import (
     PrimaryExpression,
     NegationCondition,
     OptionalExpression,
-    PrimitiveCondition,
+    PrimaryCondition,
 )
 
 
@@ -211,7 +211,15 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
             j = i + 1
 
             if chars[i] == "\\":
-                j += 3 if chars[j] in "01" else 1
+                j += (
+                    7
+                    if chars[j] == "U"
+                    else (
+                        5
+                        if chars[j] == "u"
+                        else (3 if chars[j] in "01" else 1)
+                    )
+                )
 
             if j >= len(chars) - 1 or chars[j] != "-":
                 patterns.append(LexicalSimplePattern(chars[i:j]))
@@ -221,7 +229,15 @@ class _LexicalFold(TransmuterTreeFold[_LexicalFragment]):
                 j = i + 1
 
                 if chars[i] == "\\":
-                    j += 3 if chars[j] in "01" else 1
+                    j += (
+                        7
+                        if chars[j] == "U"
+                        else (
+                            5
+                            if chars[j] == "u"
+                            else (3 if chars[j] in "01" else 1)
+                        )
+                    )
 
                 patterns.append(LexicalRangePattern(first_char, chars[i:j]))
 
@@ -473,7 +489,7 @@ class LexicalSymbolTableBuilder(TransmuterTreeVisitor):
                 )
                 symbol.references.append(node)
             elif (
-                node.type_ == PrimitiveCondition
+                node.type_ == PrimaryCondition
                 and node.children[0].type_ == Identifier
             ):
                 symbol = self.condition_table.add_get(
@@ -541,7 +557,7 @@ class _SyntacticFold(TransmuterTreeFold[_SyntacticFragment]):
             DisjunctionCondition,
             ConjunctionCondition,
             NegationCondition,
-            PrimitiveCondition,
+            PrimaryCondition,
         ):
             return None
 
@@ -674,7 +690,7 @@ class SyntacticSymbolTableBuilder(TransmuterTreeVisitor):
                 )
                 symbol.references.append(node)
             elif (
-                node.type_ == PrimitiveCondition
+                node.type_ == PrimaryCondition
                 and node.children[0].type_ == Identifier
             ):
                 symbol = self.condition_table.add_get(

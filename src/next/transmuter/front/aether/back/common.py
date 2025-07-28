@@ -51,7 +51,7 @@ from ..syntactic import (
     PrimaryExpression,
     NegationCondition,
     OptionalExpression,
-    PrimitiveCondition,
+    PrimaryCondition,
 )
 from ..semantic import LexicalState, LexicalSymbol, SyntacticSymbol
 
@@ -98,8 +98,8 @@ class AetherConditionFold(TransmuterTreeFold[str]):
             if node.type_ == NegationCondition and len(node.children) % 2 == 0:
                 return self.fold_negation(node, children[0])
 
-            if node.type_ == PrimitiveCondition:
-                return self.fold_primitive(node, children[0])
+            if node.type_ == PrimaryCondition:
+                return self.fold_primary(node, children[0])
 
             return children[0]
 
@@ -137,7 +137,7 @@ class AetherConditionFold(TransmuterTreeFold[str]):
     ) -> str:
         raise NotImplementedError()
 
-    def fold_primitive(
+    def fold_primary(
         self, node: TransmuterNonterminalTreeNode, child: str
     ) -> str:
         raise NotImplementedError()
@@ -323,7 +323,7 @@ class AetherExpressionFold(TransmuterTreeFold[str]):
                 DisjunctionCondition,
                 ConjunctionCondition,
                 NegationCondition,
-                PrimitiveCondition,
+                PrimaryCondition,
             )
             or len(children) == 0
         ):

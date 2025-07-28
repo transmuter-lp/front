@@ -103,8 +103,11 @@ def _escape_char(value: str) -> str:
     if value == '"':
         return '\\"'
 
-    if len(value) == 2 and value[0] == "\\" and value[1] in " $()*+.;?[^{|":
+    if len(value) == 2 and value[0] == "\\" and value[1] in " #$()*+.;?[^{|":
         return value[1]
+
+    if value[0] == "\\" and value[1] == "U":
+        return f"\\U00{value[2:]}"
 
     return value
 
@@ -139,7 +142,7 @@ class ConditionFold(AetherConditionFold):
 
         return f"not {child}"
 
-    def fold_primitive(
+    def fold_primary(
         self, node: TransmuterNonterminalTreeNode, child: str
     ) -> str:
         if len(node.children) == 1:
