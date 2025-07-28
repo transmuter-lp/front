@@ -49,6 +49,27 @@ class Whitespace(TransmuterTerminalTag):
         return state_accept, next_states
 
 
+class Comment(TransmuterTerminalTag):
+    @staticmethod
+    def ignore(conditions):
+        return True
+
+    @staticmethod
+    def nfa(current_states, char):
+        state_accept = False
+        next_states = 0
+
+        if 1 << 0 & current_states and char == "#":
+            state_accept = True
+            next_states |= 1 << 1
+
+        if 1 << 1 & current_states and char not in "\r\n":
+            state_accept = True
+            next_states |= 1 << 1
+
+        return state_accept, next_states
+
+
 class Identifier(TransmuterTerminalTag):
     @staticmethod
     def positives(conditions):
@@ -473,7 +494,7 @@ class OrdChar(TransmuterTerminalTag):
         next_states = 0
 
         if 1 << 0 & current_states and not (
-            "\000" <= char <= "\037" or char in " $()*+.;?[\\^{|\177"
+            "\000" <= char <= "\037" or char in " #$()*+.;?[\\^{|\177"
         ):
             state_accept = True
 
@@ -491,9 +512,9 @@ class QuotedChar(TransmuterTerminalTag):
         next_states = 0
 
         if 1 << 0 & current_states and char == "\\":
-            next_states |= 1 << 1 | 1 << 2
+            next_states |= 1 << 1 | 1 << 2 | 1 << 5 | 1 << 10
 
-        if 1 << 1 & current_states and char in " $()*+.;?[\\^abfnrtv{|":
+        if 1 << 1 & current_states and char in " #$()*+.;?[\\^abfnrtv{|":
             state_accept = True
 
         if 1 << 2 & current_states and char in "01":
@@ -503,6 +524,66 @@ class QuotedChar(TransmuterTerminalTag):
             next_states |= 1 << 4
 
         if 1 << 4 & current_states and "0" <= char <= "7":
+            state_accept = True
+
+        if 1 << 5 & current_states and char == "u":
+            next_states |= 1 << 6 | 1 << 8
+
+        if 1 << 6 & current_states and (
+            "0" <= char <= "9"
+            or "A" <= char <= "C"
+            or char in "EF"
+            or "a" <= char <= "c"
+            or char in "ef"
+        ):
+            next_states |= 1 << 7
+
+        if 1 << 7 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 17
+
+        if 1 << 8 & current_states and char in "Dd":
+            next_states |= 1 << 9
+
+        if 1 << 9 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 17
+
+        if 1 << 10 & current_states and char == "U":
+            next_states |= 1 << 11 | 1 << 13
+
+        if 1 << 11 & current_states and char == "0":
+            next_states |= 1 << 12
+
+        if 1 << 12 & current_states and (
+            "1" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 15
+
+        if 1 << 13 & current_states and char == "1":
+            next_states |= 1 << 14
+
+        if 1 << 14 & current_states and char == "0":
+            next_states |= 1 << 15
+
+        if 1 << 15 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 16
+
+        if 1 << 16 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 17
+
+        if 1 << 17 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 18
+
+        if 1 << 18 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
             state_accept = True
 
         return state_accept, next_states
@@ -535,7 +616,7 @@ class BracketExpression(TransmuterTerminalTag):
         next_states = 0
 
         if 1 << 0 & current_states and char == "[":
-            next_states |= 1 << 1 | 1 << 2 | 1 << 3 | 1 << 8
+            next_states |= 1 << 1 | 1 << 2 | 1 << 3 | 1 << 22
 
         if 1 << 1 & current_states and char == "^":
             next_states |= 1 << 2 | 1 << 3
@@ -543,13 +624,13 @@ class BracketExpression(TransmuterTerminalTag):
         if 1 << 2 & current_states and not (
             "\000" <= char <= "\037" or char in "\\^\177"
         ):
-            next_states |= 1 << 10 | 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+            next_states |= 1 << 24 | 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
         if 1 << 3 & current_states and char == "\\":
-            next_states |= 1 << 4 | 1 << 5
+            next_states |= 1 << 4 | 1 << 5 | 1 << 8 | 1 << 13
 
         if 1 << 4 & current_states and char in "\\abfnrtv":
-            next_states |= 1 << 10 | 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+            next_states |= 1 << 24 | 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
         if 1 << 5 & current_states and char in "01":
             next_states |= 1 << 6
@@ -558,84 +639,324 @@ class BracketExpression(TransmuterTerminalTag):
             next_states |= 1 << 7
 
         if 1 << 7 & current_states and "0" <= char <= "7":
-            next_states |= 1 << 10 | 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+            next_states |= 1 << 24 | 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
-        if 1 << 8 & current_states and char == "^":
-            next_states |= 1 << 9
+        if 1 << 8 & current_states and char == "u":
+            next_states |= 1 << 9 | 1 << 11
 
-        if 1 << 9 & current_states and char == "^":
-            next_states |= 1 << 10 | 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
-
-        if 1 << 10 & current_states and char == "-":
-            next_states |= 1 << 11 | 1 << 12
-
-        if 1 << 11 & current_states and not (
-            char == "]" or "\000" <= char <= "\037" or char in "\\\177"
+        if 1 << 9 & current_states and (
+            "0" <= char <= "9"
+            or "A" <= char <= "C"
+            or char in "EF"
+            or "a" <= char <= "c"
+            or char in "ef"
         ):
-            next_states |= 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+            next_states |= 1 << 10
 
-        if 1 << 12 & current_states and char == "\\":
-            next_states |= 1 << 13 | 1 << 14
+        if 1 << 10 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 20
 
-        if 1 << 13 & current_states and char in "\\abfnrtv":
-            next_states |= 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+        if 1 << 11 & current_states and char in "Dd":
+            next_states |= 1 << 12
 
-        if 1 << 14 & current_states and char in "01":
+        if 1 << 12 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 20
+
+        if 1 << 13 & current_states and char == "U":
+            next_states |= 1 << 14 | 1 << 16
+
+        if 1 << 14 & current_states and char == "0":
             next_states |= 1 << 15
 
-        if 1 << 15 & current_states and "0" <= char <= "7":
-            next_states |= 1 << 16
-
-        if 1 << 16 & current_states and "0" <= char <= "7":
-            next_states |= 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
-
-        if 1 << 17 & current_states and not (
-            char == "]" or "\000" <= char <= "\037" or char in "\\\177-"
+        if 1 << 15 & current_states and (
+            "1" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
         ):
-            next_states |= 1 << 17 | 1 << 18 | 1 << 23 | 1 << 30 | 1 << 31
+            next_states |= 1 << 18
 
-        if 1 << 18 & current_states and char == "\\":
-            next_states |= 1 << 19 | 1 << 20
+        if 1 << 16 & current_states and char == "1":
+            next_states |= 1 << 17
 
-        if 1 << 19 & current_states and char in "\\abfnrtv":
-            next_states |= 1 << 17 | 1 << 18 | 1 << 23 | 1 << 30 | 1 << 31
+        if 1 << 17 & current_states and char == "0":
+            next_states |= 1 << 18
 
-        if 1 << 20 & current_states and char in "01":
+        if 1 << 18 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 19
+
+        if 1 << 19 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 20
+
+        if 1 << 20 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
             next_states |= 1 << 21
 
-        if 1 << 21 & current_states and "0" <= char <= "7":
-            next_states |= 1 << 22
+        if 1 << 21 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 24 | 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
-        if 1 << 22 & current_states and "0" <= char <= "7":
-            next_states |= 1 << 17 | 1 << 18 | 1 << 23 | 1 << 30 | 1 << 31
+        if 1 << 22 & current_states and char == "^":
+            next_states |= 1 << 23
 
-        if 1 << 23 & current_states and char == "-":
-            next_states |= 1 << 24 | 1 << 25
+        if 1 << 23 & current_states and char == "^":
+            next_states |= 1 << 24 | 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
-        if 1 << 24 & current_states and not (
+        if 1 << 24 & current_states and char == "-":
+            next_states |= 1 << 25 | 1 << 26
+
+        if 1 << 25 & current_states and not (
             char == "]" or "\000" <= char <= "\037" or char in "\\\177"
         ):
-            next_states |= 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
-        if 1 << 25 & current_states and char == "\\":
-            next_states |= 1 << 26 | 1 << 27
+        if 1 << 26 & current_states and char == "\\":
+            next_states |= 1 << 27 | 1 << 28 | 1 << 31 | 1 << 36
 
-        if 1 << 26 & current_states and char in "\\abfnrtv":
-            next_states |= 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+        if 1 << 27 & current_states and char in "\\abfnrtv":
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
-        if 1 << 27 & current_states and char in "01":
-            next_states |= 1 << 28
-
-        if 1 << 28 & current_states and "0" <= char <= "7":
+        if 1 << 28 & current_states and char in "01":
             next_states |= 1 << 29
 
         if 1 << 29 & current_states and "0" <= char <= "7":
-            next_states |= 1 << 17 | 1 << 18 | 1 << 30 | 1 << 31
+            next_states |= 1 << 30
 
-        if 1 << 30 & current_states and char == "-":
-            next_states |= 1 << 31
+        if 1 << 30 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
 
-        if 1 << 31 & current_states and char == "]":
+        if 1 << 31 & current_states and char == "u":
+            next_states |= 1 << 32 | 1 << 34
+
+        if 1 << 32 & current_states and (
+            "0" <= char <= "9"
+            or "A" <= char <= "C"
+            or char in "EF"
+            or "a" <= char <= "c"
+            or char in "ef"
+        ):
+            next_states |= 1 << 33
+
+        if 1 << 33 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 43
+
+        if 1 << 34 & current_states and char in "Dd":
+            next_states |= 1 << 35
+
+        if 1 << 35 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 43
+
+        if 1 << 36 & current_states and char == "U":
+            next_states |= 1 << 37 | 1 << 39
+
+        if 1 << 37 & current_states and char == "0":
+            next_states |= 1 << 38
+
+        if 1 << 38 & current_states and (
+            "1" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 41
+
+        if 1 << 39 & current_states and char == "1":
+            next_states |= 1 << 40
+
+        if 1 << 40 & current_states and char == "0":
+            next_states |= 1 << 41
+
+        if 1 << 41 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 42
+
+        if 1 << 42 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 43
+
+        if 1 << 43 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 44
+
+        if 1 << 44 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
+
+        if 1 << 45 & current_states and not (
+            char == "]" or "\000" <= char <= "\037" or char in "\\\177-"
+        ):
+            next_states |= 1 << 45 | 1 << 46 | 1 << 65 | 1 << 86 | 1 << 87
+
+        if 1 << 46 & current_states and char == "\\":
+            next_states |= 1 << 47 | 1 << 48 | 1 << 51 | 1 << 56
+
+        if 1 << 47 & current_states and char in "\\abfnrtv":
+            next_states |= 1 << 45 | 1 << 46 | 1 << 65 | 1 << 86 | 1 << 87
+
+        if 1 << 48 & current_states and char in "01":
+            next_states |= 1 << 49
+
+        if 1 << 49 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 50
+
+        if 1 << 50 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 45 | 1 << 46 | 1 << 65 | 1 << 86 | 1 << 87
+
+        if 1 << 51 & current_states and char == "u":
+            next_states |= 1 << 52 | 1 << 54
+
+        if 1 << 52 & current_states and (
+            "0" <= char <= "9"
+            or "A" <= char <= "C"
+            or char in "EF"
+            or "a" <= char <= "c"
+            or char in "ef"
+        ):
+            next_states |= 1 << 53
+
+        if 1 << 53 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 63
+
+        if 1 << 54 & current_states and char in "Dd":
+            next_states |= 1 << 55
+
+        if 1 << 55 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 63
+
+        if 1 << 56 & current_states and char == "U":
+            next_states |= 1 << 57 | 1 << 59
+
+        if 1 << 57 & current_states and char == "0":
+            next_states |= 1 << 58
+
+        if 1 << 58 & current_states and (
+            "1" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 61
+
+        if 1 << 59 & current_states and char == "1":
+            next_states |= 1 << 60
+
+        if 1 << 60 & current_states and char == "0":
+            next_states |= 1 << 61
+
+        if 1 << 61 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 62
+
+        if 1 << 62 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 63
+
+        if 1 << 63 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 64
+
+        if 1 << 64 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 45 | 1 << 46 | 1 << 65 | 1 << 86 | 1 << 87
+
+        if 1 << 65 & current_states and char == "-":
+            next_states |= 1 << 66 | 1 << 67
+
+        if 1 << 66 & current_states and not (
+            char == "]" or "\000" <= char <= "\037" or char in "\\\177"
+        ):
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
+
+        if 1 << 67 & current_states and char == "\\":
+            next_states |= 1 << 68 | 1 << 69 | 1 << 72 | 1 << 77
+
+        if 1 << 68 & current_states and char in "\\abfnrtv":
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
+
+        if 1 << 69 & current_states and char in "01":
+            next_states |= 1 << 70
+
+        if 1 << 70 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 71
+
+        if 1 << 71 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
+
+        if 1 << 72 & current_states and char == "u":
+            next_states |= 1 << 73 | 1 << 75
+
+        if 1 << 73 & current_states and (
+            "0" <= char <= "9"
+            or "A" <= char <= "C"
+            or char in "EF"
+            or "a" <= char <= "c"
+            or char in "ef"
+        ):
+            next_states |= 1 << 74
+
+        if 1 << 74 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 84
+
+        if 1 << 75 & current_states and char in "Dd":
+            next_states |= 1 << 76
+
+        if 1 << 76 & current_states and "0" <= char <= "7":
+            next_states |= 1 << 84
+
+        if 1 << 77 & current_states and char == "U":
+            next_states |= 1 << 78 | 1 << 80
+
+        if 1 << 78 & current_states and char == "0":
+            next_states |= 1 << 79
+
+        if 1 << 79 & current_states and (
+            "1" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 82
+
+        if 1 << 80 & current_states and char == "1":
+            next_states |= 1 << 81
+
+        if 1 << 81 & current_states and char == "0":
+            next_states |= 1 << 82
+
+        if 1 << 82 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 83
+
+        if 1 << 83 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 84
+
+        if 1 << 84 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 85
+
+        if 1 << 85 & current_states and (
+            "0" <= char <= "9" or "A" <= char <= "F" or "a" <= char <= "f"
+        ):
+            next_states |= 1 << 45 | 1 << 46 | 1 << 86 | 1 << 87
+
+        if 1 << 86 & current_states and char == "-":
+            next_states |= 1 << 87
+
+        if 1 << 87 & current_states and char == "]":
             state_accept = True
 
         return state_accept, next_states
@@ -712,6 +1033,7 @@ class RightSquareBracket(TransmuterTerminalTag):
 class Lexer(TransmuterLexer):
     TERMINAL_TAGS = [
         Whitespace,
+        Comment,
         Identifier,
         Colon,
         Semicolon,

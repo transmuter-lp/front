@@ -695,7 +695,7 @@ class NegationCondition(TransmuterNonterminalType):
 
             next_states[-2] = next_states[-1]  # end iteration
 
-        next_states[-1] = parser.derive(PrimitiveCondition, next_states[-1])
+        next_states[-1] = parser.derive(PrimaryCondition, next_states[-1])
         return next_states[0]
 
 
@@ -733,7 +733,7 @@ class OptionalExpression(TransmuterNonterminalType):
         return next_states[0]
 
 
-class PrimitiveCondition(TransmuterNonterminalType):
+class PrimaryCondition(TransmuterNonterminalType):
     @classmethod
     def descend(cls, parser, current_state):
         next_states = [{current_state}]
@@ -787,5 +787,5 @@ class Parser(TransmuterParser):
         PrimaryExpression,
         NegationCondition,
         OptionalExpression,
-        PrimitiveCondition,
+        PrimaryCondition,
     ]
